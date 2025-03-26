@@ -5,6 +5,7 @@ export interface ShipmentFile {
   type: string;
   size: number;
   uploadDate: string;
+  position?: number; // Added for drag and drop ordering
 }
 
 export interface Shipment {

@@ -1,9 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   Package, ArrowLeft, Edit, Save, X, Plus,
-  FileText, File, Calendar, Truck, MapPin, User
+  FileText, File, Calendar, Truck, MapPin, User,
+  GripVertical
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,11 +52,20 @@ const ShipmentDetail = () => {
     type: "application/pdf",
     size: 0,
   });
+  const [draggedFile, setDraggedFile] = useState<ShipmentFile | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   
   useEffect(() => {
     if (id) {
       const shipmentData = getShipmentById(id);
       if (shipmentData) {
+        if (shipmentData.files) {
+          shipmentData.files = shipmentData.files.map((file, index) => ({
+            ...file,
+            position: file.position !== undefined ? file.position : index
+          }));
+          shipmentData.files.sort((a, b) => (a.position || 0) - (b.position || 0));
+        }
         setShipment(shipmentData);
         setEditedShipment({ ...shipmentData });
       } else {
@@ -105,12 +114,14 @@ const ShipmentDetail = () => {
   
   const handleAddFile = () => {
     if (editedShipment && newFile.name) {
+      const filesCount = editedShipment.files ? editedShipment.files.length : 0;
       const fileToAdd: ShipmentFile = {
         id: `file-${Date.now()}`,
         name: newFile.name,
         type: newFile.type || "application/pdf",
         size: newFile.size || 1024,
         uploadDate: new Date().toISOString().split('T')[0],
+        position: filesCount
       };
       
       const updatedFiles = editedShipment.files ? [...editedShipment.files, fileToAdd] : [fileToAdd];
@@ -132,6 +143,49 @@ const ShipmentDetail = () => {
         description: `File "${fileToAdd.name}" added successfully.`,
       });
     }
+  };
+  
+  const handleDragStart = (file: ShipmentFile) => {
+    setDraggedFile(file);
+  };
+  
+  const handleDragEnter = (index: number) => {
+    setDragOverIndex(index);
+  };
+  
+  const handleDragEnd = () => {
+    setDraggedFile(null);
+    setDragOverIndex(null);
+  };
+  
+  const handleDrop = (targetIndex: number) => {
+    if (!draggedFile || !editedShipment || !editedShipment.files) return;
+    
+    const sourceIndex = editedShipment.files.findIndex(file => file.id === draggedFile.id);
+    if (sourceIndex === -1) return;
+    
+    const updatedFiles = [...editedShipment.files];
+    
+    const [removedFile] = updatedFiles.splice(sourceIndex, 1);
+    
+    updatedFiles.splice(targetIndex, 0, removedFile);
+    
+    const reorderedFiles = updatedFiles.map((file, index) => ({
+      ...file,
+      position: index
+    }));
+    
+    const updatedShipment = { ...editedShipment, files: reorderedFiles };
+    setEditedShipment(updatedShipment);
+    setShipment(updateShipment(updatedShipment));
+    
+    setDraggedFile(null);
+    setDragOverIndex(null);
+    
+    toast({
+      title: "Files Reordered",
+      description: "File order has been updated."
+    });
   };
   
   const formatFileSize = (size: number) => {
@@ -384,21 +438,34 @@ const ShipmentDetail = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {(shipment.files && shipment.files.length > 0) ? (
+            {(shipment?.files && shipment.files.length > 0) ? (
               <ScrollArea className="h-[300px]">
                 <div className="w-full min-w-[500px]">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[40%]">Name</TableHead>
+                        <TableHead className="w-[5%]"></TableHead>
+                        <TableHead className="w-[35%]">Name</TableHead>
                         <TableHead className="w-[20%]">Type</TableHead>
                         <TableHead className="w-[20%]">Size</TableHead>
                         <TableHead className="w-[20%]">Upload Date</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {shipment.files.map((file) => (
-                        <TableRow key={file.id}>
+                      {shipment.files.map((file, index) => (
+                        <TableRow 
+                          key={file.id}
+                          draggable
+                          onDragStart={() => handleDragStart(file)}
+                          onDragEnter={() => handleDragEnter(index)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDragEnd={handleDragEnd}
+                          onDrop={() => handleDrop(index)}
+                          className={`cursor-move ${dragOverIndex === index ? 'bg-muted/80 border-dashed border-2 border-primary/50' : ''}`}
+                        >
+                          <TableCell className="py-2">
+                            <GripVertical className="h-4 w-4 text-muted-foreground" />
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center">
                               <File className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -420,9 +487,11 @@ const ShipmentDetail = () => {
               <div className="flex flex-col items-center justify-center h-48 text-center">
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">No files attached to this shipment</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Click "Add File" to attach a document
-                </p>
+                <div className="text-sm text-muted-foreground mt-4 border-2 border-dashed p-4 w-full rounded-md flex flex-col items-center justify-center">
+                  <p className="mb-2">Drag and drop files here</p>
+                  <p>or</p>
+                  <p className="mt-2">Click "Add File" to attach a document</p>
+                </div>
               </div>
             )}
           </CardContent>
@@ -433,3 +502,4 @@ const ShipmentDetail = () => {
 };
 
 export default ShipmentDetail;
+
