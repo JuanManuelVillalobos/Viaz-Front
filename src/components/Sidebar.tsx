@@ -26,9 +26,9 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
     >
       <div className="p-4 h-16 border-b border-border flex items-center justify-center">
         {isOpen ? (
-          <h1 className="text-xl font-bold">ShipManager</h1>
+          <img src={'viaz-logo-large.svg'} alt={"viaz-logo"} />
         ) : (
-          <h1 className="text-xl font-bold">SM</h1>
+          <img src={'viaz-logo-small.svg'} alt={"viaz-logo"} width={47}/>
         )}
       </div>
       <nav className="p-2">
