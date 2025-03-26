@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Package, Search, Filter, ArrowUpDown, 
@@ -38,73 +37,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Mock data for shipments
-const shipments = [
-  {
-    id: "SHP-1001",
-    origin: "New York, USA",
-    destination: "London, UK",
-    customer: "Acme Corp",
-    status: "delivered",
-    date: "2023-08-01",
-    carrier: "OceanExpress"
-  },
-  {
-    id: "SHP-1002",
-    origin: "Shanghai, China",
-    destination: "Los Angeles, USA",
-    customer: "TechGiant Inc",
-    status: "in-transit",
-    date: "2023-08-05",
-    carrier: "FastFreight"
-  },
-  {
-    id: "SHP-1003",
-    origin: "Hamburg, Germany",
-    destination: "Singapore",
-    customer: "Global Traders",
-    status: "processing",
-    date: "2023-08-07",
-    carrier: "SeaWays"
-  },
-  {
-    id: "SHP-1004",
-    origin: "Dubai, UAE",
-    destination: "Sydney, Australia",
-    customer: "Desert Exports",
-    status: "delivered",
-    date: "2023-07-28",
-    carrier: "AirCargo"
-  },
-  {
-    id: "SHP-1005",
-    origin: "Rotterdam, Netherlands",
-    destination: "Tokyo, Japan",
-    customer: "Euro Shipping",
-    status: "in-transit",
-    date: "2023-08-03",
-    carrier: "PacificRoute"
-  },
-  {
-    id: "SHP-1006",
-    origin: "Mumbai, India",
-    destination: "Cape Town, South Africa",
-    customer: "Spice Traders",
-    status: "delayed",
-    date: "2023-08-02",
-    carrier: "OceanWave"
-  },
-  {
-    id: "SHP-1007",
-    origin: "São Paulo, Brazil",
-    destination: "Mexico City, Mexico",
-    customer: "Americas United",
-    status: "processing",
-    date: "2023-08-08",
-    carrier: "LatinFreight"
-  },
-];
+import { Link, useNavigate } from "react-router-dom";
+import { Shipment } from "@/types/shipment";
+import { getAllShipments, getStatusColor } from "@/services/shipmentService";
 
 type FilterOption = {
   status: string[];
@@ -112,6 +47,7 @@ type FilterOption = {
 };
 
 const Shipments = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOption>({ status: [], carrier: [] });
@@ -122,14 +58,17 @@ const Shipments = () => {
     customer: "",
     carrier: "",
   });
+  const [shipments, setShipments] = useState<Shipment[]>([]);
   
-  // Get unique carriers and statuses for filter options
+  useEffect(() => {
+    setShipments(getAllShipments());
+  }, []);
+  
   const carriers = [...new Set(shipments.map(shipment => shipment.carrier))];
   const statuses = [...new Set(shipments.map(shipment => shipment.status))];
   
   const handleFilterChange = (type: "status" | "carrier", value: string) => {
     setFilters(prev => {
-      // Toggle the value (add if not present, remove if present)
       const newValues = prev[type].includes(value)
         ? prev[type].filter(v => v !== value)
         : [...prev[type], value];
@@ -143,7 +82,6 @@ const Shipments = () => {
   };
   
   const handleNewShipmentSubmit = () => {
-    // Validate required fields
     if (!newShipment.origin || !newShipment.destination || !newShipment.customer || !newShipment.carrier) {
       toast({
         title: "Validation Error",
@@ -153,13 +91,11 @@ const Shipments = () => {
       return;
     }
     
-    // In a real app, this would call an API to create the shipment
     toast({
       title: "Shipment Created",
       description: `New shipment from ${newShipment.origin} to ${newShipment.destination} has been created.`,
     });
     
-    // Reset form and close dialog
     setNewShipment({
       origin: "",
       destination: "",
@@ -171,14 +107,12 @@ const Shipments = () => {
   
   const filteredShipments = shipments.filter(
     (shipment) => {
-      // Text search filter
       const matchesSearch = 
         shipment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.destination.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Status and carrier filters
       const matchesStatus = filters.status.length === 0 || filters.status.includes(shipment.status);
       const matchesCarrier = filters.carrier.length === 0 || filters.carrier.includes(shipment.carrier);
       
@@ -186,19 +120,8 @@ const Shipments = () => {
     }
   );
   
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "delivered":
-        return "bg-green-500";
-      case "in-transit":
-        return "bg-blue-500";
-      case "processing":
-        return "bg-yellow-500";
-      case "delayed":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
-    }
+  const handleViewShipment = (id: string) => {
+    navigate(`/shipments/${id}`);
   };
 
   return (
@@ -377,6 +300,7 @@ const Shipments = () => {
                   </TableHead>
                   <TableHead>Carrier</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Files</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -406,6 +330,9 @@ const Shipments = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
+                        {shipment.files ? shipment.files.length : 0}
+                      </TableCell>
+                      <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -415,7 +342,9 @@ const Shipments = () => {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewShipment(shipment.id)}>
+                              View Details
+                            </DropdownMenuItem>
                             <DropdownMenuItem>Track Shipment</DropdownMenuItem>
                             <DropdownMenuItem>Update Status</DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -427,7 +356,7 @@ const Shipments = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
+                    <TableCell colSpan={9} className="h-24 text-center">
                       No shipments found.
                     </TableCell>
                   </TableRow>

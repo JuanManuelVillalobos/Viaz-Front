@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Index from "./pages/Index";
 import Shipments from "./pages/Shipments";
+import ShipmentDetail from "./pages/ShipmentDetail";
 import UserManagement from "./pages/UserManagement";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -54,6 +55,7 @@ const App = () => {
             }>
               <Route index element={<Index />} />
               <Route path="shipments" element={<Shipments />} />
+              <Route path="shipments/:id" element={<ShipmentDetail />} />
               <Route path="users" element={<UserManagement />} />
             </Route>
             <Route path="*" element={<NotFound />} />

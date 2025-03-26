@@ -1,0 +1,430 @@
+
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { 
+  Package, ArrowLeft, Edit, Save, X, Plus,
+  FileText, File, Calendar, Truck, MapPin, User
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Shipment, ShipmentFile } from "@/types/shipment";
+import { getShipmentById, updateShipment, getStatusColor } from "@/services/shipmentService";
+
+const ShipmentDetail = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [shipment, setShipment] = useState<Shipment | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedShipment, setEditedShipment] = useState<Shipment | null>(null);
+  const [isAddingFile, setIsAddingFile] = useState(false);
+  const [newFile, setNewFile] = useState<Partial<ShipmentFile>>({
+    name: "",
+    type: "application/pdf",
+    size: 0,
+  });
+  
+  useEffect(() => {
+    if (id) {
+      const shipmentData = getShipmentById(id);
+      if (shipmentData) {
+        setShipment(shipmentData);
+        setEditedShipment({ ...shipmentData });
+      } else {
+        toast({
+          title: "Error",
+          description: `Shipment with ID ${id} not found.`,
+          variant: "destructive",
+        });
+        navigate("/shipments");
+      }
+    }
+  }, [id, navigate]);
+  
+  const handleBack = () => {
+    navigate("/shipments");
+  };
+  
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+  
+  const handleCancel = () => {
+    setIsEditing(false);
+    if (shipment) {
+      setEditedShipment({ ...shipment });
+    }
+  };
+  
+  const handleSave = () => {
+    if (editedShipment) {
+      const updated = updateShipment(editedShipment);
+      setShipment(updated);
+      setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Shipment details updated successfully.",
+      });
+    }
+  };
+  
+  const handleInputChange = (field: keyof Shipment, value: string) => {
+    if (editedShipment) {
+      setEditedShipment({ ...editedShipment, [field]: value });
+    }
+  };
+  
+  const handleAddFile = () => {
+    if (editedShipment && newFile.name) {
+      const fileToAdd: ShipmentFile = {
+        id: `file-${Date.now()}`,
+        name: newFile.name,
+        type: newFile.type || "application/pdf",
+        size: newFile.size || 1024,
+        uploadDate: new Date().toISOString().split('T')[0],
+      };
+      
+      const updatedFiles = editedShipment.files ? [...editedShipment.files, fileToAdd] : [fileToAdd];
+      const updatedShipment = { ...editedShipment, files: updatedFiles };
+      
+      setEditedShipment(updatedShipment);
+      setShipment(updateShipment(updatedShipment));
+      
+      setNewFile({
+        name: "",
+        type: "application/pdf",
+        size: 0,
+      });
+      
+      setIsAddingFile(false);
+      
+      toast({
+        title: "Success",
+        description: `File "${fileToAdd.name}" added successfully.`,
+      });
+    }
+  };
+  
+  const formatFileSize = (size: number) => {
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  };
+  
+  if (!shipment || !editedShipment) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p>Loading shipment details...</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center">
+        <Button variant="ghost" onClick={handleBack} className="mr-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Shipments
+        </Button>
+        <h1 className="text-3xl font-bold tracking-tight">{shipment.id}</h1>
+        {!isEditing ? (
+          <Button onClick={handleEdit} className="ml-auto">
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Shipment
+          </Button>
+        ) : (
+          <div className="ml-auto space-x-2">
+            <Button variant="outline" onClick={handleCancel}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>
+              <Save className="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
+          </div>
+        )}
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center">
+              <Package className="mr-2 h-5 w-5" />
+              Shipment Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isEditing ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="origin">Origin</Label>
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <Input 
+                        id="origin" 
+                        value={editedShipment.origin}
+                        onChange={(e) => handleInputChange("origin", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="destination">Destination</Label>
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <Input 
+                        id="destination" 
+                        value={editedShipment.destination}
+                        onChange={(e) => handleInputChange("destination", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customer">Customer</Label>
+                  <div className="flex items-center">
+                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <Input 
+                      id="customer" 
+                      value={editedShipment.customer}
+                      onChange={(e) => handleInputChange("customer", e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="carrier">Carrier</Label>
+                  <div className="flex items-center">
+                    <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <Input 
+                      id="carrier" 
+                      value={editedShipment.carrier}
+                      onChange={(e) => handleInputChange("carrier", e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date</Label>
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <Input 
+                      id="date" 
+                      value={editedShipment.date}
+                      onChange={(e) => handleInputChange("date", e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={editedShipment.status}
+                    onValueChange={(value) => handleInputChange("status", value)}
+                  >
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Select a status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="processing">Processing</SelectItem>
+                      <SelectItem value="in-transit">In Transit</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="delayed">Delayed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Origin</p>
+                    <div className="flex items-center mt-1">
+                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <p className="text-base">{shipment.origin}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Destination</p>
+                    <div className="flex items-center mt-1">
+                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <p className="text-base">{shipment.destination}</p>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Customer</p>
+                  <div className="flex items-center mt-1">
+                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <p className="text-base">{shipment.customer}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Carrier</p>
+                  <div className="flex items-center mt-1">
+                    <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <p className="text-base">{shipment.carrier}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Date</p>
+                  <div className="flex items-center mt-1">
+                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <p className="text-base">{shipment.date}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <div className="mt-1">
+                    <Badge className={getStatusColor(shipment.status)}>
+                      {shipment.status.charAt(0).toUpperCase() + shipment.status.slice(1)}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center">
+                <FileText className="mr-2 h-5 w-5" />
+                Files
+              </div>
+              <Dialog open={isAddingFile} onOpenChange={setIsAddingFile}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add File
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New File</DialogTitle>
+                    <DialogDescription>
+                      Add file details to this shipment.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="filename">File Name</Label>
+                      <Input 
+                        id="filename" 
+                        value={newFile.name}
+                        onChange={(e) => setNewFile({...newFile, name: e.target.value})}
+                        placeholder="e.g. invoice.pdf"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="filetype">File Type</Label>
+                      <Select
+                        value={newFile.type}
+                        onValueChange={(value) => setNewFile({...newFile, type: value})}
+                      >
+                        <SelectTrigger id="filetype">
+                          <SelectValue placeholder="Select file type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="application/pdf">PDF Document (.pdf)</SelectItem>
+                          <SelectItem value="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">Excel Spreadsheet (.xlsx)</SelectItem>
+                          <SelectItem value="application/vnd.openxmlformats-officedocument.wordprocessingml.document">Word Document (.docx)</SelectItem>
+                          <SelectItem value="image/jpeg">JPEG Image (.jpg)</SelectItem>
+                          <SelectItem value="image/png">PNG Image (.png)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="filesize">File Size (KB)</Label>
+                      <Input 
+                        id="filesize" 
+                        type="number"
+                        value={newFile.size ? newFile.size / 1024 : ""}
+                        onChange={(e) => setNewFile({...newFile, size: parseInt(e.target.value) * 1024 || 0})}
+                        placeholder="File size in KB"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsAddingFile(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleAddFile}>Add File</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(shipment.files && shipment.files.length > 0) ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Size</TableHead>
+                    <TableHead>Upload Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {shipment.files.map((file) => (
+                    <TableRow key={file.id}>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <File className="h-4 w-4 mr-2 text-muted-foreground" />
+                          {file.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {file.type.split('/')[1].toUpperCase()}
+                      </TableCell>
+                      <TableCell>{formatFileSize(file.size)}</TableCell>
+                      <TableCell>{file.uploadDate}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-48 text-center">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No files attached to this shipment</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Click "Add File" to attach a document
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default ShipmentDetail;
