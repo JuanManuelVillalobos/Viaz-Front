@@ -36,6 +36,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Shipment, ShipmentFile } from "@/types/shipment";
 import { getShipmentById, updateShipment, getStatusColor } from "@/services/shipmentService";
 
@@ -149,12 +150,12 @@ const ShipmentDetail = () => {
   
   return (
     <div className="space-y-6">
-      <div className="flex items-center">
-        <Button variant="ghost" onClick={handleBack} className="mr-4">
+      <div className="flex items-center flex-wrap gap-2">
+        <Button variant="ghost" onClick={handleBack} className="mr-2">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Shipments
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">{shipment.id}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{shipment.id}</h1>
         {!isEditing ? (
           <Button onClick={handleEdit} className="ml-auto">
             <Edit className="h-4 w-4 mr-2" />
@@ -384,33 +385,37 @@ const ShipmentDetail = () => {
           </CardHeader>
           <CardContent>
             {(shipment.files && shipment.files.length > 0) ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Upload Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {shipment.files.map((file) => (
-                    <TableRow key={file.id}>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <File className="h-4 w-4 mr-2 text-muted-foreground" />
-                          {file.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {file.type.split('/')[1].toUpperCase()}
-                      </TableCell>
-                      <TableCell>{formatFileSize(file.size)}</TableCell>
-                      <TableCell>{file.uploadDate}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <ScrollArea className="h-[300px]">
+                <div className="w-full min-w-[500px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[40%]">Name</TableHead>
+                        <TableHead className="w-[20%]">Type</TableHead>
+                        <TableHead className="w-[20%]">Size</TableHead>
+                        <TableHead className="w-[20%]">Upload Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {shipment.files.map((file) => (
+                        <TableRow key={file.id}>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <File className="h-4 w-4 mr-2 text-muted-foreground" />
+                              {file.name}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {file.type.split('/')[1].toUpperCase()}
+                          </TableCell>
+                          <TableCell>{formatFileSize(file.size)}</TableCell>
+                          <TableCell>{file.uploadDate}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </ScrollArea>
             ) : (
               <div className="flex flex-col items-center justify-center h-48 text-center">
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />

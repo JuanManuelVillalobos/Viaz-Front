@@ -40,6 +40,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { Shipment } from "@/types/shipment";
 import { getAllShipments, getStatusColor } from "@/services/shipmentService";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type FilterOption = {
   status: string[];
@@ -278,91 +279,95 @@ const Shipments = () => {
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>
-                    <Button variant="ghost" className="p-0 h-8">
-                      ID <ArrowUpDown className="ml-1 h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>Origin</TableHead>
-                  <TableHead>Destination</TableHead>
-                  <TableHead>
-                    <Button variant="ghost" className="p-0 h-8">
-                      Customer <ArrowUpDown className="ml-1 h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" className="p-0 h-8">
-                      Date <ArrowUpDown className="ml-1 h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>Carrier</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Files</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredShipments.length > 0 ? (
-                  filteredShipments.map((shipment) => (
-                    <TableRow key={shipment.id}>
-                      <TableCell className="font-medium">{shipment.id}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <MapPin className="mr-1 h-3 w-3 text-muted-foreground" />
-                          {shipment.origin}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <MapPin className="mr-1 h-3 w-3 text-muted-foreground" />
-                          {shipment.destination}
-                        </div>
-                      </TableCell>
-                      <TableCell>{shipment.customer}</TableCell>
-                      <TableCell>{shipment.date}</TableCell>
-                      <TableCell>{shipment.carrier}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(shipment.status)}>
-                          {shipment.status.charAt(0).toUpperCase() + shipment.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {shipment.files ? shipment.files.length : 0}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleViewShipment(shipment.id)}>
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>Track Shipment</DropdownMenuItem>
-                            <DropdownMenuItem>Update Status</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-500">Cancel Shipment</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+            <ScrollArea className="h-[calc(100vh-300px)]">
+              <div className="w-full min-w-[900px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <Button variant="ghost" className="p-0 h-8">
+                          ID <ArrowUpDown className="ml-1 h-3 w-3" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>Origin</TableHead>
+                      <TableHead>Destination</TableHead>
+                      <TableHead>
+                        <Button variant="ghost" className="p-0 h-8">
+                          Customer <ArrowUpDown className="ml-1 h-3 w-3" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" className="p-0 h-8">
+                          Date <ArrowUpDown className="ml-1 h-3 w-3" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>Carrier</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Files</TableHead>
+                      <TableHead className="w-[80px]"></TableHead>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={9} className="h-24 text-center">
-                      No shipments found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredShipments.length > 0 ? (
+                      filteredShipments.map((shipment) => (
+                        <TableRow key={shipment.id}>
+                          <TableCell className="font-medium">{shipment.id}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <MapPin className="mr-1 h-3 w-3 text-muted-foreground" />
+                              {shipment.origin}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <MapPin className="mr-1 h-3 w-3 text-muted-foreground" />
+                              {shipment.destination}
+                            </div>
+                          </TableCell>
+                          <TableCell>{shipment.customer}</TableCell>
+                          <TableCell>{shipment.date}</TableCell>
+                          <TableCell>{shipment.carrier}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(shipment.status)}>
+                              {shipment.status.charAt(0).toUpperCase() + shipment.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {shipment.files ? shipment.files.length : 0}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleViewShipment(shipment.id)}>
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>Track Shipment</DropdownMenuItem>
+                                <DropdownMenuItem>Update Status</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-red-500">Cancel Shipment</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={9} className="h-24 text-center">
+                          No shipments found.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </ScrollArea>
           </div>
         </CardContent>
       </Card>
