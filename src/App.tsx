@@ -16,8 +16,9 @@ import DashboardLayout from "./layouts/DashboardLayout";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-  
+  // const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const isLoggedIn = true;
+
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
   }
