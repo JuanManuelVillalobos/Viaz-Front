@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,11 +12,12 @@ import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./layouts/DashboardLayout";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  // const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
   const isLoggedIn = true;
 
   if (!isLoggedIn) {
@@ -31,12 +31,11 @@ const App = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   
   useEffect(() => {
-    // This ensures hydration happens before rendering
     setIsLoaded(true);
   }, []);
 
   if (!isLoaded) {
-    return null; // Return null during SSR/initial load
+    return null;
   }
   
   return (
@@ -57,6 +56,8 @@ const App = () => {
               <Route path="shipments" element={<Shipments />} />
               <Route path="shipments/:id" element={<ShipmentDetail />} />
               <Route path="users" element={<UserManagement />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

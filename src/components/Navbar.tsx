@@ -1,5 +1,4 @@
-
-import { Bell, Menu, LogOut, Settings, UserIcon } from "lucide-react";
+import { Bell, Menu, LogOut, Settings, UserIcon, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -13,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Link } from "react-router-dom";
 
 interface NavbarProps {
   onMenuToggle: () => void;
@@ -86,13 +86,17 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <UserIcon className="mr-2 h-4 w-4" />
-                <span>Profile</span>
+              <DropdownMenuItem asChild>
+                <Link to="/profile" className="cursor-pointer">
+                  <UserRound className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
