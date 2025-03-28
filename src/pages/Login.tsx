@@ -12,8 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, LockKeyhole, ArrowRight } from "lucide-react";
+import { LogIn, Mail, LockKeyhole } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { authService } from "@/services/api/authService";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -35,26 +36,28 @@ const Login = () => {
     
     setIsLoading(true);
     
-    // Simulate API call delay
-    setTimeout(() => {
-      // In a real app, this would be an API call
-      if (email === "admin@example.com" && password === "password") {
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("user", JSON.stringify({ name: "Admin User", email }));
-        toast({
-          title: "Success",
-          description: "You have successfully logged in",
-        });
-        navigate("/");
-      } else {
-        toast({
-          title: "Error",
-          description: "Invalid email or password",
-          variant: "destructive",
-        });
-      }
+    try {
+      // Call the login API
+      const response = await authService.login({ email, password });
+      
+      // Get user info and save to localStorage (you might want to adapt this)
+      localStorage.setItem("user", JSON.stringify({ 
+        name: email.split('@')[0], // This is just a placeholder, real apps would get the name from a /me endpoint
+        email
+      }));
+      
+      toast({
+        title: "Success",
+        description: "You have successfully logged in",
+      });
+      
+      navigate("/");
+    } catch (error) {
+      console.error("Login error:", error);
+      // The toast for errors is handled by the API client
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

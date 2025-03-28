@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Package, Search, Filter, ArrowUpDown, 
@@ -39,8 +40,10 @@ import {
 } from "@/components/ui/select";
 import { Link, useNavigate } from "react-router-dom";
 import { Shipment } from "@/types/shipment";
-import { getAllShipments, getStatusColor } from "@/services/shipmentService";
+import { getStatusColor } from "@/services/shipmentService";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiShipmentService } from "@/services/api/shipmentService";
 
 type FilterOption = {
   status: string[];
@@ -49,6 +52,7 @@ type FilterOption = {
 
 const Shipments = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOption>({ status: [], carrier: [] });
@@ -59,12 +63,49 @@ const Shipments = () => {
     customer: "",
     carrier: "",
   });
-  const [shipments, setShipments] = useState<Shipment[]>([]);
   
-  useEffect(() => {
-    setShipments(getAllShipments());
-  }, []);
+  // Fetch shipments with React Query
+  const { data: shipments = [], isLoading, error } = useQuery({
+    queryKey: ['shipments'],
+    queryFn: apiShipmentService.getAllShipments,
+  });
   
+  // Create shipment mutation
+  const createShipmentMutation = useMutation({
+    mutationFn: apiShipmentService.createShipment,
+    onSuccess: () => {
+      // Invalidate and refetch shipments query
+      queryClient.invalidateQueries({ queryKey: ['shipments'] });
+      setNewShipmentOpen(false);
+      
+      toast({
+        title: "Shipment Created",
+        description: `New shipment from ${newShipment.origin} to ${newShipment.destination} has been created.`,
+      });
+      
+      setNewShipment({
+        origin: "",
+        destination: "",
+        customer: "",
+        carrier: "",
+      });
+    },
+  });
+  
+  // Delete shipment mutation
+  const deleteShipmentMutation = useMutation({
+    mutationFn: apiShipmentService.deleteShipment,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shipments'] });
+      
+      toast({
+        title: "Shipment Deleted",
+        description: "The shipment has been successfully deleted.",
+      });
+    },
+  });
+  
+  // Extract unique carriers and statuses for filters
   const carriers = [...new Set(shipments.map(shipment => shipment.carrier))];
   const statuses = [...new Set(shipments.map(shipment => shipment.status))];
   
@@ -92,24 +133,22 @@ const Shipments = () => {
       return;
     }
     
-    toast({
-      title: "Shipment Created",
-      description: `New shipment from ${newShipment.origin} to ${newShipment.destination} has been created.`,
+    // Create a new shipment with the API
+    createShipmentMutation.mutate({
+      viazId: `SHP-${Math.floor(Math.random() * 10000)}`, // This would come from the backend normally
+      origin: newShipment.origin,
+      destination: newShipment.destination,
+      customer: newShipment.customer,
+      carrier: newShipment.carrier,
+      status: "processing",
+      date: new Date().toISOString().split('T')[0],
     });
-    
-    setNewShipment({
-      origin: "",
-      destination: "",
-      customer: "",
-      carrier: "",
-    });
-    setNewShipmentOpen(false);
   };
   
   const filteredShipments = shipments.filter(
     (shipment) => {
       const matchesSearch = 
-        shipment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shipment.id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.destination.toLowerCase().includes(searchTerm.toLowerCase());
@@ -124,6 +163,36 @@ const Shipments = () => {
   const handleViewShipment = (id: string) => {
     navigate(`/shipments/${id}`);
   };
+  
+  const handleDeleteShipment = (id: string) => {
+    if (confirm("Are you sure you want to delete this shipment?")) {
+      deleteShipmentMutation.mutate(id);
+    }
+  };
+
+  // If loading, show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Shipments</h1>
+          <p className="text-muted-foreground">Loading shipments...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If error, show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Shipments</h1>
+          <p className="text-red-500">Error loading shipments. Please try again later.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -270,7 +339,12 @@ const Shipments = () => {
                     <Button variant="outline" onClick={() => setNewShipmentOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleNewShipmentSubmit}>Create Shipment</Button>
+                    <Button 
+                      onClick={handleNewShipmentSubmit}
+                      disabled={createShipmentMutation.isPending}
+                    >
+                      {createShipmentMutation.isPending ? "Creating..." : "Create Shipment"}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -351,7 +425,16 @@ const Shipments = () => {
                                 <DropdownMenuItem>Track Shipment</DropdownMenuItem>
                                 <DropdownMenuItem>Update Status</DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-500">Cancel Shipment</DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="text-red-500"
+                                  onClick={() => handleDeleteShipment(shipment.id)}
+                                  disabled={deleteShipmentMutation.isPending}
+                                >
+                                  {deleteShipmentMutation.isPending && deleteShipmentMutation.variables === shipment.id 
+                                    ? "Deleting..." 
+                                    : "Delete Shipment"
+                                  }
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>

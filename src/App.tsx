@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,10 +16,17 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isLoggedIn = true;
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
@@ -31,7 +39,24 @@ const App = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   
   useEffect(() => {
-    setIsLoaded(true);
+    // Check if token exists and is valid
+    const checkAuth = async () => {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        try {
+          // You could add a token validation check here
+          // For now, we just trust localStorage
+          localStorage.setItem('isLoggedIn', 'true');
+        } catch (error) {
+          console.error('Token validation error:', error);
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('isLoggedIn');
+        }
+      }
+      setIsLoaded(true);
+    };
+    
+    checkAuth();
   }, []);
 
   if (!isLoaded) {

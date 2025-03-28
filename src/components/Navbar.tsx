@@ -1,4 +1,5 @@
-import { Bell, Menu, LogOut, Settings, UserIcon, UserRound } from "lucide-react";
+
+import { Bell, Menu, LogOut, Settings, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
+import { authService } from "@/services/api/authService";
 
 interface NavbarProps {
   onMenuToggle: () => void;
@@ -39,14 +41,18 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
     }
   }, []);
   
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("user");
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // The apiClient will handle the toast for errors
+    }
   };
   
   const getInitials = (name: string) => {
