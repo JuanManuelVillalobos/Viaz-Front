@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   Package, ArrowLeft, Edit, Save, X, Plus,
   FileText, File, Calendar, Truck, MapPin, User,
-  GripVertical
+  GripVertical, Trash2, Upload
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Shipment, ShipmentFile } from "@/types/shipment";
 import { getShipmentById, updateShipment, getStatusColor } from "@/services/shipmentService";
@@ -54,6 +65,9 @@ const ShipmentDetail = () => {
   });
   const [draggedFile, setDraggedFile] = useState<ShipmentFile | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [fileToDelete, setFileToDelete] = useState<ShipmentFile | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
     if (id) {
@@ -186,6 +200,72 @@ const ShipmentDetail = () => {
       title: "Files Reordered",
       description: "File order has been updated."
     });
+  };
+  
+  const handleDeleteFile = (file: ShipmentFile) => {
+    setFileToDelete(file);
+  };
+  
+  const confirmDeleteFile = () => {
+    if (fileToDelete && editedShipment && editedShipment.files) {
+      const updatedFiles = editedShipment.files.filter(f => f.id !== fileToDelete.id);
+      
+      // Reindex positions
+      const reorderedFiles = updatedFiles.map((file, index) => ({
+        ...file,
+        position: index
+      }));
+      
+      const updatedShipment = { ...editedShipment, files: reorderedFiles };
+      setEditedShipment(updatedShipment);
+      setShipment(updateShipment(updatedShipment));
+      
+      setFileToDelete(null);
+      
+      toast({
+        title: "File Deleted",
+        description: `File "${fileToDelete.name}" has been removed.`
+      });
+    }
+  };
+  
+  const handleFileDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDraggingOver(false);
+    
+    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      const droppedFile = event.dataTransfer.files[0];
+      setNewFile({
+        name: droppedFile.name,
+        type: droppedFile.type || "application/octet-stream",
+        size: droppedFile.size,
+      });
+    }
+  };
+  
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDraggingOver(true);
+  };
+  
+  const handleDragLeave = () => {
+    setIsDraggingOver(false);
+  };
+  
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const selectedFile = files[0];
+      setNewFile({
+        name: selectedFile.name,
+        type: selectedFile.type || "application/octet-stream",
+        size: selectedFile.size,
+      });
+    }
+  };
+  
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
   
   const formatFileSize = (size: number) => {
@@ -389,15 +469,39 @@ const ShipmentDetail = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="filename">File Name</Label>
-                      <Input 
-                        id="filename" 
-                        value={newFile.name}
-                        onChange={(e) => setNewFile({...newFile, name: e.target.value})}
-                        placeholder="e.g. invoice.pdf"
+                    <div 
+                      className={`grid gap-2 border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors ${
+                        isDraggingOver ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+                      }`}
+                      onClick={triggerFileInput}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleFileDrop}
+                    >
+                      <Upload className="h-10 w-10 mx-auto text-muted-foreground" />
+                      <p className="text-sm font-medium">
+                        {isDraggingOver ? "Drop file here" : "Drag & drop file or click to browse"}
+                      </p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        onChange={handleFileInputChange}
                       />
                     </div>
+                    
+                    {newFile.name && (
+                      <div className="bg-muted/50 p-3 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <File className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{newFile.name}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {formatFileSize(newFile.size || 0)}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="grid gap-2">
                       <Label htmlFor="filetype">File Type</Label>
                       <Select
@@ -416,22 +520,12 @@ const ShipmentDetail = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="filesize">File Size (KB)</Label>
-                      <Input 
-                        id="filesize" 
-                        type="number"
-                        value={newFile.size ? newFile.size / 1024 : ""}
-                        onChange={(e) => setNewFile({...newFile, size: parseInt(e.target.value) * 1024 || 0})}
-                        placeholder="File size in KB"
-                      />
-                    </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsAddingFile(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleAddFile}>Add File</Button>
+                    <Button onClick={handleAddFile} disabled={!newFile.name}>Add File</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -447,8 +541,9 @@ const ShipmentDetail = () => {
                         <TableHead className="w-[5%]"></TableHead>
                         <TableHead className="w-[35%]">Name</TableHead>
                         <TableHead className="w-[20%]">Type</TableHead>
-                        <TableHead className="w-[20%]">Size</TableHead>
-                        <TableHead className="w-[20%]">Upload Date</TableHead>
+                        <TableHead className="w-[15%]">Size</TableHead>
+                        <TableHead className="w-[15%]">Upload Date</TableHead>
+                        {isEditing && <TableHead className="w-[10%]">Action</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -477,6 +572,18 @@ const ShipmentDetail = () => {
                           </TableCell>
                           <TableCell>{formatFileSize(file.size)}</TableCell>
                           <TableCell>{file.uploadDate}</TableCell>
+                          {isEditing && (
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteFile(file)}
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -487,19 +594,30 @@ const ShipmentDetail = () => {
               <div className="flex flex-col items-center justify-center h-48 text-center">
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">No files attached to this shipment</p>
-                <div className="text-sm text-muted-foreground mt-4 border-2 border-dashed p-4 w-full rounded-md flex flex-col items-center justify-center">
-                  <p className="mb-2">Drag and drop files here</p>
-                  <p>or</p>
-                  <p className="mt-2">Click "Add File" to attach a document</p>
-                </div>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+      
+      <AlertDialog open={!!fileToDelete} onOpenChange={(open) => !open && setFileToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete File</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this file? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteFile} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
 
 export default ShipmentDetail;
-
