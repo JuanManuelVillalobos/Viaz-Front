@@ -43,7 +43,7 @@ import { Shipment } from "@/types/shipment";
 import { getStatusColor } from "@/services/shipmentService";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiShipmentService } from "@/services/api/shipmentService";
+import { apiShipmentService } from "@/services/api";
 
 type FilterOption = {
   status: string[];
@@ -60,8 +60,8 @@ const Shipments = () => {
   const [newShipment, setNewShipment] = useState({
     origin: "",
     destination: "",
-    customer: "",
-    carrier: "",
+    client: "",
+    transportProvider: "",
   });
   
   // Fetch shipments with React Query
@@ -86,8 +86,8 @@ const Shipments = () => {
       setNewShipment({
         origin: "",
         destination: "",
-        customer: "",
-        carrier: "",
+        client: "",
+        transportProvider: "",
       });
     },
   });
@@ -106,8 +106,8 @@ const Shipments = () => {
   });
   
   // Extract unique carriers and statuses for filters
-  const carriers = [...new Set(shipments.map(shipment => shipment.carrier))];
-  const statuses = [...new Set(shipments.map(shipment => shipment.status))];
+  const carriers = [...new Set(shipments.map(shipment => shipment.transportProvider || '').filter(Boolean))];
+  const statuses = [...new Set(shipments.map(shipment => shipment.shipmentStatus || '').filter(Boolean))];
   
   const handleFilterChange = (type: "status" | "carrier", value: string) => {
     setFilters(prev => {
@@ -124,7 +124,7 @@ const Shipments = () => {
   };
   
   const handleNewShipmentSubmit = () => {
-    if (!newShipment.origin || !newShipment.destination || !newShipment.customer || !newShipment.carrier) {
+    if (!newShipment.origin || !newShipment.destination || !newShipment.client || !newShipment.transportProvider) {
       toast({
         title: "Validation Error",
         description: "All fields are required",
@@ -135,26 +135,32 @@ const Shipments = () => {
     
     // Create a new shipment with the API
     createShipmentMutation.mutate({
-      viazId: `SHP-${Math.floor(Math.random() * 10000)}`, // This would come from the backend normally
+      viazId: "", // Backend will generate this
+      year: new Date().getFullYear(),
+      sequence: Math.floor(Math.random() * 1000), // This would come from the backend normally
       origin: newShipment.origin,
       destination: newShipment.destination,
-      customer: newShipment.customer,
-      carrier: newShipment.carrier,
-      status: "processing",
-      date: new Date().toISOString().split('T')[0],
+      client: newShipment.client,
+      transportProvider: newShipment.transportProvider,
+      shipmentStatus: "processing",
     });
   };
   
   const filteredShipments = shipments.filter(
     (shipment) => {
       const matchesSearch = 
-        shipment.id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-        shipment.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        shipment.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        shipment.destination.toLowerCase().includes(searchTerm.toLowerCase());
+        shipment.viazId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shipment.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shipment.origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shipment.destination?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesStatus = filters.status.length === 0 || filters.status.includes(shipment.status);
-      const matchesCarrier = filters.carrier.length === 0 || filters.carrier.includes(shipment.carrier);
+      const matchesStatus = 
+        filters.status.length === 0 || 
+        (shipment.shipmentStatus && filters.status.includes(shipment.shipmentStatus));
+      
+      const matchesCarrier = 
+        filters.carrier.length === 0 || 
+        (shipment.transportProvider && filters.carrier.includes(shipment.transportProvider));
       
       return matchesSearch && matchesStatus && matchesCarrier;
     }
@@ -310,29 +316,22 @@ const Shipments = () => {
                       </div>
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="customer">Customer</Label>
+                      <Label htmlFor="client">Client</Label>
                       <Input 
-                        id="customer" 
-                        value={newShipment.customer}
-                        onChange={e => setNewShipment({...newShipment, customer: e.target.value})}
-                        placeholder="Customer Name"
+                        id="client" 
+                        value={newShipment.client}
+                        onChange={e => setNewShipment({...newShipment, client: e.target.value})}
+                        placeholder="Client Name"
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="carrier">Carrier</Label>
-                      <Select 
-                        value={newShipment.carrier}
-                        onValueChange={(value) => setNewShipment({...newShipment, carrier: value})}
-                      >
-                        <SelectTrigger id="carrier">
-                          <SelectValue placeholder="Select a carrier" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {carriers.map(carrier => (
-                            <SelectItem key={carrier} value={carrier}>{carrier}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="transportProvider">Transport Provider</Label>
+                      <Input 
+                        id="transportProvider" 
+                        value={newShipment.transportProvider}
+                        onChange={e => setNewShipment({...newShipment, transportProvider: e.target.value})}
+                        placeholder="Transport Provider Name"
+                      />
                     </div>
                   </div>
                   <DialogFooter>
@@ -367,15 +366,15 @@ const Shipments = () => {
                       <TableHead>Destination</TableHead>
                       <TableHead>
                         <Button variant="ghost" className="p-0 h-8">
-                          Customer <ArrowUpDown className="ml-1 h-3 w-3" />
+                          Client <ArrowUpDown className="ml-1 h-3 w-3" />
                         </Button>
                       </TableHead>
                       <TableHead>
                         <Button variant="ghost" className="p-0 h-8">
-                          Date <ArrowUpDown className="ml-1 h-3 w-3" />
+                          Year <ArrowUpDown className="ml-1 h-3 w-3" />
                         </Button>
                       </TableHead>
-                      <TableHead>Carrier</TableHead>
+                      <TableHead>Transport Provider</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Files</TableHead>
                       <TableHead className="w-[80px]"></TableHead>
@@ -384,26 +383,26 @@ const Shipments = () => {
                   <TableBody>
                     {filteredShipments.length > 0 ? (
                       filteredShipments.map((shipment) => (
-                        <TableRow key={shipment.id}>
-                          <TableCell className="font-medium">{shipment.id}</TableCell>
+                        <TableRow key={shipment.viazId}>
+                          <TableCell className="font-medium">{shipment.viazId}</TableCell>
                           <TableCell>
                             <div className="flex items-center">
                               <MapPin className="mr-1 h-3 w-3 text-muted-foreground" />
-                              {shipment.origin}
+                              {shipment.origin || "N/A"}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center">
                               <MapPin className="mr-1 h-3 w-3 text-muted-foreground" />
-                              {shipment.destination}
+                              {shipment.destination || "N/A"}
                             </div>
                           </TableCell>
-                          <TableCell>{shipment.customer}</TableCell>
-                          <TableCell>{shipment.date}</TableCell>
-                          <TableCell>{shipment.carrier}</TableCell>
+                          <TableCell>{shipment.client || "N/A"}</TableCell>
+                          <TableCell>{shipment.year}</TableCell>
+                          <TableCell>{shipment.transportProvider || "N/A"}</TableCell>
                           <TableCell>
-                            <Badge className={getStatusColor(shipment.status)}>
-                              {shipment.status.charAt(0).toUpperCase() + shipment.status.slice(1)}
+                            <Badge className={getStatusColor(shipment.shipmentStatus || "")}>
+                              {(shipment.shipmentStatus || "").charAt(0).toUpperCase() + (shipment.shipmentStatus || "").slice(1) || "N/A"}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -419,7 +418,7 @@ const Shipments = () => {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleViewShipment(shipment.id)}>
+                                <DropdownMenuItem onClick={() => handleViewShipment(shipment.viazId)}>
                                   View Details
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>Track Shipment</DropdownMenuItem>
@@ -427,10 +426,10 @@ const Shipments = () => {
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem 
                                   className="text-red-500"
-                                  onClick={() => handleDeleteShipment(shipment.id)}
+                                  onClick={() => handleDeleteShipment(shipment.viazId)}
                                   disabled={deleteShipmentMutation.isPending}
                                 >
-                                  {deleteShipmentMutation.isPending && deleteShipmentMutation.variables === shipment.id 
+                                  {deleteShipmentMutation.isPending && deleteShipmentMutation.variables === shipment.viazId 
                                     ? "Deleting..." 
                                     : "Delete Shipment"
                                   }

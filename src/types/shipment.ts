@@ -9,12 +9,35 @@ export interface ShipmentFile {
 }
 
 export interface Shipment {
-  id: string;
-  origin: string;
-  destination: string;
-  customer: string;
-  status: string;
-  date: string;
-  carrier: string;
+  viazId: string;
+  year?: number;
+  sequence?: number;
+  typeOfService?: string;
+  customerServiceAgent?: string;
+  client?: string;
+  origin?: string;
+  customsAgent?: string;
+  destination?: string;
+  shipmentStatus?: string;
+  container?: string;
+  containerType?: string;
+  containerDate?: string; 
+  transportProvider?: string;
+  shipmentOperator?: string;
+  shipmentTerminal?: string;
+  ci?: boolean;
+  ccp?: boolean;
+  taxFolio?: boolean;
+  loadManoeuvre?: boolean;
+  pisVinculation?: boolean;
+  portDepartureDate?: string;
+  portArrivalDate?: string;
+  portUnloadDate?: string;
+  vacuumManoeuvre?: string;
+  portOfDischarge?: string;
+  portOfDischargeDate?: string;
+  vacuumArrival?: string;
+  eir?: string;
+  observations?: string;
   files?: ShipmentFile[];
 }

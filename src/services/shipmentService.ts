@@ -4,13 +4,17 @@ import { Shipment, ShipmentFile } from "../types/shipment";
 // Mock data for shipments
 const shipments: Shipment[] = [
   {
-    id: "SHP-1001",
+    viazId: "VZ-2023-001",
+    year: 2023,
+    sequence: 1,
     origin: "New York, USA",
     destination: "London, UK",
-    customer: "Acme Corp",
-    status: "delivered",
-    date: "2023-08-01",
-    carrier: "OceanExpress",
+    client: "Acme Corp",
+    shipmentStatus: "delivered",
+    transportProvider: "OceanExpress",
+    customerServiceAgent: "John Doe",
+    customsAgent: "Customs Inc.",
+    containerType: "40ft",
     files: [
       {
         id: "file-1",
@@ -29,13 +33,16 @@ const shipments: Shipment[] = [
     ]
   },
   {
-    id: "SHP-1002",
+    viazId: "VZ-2023-002",
+    year: 2023,
+    sequence: 2,
     origin: "Shanghai, China",
     destination: "Los Angeles, USA",
-    customer: "TechGiant Inc",
-    status: "in-transit",
-    date: "2023-08-05",
-    carrier: "FastFreight",
+    client: "TechGiant Inc",
+    shipmentStatus: "in-transit",
+    transportProvider: "FastFreight",
+    customerServiceAgent: "Jane Smith",
+    containerType: "20ft",
     files: [
       {
         id: "file-3",
@@ -47,23 +54,29 @@ const shipments: Shipment[] = [
     ]
   },
   {
-    id: "SHP-1003",
+    viazId: "VZ-2024-001",
+    year: 2024,
+    sequence: 1,
     origin: "Hamburg, Germany",
     destination: "Singapore",
-    customer: "Global Traders",
-    status: "processing",
-    date: "2023-08-07",
-    carrier: "SeaWays",
+    client: "Global Traders",
+    shipmentStatus: "processing",
+    transportProvider: "SeaWays",
+    customerServiceAgent: "Michael Brown",
+    containerType: "20ft",
     files: []
   },
   {
-    id: "SHP-1004",
+    viazId: "VZ-2024-002",
+    year: 2024,
+    sequence: 2,
     origin: "Dubai, UAE",
     destination: "Sydney, Australia",
-    customer: "Desert Exports",
-    status: "delivered",
-    date: "2023-07-28",
-    carrier: "AirCargo",
+    client: "Desert Exports",
+    shipmentStatus: "delivered",
+    transportProvider: "AirCargo",
+    customerServiceAgent: "Sarah Johnson",
+    containerType: "40ft High Cube",
     files: [
       {
         id: "file-4",
@@ -75,23 +88,29 @@ const shipments: Shipment[] = [
     ]
   },
   {
-    id: "SHP-1005",
+    viazId: "VZ-2024-003",
+    year: 2024,
+    sequence: 3,
     origin: "Rotterdam, Netherlands",
     destination: "Tokyo, Japan",
-    customer: "Euro Shipping",
-    status: "in-transit",
-    date: "2023-08-03",
-    carrier: "PacificRoute",
+    client: "Euro Shipping",
+    shipmentStatus: "in-transit",
+    transportProvider: "PacificRoute",
+    customerServiceAgent: "David Wilson",
+    containerType: "20ft",
     files: []
   },
   {
-    id: "SHP-1006",
+    viazId: "VZ-2024-004",
+    year: 2024,
+    sequence: 4,
     origin: "Mumbai, India",
     destination: "Cape Town, South Africa",
-    customer: "Spice Traders",
-    status: "delayed",
-    date: "2023-08-02",
-    carrier: "OceanWave",
+    client: "Spice Traders",
+    shipmentStatus: "delayed",
+    transportProvider: "OceanWave",
+    customerServiceAgent: "Emily Davis",
+    containerType: "40ft",
     files: [
       {
         id: "file-5",
@@ -103,13 +122,16 @@ const shipments: Shipment[] = [
     ]
   },
   {
-    id: "SHP-1007",
+    viazId: "VZ-2024-005",
+    year: 2024,
+    sequence: 5,
     origin: "São Paulo, Brazil",
     destination: "Mexico City, Mexico",
-    customer: "Americas United",
-    status: "processing",
-    date: "2023-08-08",
-    carrier: "LatinFreight",
+    client: "Americas United",
+    shipmentStatus: "processing",
+    transportProvider: "LatinFreight",
+    customerServiceAgent: "Carlos Rodriguez",
+    containerType: "20ft",
     files: []
   },
 ];
@@ -121,12 +143,12 @@ export const getAllShipments = (): Shipment[] => {
 
 // Get a shipment by ID
 export const getShipmentById = (id: string): Shipment | undefined => {
-  return shipments.find(shipment => shipment.id === id);
+  return shipments.find(shipment => shipment.viazId === id);
 };
 
 // Update a shipment
 export const updateShipment = (updatedShipment: Shipment): Shipment => {
-  const index = shipments.findIndex(shipment => shipment.id === updatedShipment.id);
+  const index = shipments.findIndex(shipment => shipment.viazId === updatedShipment.viazId);
   if (index !== -1) {
     shipments[index] = updatedShipment;
   }
