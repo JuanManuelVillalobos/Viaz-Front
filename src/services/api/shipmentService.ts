@@ -50,5 +50,11 @@ export const apiShipmentService = {
     });
     
     return response.data;
+  },
+  
+  // List documents for a shipment
+  getShipmentDocuments: async (viazId: string): Promise<ShipmentFile[]> => {
+    const response = await apiClient.get(`/api/shipment/${viazId}/list-objects`);
+    return response.data;
   }
 };

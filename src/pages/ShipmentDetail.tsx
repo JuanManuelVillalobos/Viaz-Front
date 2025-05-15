@@ -48,15 +48,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Shipment, ShipmentFile } from "@/types/shipment";
-import { getShipmentById, updateShipment, getStatusColor } from "@/services/shipmentService";
+import { ApiShipment, ShipmentFile } from "@/types/api";
+import { useQuery } from "@tanstack/react-query";
+import { apiShipmentService } from "@/services/api/shipmentService";
 
 const ShipmentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [shipment, setShipment] = useState<Shipment | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedShipment, setEditedShipment] = useState<Shipment | null>(null);
+  const [editedShipment, setEditedShipment] = useState<ApiShipment | null>(null);
   const [isAddingFile, setIsAddingFile] = useState(false);
   const [newFile, setNewFile] = useState<Partial<ShipmentFile>>({
     name: "",
@@ -69,29 +69,33 @@ const ShipmentDetail = () => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Fetch shipment data
+  const { 
+    data: shipment, 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ['shipment', id],
+    queryFn: () => id ? apiShipmentService.getShipmentById(id) : Promise.reject('No ID provided'),
+    enabled: !!id
+  });
+
+  // Fetch shipment documents
+  const { 
+    data: documents = [], 
+    isLoading: isLoadingDocuments,
+    refetch: refetchDocuments
+  } = useQuery({
+    queryKey: ['shipmentDocuments', id],
+    queryFn: () => id ? apiShipmentService.getShipmentDocuments(id) : Promise.reject('No ID provided'),
+    enabled: !!id
+  });
+  
   useEffect(() => {
-    if (id) {
-      const shipmentData = getShipmentById(id);
-      if (shipmentData) {
-        if (shipmentData.files) {
-          shipmentData.files = shipmentData.files.map((file, index) => ({
-            ...file,
-            position: file.position !== undefined ? file.position : index
-          }));
-          shipmentData.files.sort((a, b) => (a.position || 0) - (b.position || 0));
-        }
-        setShipment(shipmentData);
-        setEditedShipment({ ...shipmentData });
-      } else {
-        toast({
-          title: "Error",
-          description: `Shipment with ID ${id} not found.`,
-          variant: "destructive",
-        });
-        navigate("/shipments");
-      }
+    if (shipment) {
+      setEditedShipment({ ...shipment });
     }
-  }, [id, navigate]);
+  }, [shipment]);
   
   const handleBack = () => {
     navigate("/shipments");
@@ -108,41 +112,45 @@ const ShipmentDetail = () => {
     }
   };
   
-  const handleSave = () => {
-    if (editedShipment) {
-      const updated = updateShipment(editedShipment);
-      setShipment(updated);
-      setIsEditing(false);
-      toast({
-        title: "Success",
-        description: "Shipment details updated successfully.",
-      });
+  const handleSave = async () => {
+    if (editedShipment && id) {
+      try {
+        const updated = await apiShipmentService.updateShipment(id, editedShipment);
+        setEditedShipment(updated);
+        setIsEditing(false);
+        toast({
+          title: "Success",
+          description: "Shipment details updated successfully.",
+        });
+      } catch (error) {
+        console.error("Error updating shipment:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update shipment details.",
+          variant: "destructive",
+        });
+      }
     }
   };
   
-  const handleInputChange = (field: keyof Shipment, value: string) => {
+  const handleInputChange = (field: keyof ApiShipment, value: string | boolean) => {
     if (editedShipment) {
       setEditedShipment({ ...editedShipment, [field]: value });
     }
   };
   
   const handleAddFile = () => {
-    if (editedShipment && newFile.name) {
-      const filesCount = editedShipment.files ? editedShipment.files.length : 0;
+    if (editedShipment && newFile.name && id) {
       const fileToAdd: ShipmentFile = {
         id: `file-${Date.now()}`,
         name: newFile.name,
         type: newFile.type || "application/pdf",
         size: newFile.size || 1024,
-        uploadDate: new Date().toISOString().split('T')[0],
-        position: filesCount
+        uploadDate: new Date().toISOString().split('T')[0]
       };
       
-      const updatedFiles = editedShipment.files ? [...editedShipment.files, fileToAdd] : [fileToAdd];
-      const updatedShipment = { ...editedShipment, files: updatedFiles };
-      
-      setEditedShipment(updatedShipment);
-      setShipment(updateShipment(updatedShipment));
+      // Here you would typically upload the file to the server
+      // For now, we just update the UI
       
       setNewFile({
         name: "",
@@ -151,6 +159,9 @@ const ShipmentDetail = () => {
       });
       
       setIsAddingFile(false);
+      
+      // Refresh document list
+      refetchDocuments();
       
       toast({
         title: "Success",
@@ -173,26 +184,6 @@ const ShipmentDetail = () => {
   };
   
   const handleDrop = (targetIndex: number) => {
-    if (!draggedFile || !editedShipment || !editedShipment.files) return;
-    
-    const sourceIndex = editedShipment.files.findIndex(file => file.id === draggedFile.id);
-    if (sourceIndex === -1) return;
-    
-    const updatedFiles = [...editedShipment.files];
-    
-    const [removedFile] = updatedFiles.splice(sourceIndex, 1);
-    
-    updatedFiles.splice(targetIndex, 0, removedFile);
-    
-    const reorderedFiles = updatedFiles.map((file, index) => ({
-      ...file,
-      position: index
-    }));
-    
-    const updatedShipment = { ...editedShipment, files: reorderedFiles };
-    setEditedShipment(updatedShipment);
-    setShipment(updateShipment(updatedShipment));
-    
     setDraggedFile(null);
     setDragOverIndex(null);
     
@@ -206,26 +197,28 @@ const ShipmentDetail = () => {
     setFileToDelete(file);
   };
   
-  const confirmDeleteFile = () => {
-    if (fileToDelete && editedShipment && editedShipment.files) {
-      const updatedFiles = editedShipment.files.filter(f => f.id !== fileToDelete.id);
-      
-      // Reindex positions
-      const reorderedFiles = updatedFiles.map((file, index) => ({
-        ...file,
-        position: index
-      }));
-      
-      const updatedShipment = { ...editedShipment, files: reorderedFiles };
-      setEditedShipment(updatedShipment);
-      setShipment(updateShipment(updatedShipment));
-      
-      setFileToDelete(null);
-      
-      toast({
-        title: "File Deleted",
-        description: `File "${fileToDelete.name}" has been removed.`
-      });
+  const confirmDeleteFile = async () => {
+    if (fileToDelete && id) {
+      try {
+        // Here you would delete the file from the server
+        
+        setFileToDelete(null);
+        
+        // Refresh document list
+        refetchDocuments();
+        
+        toast({
+          title: "File Deleted",
+          description: `File "${fileToDelete.name}" has been removed.`
+        });
+      } catch (error) {
+        console.error("Error deleting file:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete file.",
+          variant: "destructive",
+        });
+      }
     }
   };
   
@@ -274,10 +267,34 @@ const ShipmentDetail = () => {
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
   
-  if (!shipment || !editedShipment) {
+  // Get status color
+  const getStatusColor = (status: string): string => {
+    switch (status) {
+      case "delivered":
+        return "bg-green-500";
+      case "in-transit":
+        return "bg-blue-500";
+      case "processing":
+        return "bg-yellow-500";
+      case "delayed":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+  
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <p>Loading shipment details...</p>
+      </div>
+    );
+  }
+  
+  if (error || !shipment) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p>Error loading shipment details.</p>
       </div>
     );
   }
@@ -289,7 +306,7 @@ const ShipmentDetail = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Shipments
         </Button>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{shipment.id}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{shipment.viazId}</h1>
         {!isEditing ? (
           <Button onClick={handleEdit} className="ml-auto">
             <Edit className="h-4 w-4 mr-2" />
@@ -327,7 +344,7 @@ const ShipmentDetail = () => {
                       <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
                       <Input 
                         id="origin" 
-                        value={editedShipment.origin}
+                        value={editedShipment.origin || ''}
                         onChange={(e) => handleInputChange("origin", e.target.value)}
                       />
                     </div>
@@ -338,52 +355,53 @@ const ShipmentDetail = () => {
                       <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
                       <Input 
                         id="destination" 
-                        value={editedShipment.destination}
+                        value={editedShipment.destination || ''}
                         onChange={(e) => handleInputChange("destination", e.target.value)}
                       />
                     </div>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="customer">Customer</Label>
+                  <Label htmlFor="client">Client</Label>
                   <div className="flex items-center">
                     <User className="h-4 w-4 mr-2 text-muted-foreground" />
                     <Input 
-                      id="customer" 
-                      value={editedShipment.customer}
-                      onChange={(e) => handleInputChange("customer", e.target.value)}
+                      id="client" 
+                      value={editedShipment.client || ''}
+                      onChange={(e) => handleInputChange("client", e.target.value)}
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="carrier">Carrier</Label>
+                  <Label htmlFor="transportProvider">Transport Provider</Label>
                   <div className="flex items-center">
                     <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
                     <Input 
-                      id="carrier" 
-                      value={editedShipment.carrier}
-                      onChange={(e) => handleInputChange("carrier", e.target.value)}
+                      id="transportProvider" 
+                      value={editedShipment.transportProvider || ''}
+                      onChange={(e) => handleInputChange("transportProvider", e.target.value)}
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
+                  <Label htmlFor="containerDate">Container Date</Label>
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
                     <Input 
-                      id="date" 
-                      value={editedShipment.date}
-                      onChange={(e) => handleInputChange("date", e.target.value)}
+                      id="containerDate" 
+                      type="datetime-local"
+                      value={editedShipment.containerDate ? editedShipment.containerDate.toString().slice(0, 16) : ''}
+                      onChange={(e) => handleInputChange("containerDate", e.target.value)}
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
+                  <Label htmlFor="shipmentStatus">Status</Label>
                   <Select
-                    value={editedShipment.status}
-                    onValueChange={(value) => handleInputChange("status", value)}
+                    value={editedShipment.shipmentStatus || ''}
+                    onValueChange={(value) => handleInputChange("shipmentStatus", value)}
                   >
-                    <SelectTrigger id="status">
+                    <SelectTrigger id="shipmentStatus">
                       <SelectValue placeholder="Select a status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -402,43 +420,50 @@ const ShipmentDetail = () => {
                     <p className="text-sm font-medium text-muted-foreground">Origin</p>
                     <div className="flex items-center mt-1">
                       <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <p className="text-base">{shipment.origin}</p>
+                      <p className="text-base">{shipment.origin || 'N/A'}</p>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Destination</p>
                     <div className="flex items-center mt-1">
                       <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <p className="text-base">{shipment.destination}</p>
+                      <p className="text-base">{shipment.destination || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Customer</p>
+                  <p className="text-sm font-medium text-muted-foreground">Client</p>
                   <div className="flex items-center mt-1">
                     <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <p className="text-base">{shipment.customer}</p>
+                    <p className="text-base">{shipment.client || 'N/A'}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Carrier</p>
+                  <p className="text-sm font-medium text-muted-foreground">Transport Provider</p>
                   <div className="flex items-center mt-1">
                     <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <p className="text-base">{shipment.carrier}</p>
+                    <p className="text-base">{shipment.transportProvider || 'N/A'}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Date</p>
+                  <p className="text-sm font-medium text-muted-foreground">Container Date</p>
                   <div className="flex items-center mt-1">
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <p className="text-base">{shipment.date}</p>
+                    <p className="text-base">
+                      {shipment.containerDate ? 
+                        new Date(shipment.containerDate).toLocaleString() : 
+                        'N/A'}
+                    </p>
                   </div>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Status</p>
                   <div className="mt-1">
-                    <Badge className={getStatusColor(shipment.status)}>
-                      {shipment.status.charAt(0).toUpperCase() + shipment.status.slice(1)}
+                    <Badge className={getStatusColor(shipment.shipmentStatus || '')}>
+                      {shipment.shipmentStatus ? 
+                        shipment.shipmentStatus.charAt(0).toUpperCase() + 
+                        shipment.shipmentStatus.slice(1) : 
+                        'Unknown'}
                     </Badge>
                   </div>
                 </div>
@@ -532,7 +557,11 @@ const ShipmentDetail = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {(shipment?.files && shipment.files.length > 0) ? (
+            {isLoadingDocuments ? (
+              <div className="flex items-center justify-center h-48">
+                <p>Loading documents...</p>
+              </div>
+            ) : documents.length > 0 ? (
               <ScrollArea className="h-[300px]">
                 <div className="w-full min-w-[500px]">
                   <Table>
@@ -547,7 +576,7 @@ const ShipmentDetail = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {shipment.files.map((file, index) => (
+                      {documents.map((file, index) => (
                         <TableRow 
                           key={file.id}
                           draggable
