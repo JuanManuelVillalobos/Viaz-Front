@@ -262,6 +262,22 @@ const ShipmentDetail = () => {
     fileInputRef.current?.click();
   };
   
+  // Get file type display text - safely 
+  const getFileTypeDisplay = (file: ShipmentFile): string => {
+    if (!file.type) {
+      return 'Unknown';
+    }
+    
+    try {
+      const typeParts = file.type.split('/');
+      return typeParts.length > 1 ? typeParts[1].toUpperCase() : file.type.toUpperCase();
+    } catch (error) {
+      console.error("Error processing file type:", file.type, error);
+      return 'Unknown';
+    }
+  };
+  
+  // Format file size
   const formatFileSize = (size: number) => {
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
@@ -623,7 +639,7 @@ const ShipmentDetail = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {file.type.split('/')[1].toUpperCase()}
+                            {getFileTypeDisplay(file)}
                           </TableCell>
                           <TableCell>{formatFileSize(file.size)}</TableCell>
                           <TableCell>{file.uploadDate}</TableCell>
@@ -691,19 +707,19 @@ const ShipmentDetail = () => {
               {viewingDocument?.file.name}
             </DialogTitle>
             <DialogDescription>
-              {viewingDocument?.file.type} - {viewingDocument && formatFileSize(viewingDocument.file.size)}
+              {viewingDocument?.file.type || 'Unknown'} - {viewingDocument && formatFileSize(viewingDocument.file.size)}
             </DialogDescription>
           </DialogHeader>
           
           <div className="flex-1 overflow-hidden my-4">
             {viewingDocument && (
-              viewingDocument.file.type.includes('pdf') ? (
+              viewingDocument.file.type && viewingDocument.file.type.includes('pdf') ? (
                 <iframe 
                   src={viewingDocument.url} 
                   className="w-full h-[60vh] border rounded"
                   title={viewingDocument.file.name}
                 />
-              ) : viewingDocument.file.type.includes('image') ? (
+              ) : viewingDocument.file.type && viewingDocument.file.type.includes('image') ? (
                 <img 
                   src={viewingDocument.url} 
                   alt={viewingDocument.file.name}
