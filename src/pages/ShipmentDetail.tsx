@@ -1,10 +1,9 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   Package, ArrowLeft, Edit, Save, X, Plus,
   FileText, File, Calendar, Truck, MapPin, User,
-  GripVertical, Trash2, Upload
+  GripVertical, Trash2, Upload, Download, Eye
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,6 +66,8 @@ const ShipmentDetail = () => {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [fileToDelete, setFileToDelete] = useState<ShipmentFile | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [viewingDocument, setViewingDocument] = useState<{file: ShipmentFile, url: string} | null>(null);
+  const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Fetch shipment data
@@ -281,6 +282,31 @@ const ShipmentDetail = () => {
       default:
         return "bg-gray-500";
     }
+  };
+  
+  const handleViewDocument = async (file: ShipmentFile) => {
+    try {
+      setIsLoadingDocument(true);
+      // We assume the file.id is the object key
+      const downloadUrl = await apiShipmentService.getDocumentDownloadUrl(file.id);
+      setViewingDocument({
+        file,
+        url: downloadUrl,
+      });
+    } catch (error) {
+      console.error("Error fetching document URL:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load document.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDocument(false);
+    }
+  };
+  
+  const handleCloseDocumentModal = () => {
+    setViewingDocument(null);
   };
   
   if (isLoading) {
@@ -572,7 +598,7 @@ const ShipmentDetail = () => {
                         <TableHead className="w-[20%]">Type</TableHead>
                         <TableHead className="w-[15%]">Size</TableHead>
                         <TableHead className="w-[15%]">Upload Date</TableHead>
-                        {isEditing && <TableHead className="w-[10%]">Action</TableHead>}
+                        <TableHead className="w-[10%]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -601,18 +627,29 @@ const ShipmentDetail = () => {
                           </TableCell>
                           <TableCell>{formatFileSize(file.size)}</TableCell>
                           <TableCell>{file.uploadDate}</TableCell>
-                          {isEditing && (
-                            <TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleDeleteFile(file)}
-                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleViewDocument(file)}
+                                className="h-8 w-8 hover:bg-primary/10"
+                                disabled={isLoadingDocument}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Eye className="h-4 w-4" />
                               </Button>
-                            </TableCell>
-                          )}
+                              {isEditing && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteFile(file)}
+                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -645,6 +682,68 @@ const ShipmentDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Document Viewer Modal */}
+      <Dialog open={!!viewingDocument} onOpenChange={(open) => !open && setViewingDocument(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {viewingDocument?.file.name}
+            </DialogTitle>
+            <DialogDescription>
+              {viewingDocument?.file.type} - {viewingDocument && formatFileSize(viewingDocument.file.size)}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-hidden my-4">
+            {viewingDocument && (
+              viewingDocument.file.type.includes('pdf') ? (
+                <iframe 
+                  src={viewingDocument.url} 
+                  className="w-full h-[60vh] border rounded"
+                  title={viewingDocument.file.name}
+                />
+              ) : viewingDocument.file.type.includes('image') ? (
+                <img 
+                  src={viewingDocument.url} 
+                  alt={viewingDocument.file.name}
+                  className="max-w-full max-h-[60vh] mx-auto"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[60vh]">
+                  <File className="h-16 w-16 mb-4 text-muted-foreground" />
+                  <p className="mb-4">Preview not available for this file type</p>
+                  <Button asChild>
+                    <a href={viewingDocument.url} target="_blank" rel="noopener noreferrer">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download File
+                    </a>
+                  </Button>
+                </div>
+              )
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseDocumentModal}>
+              Close
+            </Button>
+            {viewingDocument && (
+              <Button asChild>
+                <a 
+                  href={viewingDocument.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  download={viewingDocument.file.name}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </a>
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

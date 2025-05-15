@@ -1,6 +1,6 @@
 
 import apiClient from './apiClient';
-import { ApiShipment, ShipmentUpdateRequest } from '@/types/api';
+import { ApiShipment, ShipmentUpdateRequest, ShipmentFile } from '@/types/api';
 
 export const apiShipmentService = {
   // Get all shipments
@@ -55,6 +55,12 @@ export const apiShipmentService = {
   // List documents for a shipment
   getShipmentDocuments: async (viazId: string): Promise<ShipmentFile[]> => {
     const response = await apiClient.get(`/api/shipment/${viazId}/list-objects`);
+    return response.data;
+  },
+  
+  // Get document download URL
+  getDocumentDownloadUrl: async (objectKey: string): Promise<string> => {
+    const response = await apiClient.get(`/api/shipment/download-file/${objectKey}`);
     return response.data;
   }
 };
