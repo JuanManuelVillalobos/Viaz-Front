@@ -53,14 +53,14 @@ export const apiShipmentService = {
   },
   
   // List documents for a shipment
-  getShipmentDocuments: async (viazId: string): Promise<ShipmentFile[]> => {
+  getShipmentDocuments: async (viazId: string): Promise<string[]> => {
     const response = await apiClient.get(`/api/shipment/${viazId}/list-objects`);
     return response.data;
   },
   
   // Get document download URL
   getDocumentDownloadUrl: async (objectKey: string): Promise<string> => {
-    const response = await apiClient.get(`/api/shipment/download-file/${objectKey}`);
+    const response = await apiClient.get(`/api/shipment/download-file/${encodeURIComponent(objectKey)}`);
     return response.data;
   }
 };

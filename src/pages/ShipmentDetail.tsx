@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -62,11 +63,11 @@ const ShipmentDetail = () => {
     type: "application/pdf",
     size: 0,
   });
-  const [draggedFile, setDraggedFile] = useState<ShipmentFile | null>(null);
+  const [draggedFile, setDraggedFile] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [fileToDelete, setFileToDelete] = useState<ShipmentFile | null>(null);
+  const [fileToDelete, setFileToDelete] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [viewingDocument, setViewingDocument] = useState<{file: ShipmentFile, url: string} | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<{objectKey: string, fileName: string, url: string} | null>(null);
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -141,18 +142,8 @@ const ShipmentDetail = () => {
   };
   
   const handleAddFile = () => {
-    if (editedShipment && newFile.name && id) {
-      const fileToAdd: ShipmentFile = {
-        id: `file-${Date.now()}`,
-        name: newFile.name,
-        type: newFile.type || "application/pdf",
-        size: newFile.size || 1024,
-        uploadDate: new Date().toISOString().split('T')[0]
-      };
-      
-      // Here you would typically upload the file to the server
-      // For now, we just update the UI
-      
+    // In a real implementation, this would upload the file to the server
+    if (id && newFile.name) {
       setNewFile({
         name: "",
         type: "application/pdf",
@@ -166,13 +157,13 @@ const ShipmentDetail = () => {
       
       toast({
         title: "Success",
-        description: `File "${fileToAdd.name}" added successfully.`,
+        description: `File "${newFile.name}" added successfully.`,
       });
     }
   };
   
-  const handleDragStart = (file: ShipmentFile) => {
-    setDraggedFile(file);
+  const handleDragStart = (objectKey: string) => {
+    setDraggedFile(objectKey);
   };
   
   const handleDragEnter = (index: number) => {
@@ -194,8 +185,8 @@ const ShipmentDetail = () => {
     });
   };
   
-  const handleDeleteFile = (file: ShipmentFile) => {
-    setFileToDelete(file);
+  const handleDeleteFile = (objectKey: string) => {
+    setFileToDelete(objectKey);
   };
   
   const confirmDeleteFile = async () => {
@@ -210,7 +201,7 @@ const ShipmentDetail = () => {
         
         toast({
           title: "File Deleted",
-          description: `File "${fileToDelete.name}" has been removed.`
+          description: "File has been removed."
         });
       } catch (error) {
         console.error("Error deleting file:", error);
@@ -262,18 +253,57 @@ const ShipmentDetail = () => {
     fileInputRef.current?.click();
   };
   
-  // Get file type display text - safely 
-  const getFileTypeDisplay = (file: ShipmentFile): string => {
-    if (!file.type) {
-      return 'Unknown';
-    }
-    
+  // Extract file name from object key
+  const getFileNameFromObjectKey = (objectKey: string): string => {
     try {
-      const typeParts = file.type.split('/');
-      return typeParts.length > 1 ? typeParts[1].toUpperCase() : file.type.toUpperCase();
+      const parts = objectKey.split('/');
+      return parts[parts.length - 1] || objectKey;
     } catch (error) {
-      console.error("Error processing file type:", file.type, error);
-      return 'Unknown';
+      console.error("Error extracting file name:", error);
+      return objectKey;
+    }
+  };
+  
+  // Get file extension from object key
+  const getFileExtension = (objectKey: string): string => {
+    try {
+      const fileName = getFileNameFromObjectKey(objectKey);
+      const parts = fileName.split('.');
+      return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'UNKNOWN';
+    } catch (error) {
+      console.error("Error extracting file extension:", error);
+      return 'UNKNOWN';
+    }
+  };
+  
+  // Guess file type from extension
+  const guessFileTypeFromExtension = (objectKey: string): string => {
+    const ext = getFileExtension(objectKey).toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'doc':
+      case 'docx':
+        return 'application/msword';
+      case 'xls':
+      case 'xlsx':
+        return 'application/vnd.ms-excel';
+      case 'ppt':
+      case 'pptx':
+        return 'application/vnd.ms-powerpoint';
+      case 'txt':
+        return 'text/plain';
+      case 'csv':
+        return 'text/csv';
+      default:
+        return 'application/octet-stream';
     }
   };
   
@@ -300,13 +330,13 @@ const ShipmentDetail = () => {
     }
   };
   
-  const handleViewDocument = async (file: ShipmentFile) => {
+  const handleViewDocument = async (objectKey: string) => {
     try {
       setIsLoadingDocument(true);
-      // We assume the file.id is the object key
-      const downloadUrl = await apiShipmentService.getDocumentDownloadUrl(file.id);
+      const downloadUrl = await apiShipmentService.getDocumentDownloadUrl(objectKey);
       setViewingDocument({
-        file,
+        objectKey,
+        fileName: getFileNameFromObjectKey(objectKey),
         url: downloadUrl,
       });
     } catch (error) {
@@ -612,17 +642,16 @@ const ShipmentDetail = () => {
                         <TableHead className="w-[5%]"></TableHead>
                         <TableHead className="w-[35%]">Name</TableHead>
                         <TableHead className="w-[20%]">Type</TableHead>
-                        <TableHead className="w-[15%]">Size</TableHead>
-                        <TableHead className="w-[15%]">Upload Date</TableHead>
+                        <TableHead className="w-[30%]">Object Key</TableHead>
                         <TableHead className="w-[10%]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {documents.map((file, index) => (
+                      {documents.map((objectKey, index) => (
                         <TableRow 
-                          key={file.id}
+                          key={objectKey}
                           draggable
-                          onDragStart={() => handleDragStart(file)}
+                          onDragStart={() => handleDragStart(objectKey)}
                           onDragEnter={() => handleDragEnter(index)}
                           onDragOver={(e) => e.preventDefault()}
                           onDragEnd={handleDragEnd}
@@ -635,20 +664,21 @@ const ShipmentDetail = () => {
                           <TableCell>
                             <div className="flex items-center">
                               <File className="h-4 w-4 mr-2 text-muted-foreground" />
-                              {file.name}
+                              {getFileNameFromObjectKey(objectKey)}
                             </div>
                           </TableCell>
                           <TableCell>
-                            {getFileTypeDisplay(file)}
+                            {getFileExtension(objectKey)}
                           </TableCell>
-                          <TableCell>{formatFileSize(file.size)}</TableCell>
-                          <TableCell>{file.uploadDate}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground font-mono truncate">
+                            {objectKey}
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-1">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleViewDocument(file)}
+                                onClick={() => handleViewDocument(objectKey)}
                                 className="h-8 w-8 hover:bg-primary/10"
                                 disabled={isLoadingDocument}
                               >
@@ -658,7 +688,7 @@ const ShipmentDetail = () => {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleDeleteFile(file)}
+                                  onClick={() => handleDeleteFile(objectKey)}
                                   className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -704,25 +734,25 @@ const ShipmentDetail = () => {
         <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
-              {viewingDocument?.file.name}
+              {viewingDocument?.fileName || 'Document'}
             </DialogTitle>
             <DialogDescription>
-              {viewingDocument?.file.type || 'Unknown'} - {viewingDocument && formatFileSize(viewingDocument.file.size)}
+              {getFileExtension(viewingDocument?.objectKey || '')} - Object key: {viewingDocument?.objectKey}
             </DialogDescription>
           </DialogHeader>
           
           <div className="flex-1 overflow-hidden my-4">
             {viewingDocument && (
-              viewingDocument.file.type && viewingDocument.file.type.includes('pdf') ? (
+              guessFileTypeFromExtension(viewingDocument.objectKey).includes('pdf') ? (
                 <iframe 
                   src={viewingDocument.url} 
                   className="w-full h-[60vh] border rounded"
-                  title={viewingDocument.file.name}
+                  title={viewingDocument.fileName}
                 />
-              ) : viewingDocument.file.type && viewingDocument.file.type.includes('image') ? (
+              ) : guessFileTypeFromExtension(viewingDocument.objectKey).includes('image') ? (
                 <img 
                   src={viewingDocument.url} 
-                  alt={viewingDocument.file.name}
+                  alt={viewingDocument.fileName}
                   className="max-w-full max-h-[60vh] mx-auto"
                 />
               ) : (
@@ -750,7 +780,7 @@ const ShipmentDetail = () => {
                   href={viewingDocument.url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  download={viewingDocument.file.name}
+                  download={viewingDocument.fileName}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download
