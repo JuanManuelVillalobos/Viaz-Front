@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { UsersIcon, Search, MoreHorizontal, Mail, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,56 +36,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
+import {userService} from "@/services/api";
 
-// Mock data for users
-const users = [
-  {
-    id: 1,
-    name: "John Smith",
-    email: "john.smith@example.com",
-    role: "Admin",
-    status: "active",
-    lastActive: "Today at 2:30 PM"
-  },
-  {
-    id: 2,
-    name: "Emily Johnson",
-    email: "emily.j@example.com",
-    role: "Manager",
-    status: "active",
-    lastActive: "Today at 10:15 AM"
-  },
-  {
-    id: 3,
-    name: "Michael Brown",
-    email: "m.brown@example.com",
-    role: "Operator",
-    status: "active",
-    lastActive: "Yesterday at 4:45 PM"
-  },
-  {
-    id: 4,
-    name: "Sarah Williams",
-    email: "s.williams@example.com",
-    role: "Operator",
-    status: "inactive",
-    lastActive: "3 days ago"
-  },
-  {
-    id: 5,
-    name: "Daniel Jones",
-    email: "daniel.jones@example.com",
-    role: "Manager",
-    status: "pending",
-    lastActive: "Invite sent 2 days ago"
-  }
-];
+
 
 const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("");
+  const [users, setUsers] = useState([]);
   
   const filteredUsers = users.filter(
     (user) =>
@@ -126,6 +86,10 @@ const UserManagement = () => {
       .join("")
       .toUpperCase();
   };
+
+  useEffect(() => {
+    userService.getAllUsers().then(users => {setUsers(users); console.log(users);})
+  },[])
 
   return (
     <div className="space-y-6">
