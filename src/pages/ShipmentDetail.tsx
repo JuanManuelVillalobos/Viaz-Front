@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -253,8 +252,9 @@ const ShipmentDetail = () => {
     fileInputRef.current?.click();
   };
   
-  // Extract file name from object key
-  const getFileNameFromObjectKey = (objectKey: string): string => {
+  // Extract file name from object key - Updated to handle full paths
+  const getFileNameFromObjectKey = (objectKey: string | undefined): string => {
+    if (!objectKey) return 'Unknown';
     try {
       const parts = objectKey.split('/');
       return parts[parts.length - 1] || objectKey;
@@ -265,7 +265,8 @@ const ShipmentDetail = () => {
   };
   
   // Get file extension from object key
-  const getFileExtension = (objectKey: string): string => {
+  const getFileExtension = (objectKey: string | undefined): string => {
+    if (!objectKey) return 'UNKNOWN';
     try {
       const fileName = getFileNameFromObjectKey(objectKey);
       const parts = fileName.split('.');
@@ -333,6 +334,7 @@ const ShipmentDetail = () => {
   const handleViewDocument = async (objectKey: string) => {
     try {
       setIsLoadingDocument(true);
+      // Pass the full objectKey to the service
       const downloadUrl = await apiShipmentService.getDocumentDownloadUrl(objectKey);
       setViewingDocument({
         objectKey,

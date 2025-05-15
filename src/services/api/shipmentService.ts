@@ -58,9 +58,10 @@ export const apiShipmentService = {
     return response.data;
   },
   
-  // Get document download URL
+  // Get document download URL - Updated to use the full objectKey directly
   getDocumentDownloadUrl: async (objectKey: string): Promise<string> => {
-    const response = await apiClient.get(`/api/shipment/download-file/${encodeURIComponent(objectKey)}`);
+    // Use the objectKey directly without encoding since it already contains the full path
+    const response = await apiClient.get(`/api/shipment/download-file/${objectKey}`);
     return response.data;
   }
 };
