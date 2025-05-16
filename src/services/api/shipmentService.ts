@@ -62,10 +62,27 @@ export const apiShipmentService = {
     return response.data;
   },
   
+  // Upload file to a shipment
+  uploadFile: async (viazId: string, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    await apiClient.post(`/api/shipment/${viazId}/upload-file`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  
   // List documents for a shipment
   getShipmentDocuments: async (viazId: string): Promise<string[]> => {
     const response = await apiClient.get(`/api/shipment/${viazId}/list-objects`);
     return response.data;
+  },
+  
+  // Delete document from a shipment
+  deleteDocument: async (viazId: string, objectKey: string): Promise<void> => {
+    await apiClient.delete(`/api/shipment/${viazId}/delete-file/${encodeURIComponent(objectKey)}`);
   },
   
   // Get document download URL - Updated to use the full objectKey directly

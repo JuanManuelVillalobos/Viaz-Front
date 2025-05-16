@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Package, Search, ArrowUpDown,
@@ -410,7 +409,7 @@ const Shipments = () => {
               
               {/* Excel Export Button */}
               <Button variant="outline" size="sm" onClick={handleExportExcel}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                <FileUp className="mr-2 h-4 w-4" />
                 Export Excel
               </Button>
               
