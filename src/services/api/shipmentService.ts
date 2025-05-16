@@ -1,6 +1,6 @@
 
 import apiClient from './apiClient';
-import { ApiShipment, ShipmentUpdateRequest, ShipmentFile } from '@/types/api';
+import { ApiShipment, ShipmentUpdateRequest } from '@/types/api';
 
 export const apiShipmentService = {
   // Get all shipments
@@ -48,6 +48,16 @@ export const apiShipmentService = {
         'Content-Type': 'multipart/form-data',
       },
     });
+    
+    return response.data;
+  },
+  
+  // Export shipments to Excel
+  exportShipmentsExcel: async (shipments: ApiShipment[]): Promise<Blob> => {
+    const response = await apiClient.post('/api/shipment/export-excel', 
+      { shipments }, 
+      { responseType: 'blob' }
+    );
     
     return response.data;
   },

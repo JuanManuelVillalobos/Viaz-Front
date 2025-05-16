@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { 
   Package, Search, Filter, ArrowUpDown, 
-  Download, MoreHorizontal, MapPin 
+  Download, MoreHorizontal, MapPin, Columns, FileExcel, ListFilter 
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -40,7 +41,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
-import { Shipment } from "@/types/shipment";
+import { Shipment, TableColumn, defaultShipmentColumns } from "@/types/shipment";
 import { getStatusColor } from "@/services/shipmentService";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -60,6 +61,12 @@ const Shipments = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOption>({ status: [], carrier: [] });
   const [newShipmentOpen, setNewShipmentOpen] = useState(false);
+  const [columns, setColumns] = useState<TableColumn[]>(() => {
+    // Try to load column preferences from localStorage
+    const savedColumns = localStorage.getItem("shipmentColumns");
+    return savedColumns ? JSON.parse(savedColumns) : defaultShipmentColumns;
+  });
+  
   const [newShipment, setNewShipment] = useState<Partial<Shipment>>({
     origin: "",
     destination: "",
@@ -84,11 +91,30 @@ const Shipments = () => {
     observations: ""
   });
   
+  // Save column visibility preferences when they change
+  useEffect(() => {
+    localStorage.setItem("shipmentColumns", JSON.stringify(columns));
+  }, [columns]);
+  
   // Fetch shipments with React Query
   const { data: shipments = [], isLoading, error } = useQuery({
     queryKey: ['shipments'],
     queryFn: apiShipmentService.getAllShipments,
   });
+  
+  // Toggle column visibility
+  const toggleColumnVisibility = (columnId: string) => {
+    setColumns(prev => 
+      prev.map(col => 
+        col.id === columnId ? { ...col, visible: !col.visible } : col
+      )
+    );
+  };
+  
+  // Reset column visibility to defaults
+  const resetColumns = () => {
+    setColumns(defaultShipmentColumns);
+  };
   
   // Create shipment mutation
   const createShipmentMutation = useMutation({
@@ -216,6 +242,37 @@ const Shipments = () => {
     }
   };
 
+  // Export to Excel function
+  const handleExportExcel = async () => {
+    try {
+      const blob = await apiShipmentService.exportShipmentsExcel(filteredShipments);
+      
+      // Create a download link and trigger download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `shipments-export-${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Export Successful",
+        description: "Shipments have been exported to Excel.",
+      });
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting shipments to Excel.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // If loading, show loading state
   if (isLoading) {
     return (
@@ -239,6 +296,9 @@ const Shipments = () => {
       </div>
     );
   }
+
+  // Get visible columns
+  const visibleColumns = columns.filter(col => col.visible);
 
   return (
     <div className="space-y-6">
@@ -264,10 +324,38 @@ const Shipments = () => {
               />
             </div>
             <div className="flex gap-2 ml-auto">
+              {/* Column Selection Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Columns className="mr-2 h-4 w-4" />
+                    Columns
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {columns.map(column => (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      checked={column.visible}
+                      onCheckedChange={() => toggleColumnVisibility(column.id)}
+                    >
+                      {column.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={resetColumns}>
+                    Reset to defaults
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Filter Dialog */}
               <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
-                    <Filter className="mr-2 h-4 w-4" />
+                    <ListFilter className="mr-2 h-4 w-4" />
                     Filter {(filters.status.length > 0 || filters.carrier.length > 0) && 
                       <Badge className="ml-1 bg-primary px-1 text-[10px]">
                         {filters.status.length + filters.carrier.length}
@@ -319,10 +407,14 @@ const Shipments = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              <Button variant="outline" size="sm">
-                <Download className="mr-2 h-4 w-4" />
-                Export
+              
+              {/* Excel Export Button */}
+              <Button variant="outline" size="sm" onClick={handleExportExcel}>
+                <FileExcel className="mr-2 h-4 w-4" />
+                Export Excel
               </Button>
+              
+              {/* New Shipment Dialog */}
               <Dialog open={newShipmentOpen} onOpenChange={setNewShipmentOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm">+ New Shipment</Button>
@@ -670,21 +762,16 @@ const Shipments = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>
-                        <Button variant="ghost" className="p-0 h-8">
-                          ID <ArrowUpDown className="ml-1 h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>Origin</TableHead>
-                      <TableHead>Destination</TableHead>
-                      <TableHead>
-                        <Button variant="ghost" className="p-0 h-8">
-                          Client <ArrowUpDown className="ml-1 h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>Transport Provider</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Files</TableHead>
+                      {/* Dynamic column headers based on visibility preferences */}
+                      {columns
+                        .filter(col => col.visible)
+                        .map(col => (
+                          <TableHead key={col.id}>
+                            <Button variant="ghost" className="p-0 h-8">
+                              {col.label} <ArrowUpDown className="ml-1 h-3 w-3" />
+                            </Button>
+                          </TableHead>
+                        ))}
                       <TableHead className="w-[80px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -692,30 +779,35 @@ const Shipments = () => {
                     {filteredShipments.length > 0 ? (
                       filteredShipments.map((shipment) => (
                         <TableRow key={shipment.viazId}>
-                          <TableCell className="font-medium">{shipment.viazId}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <MapPin className="mr-1 h-3 w-3 text-muted-foreground" />
-                              {shipment.origin || "N/A"}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <MapPin className="mr-1 h-3 w-3 text-muted-foreground" />
-                              {shipment.destination || "N/A"}
-                            </div>
-                          </TableCell>
-                          <TableCell>{shipment.client || "N/A"}</TableCell>
-                          <TableCell>{shipment.year}</TableCell>
-                          <TableCell>{shipment.transportProvider || "N/A"}</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(shipment.shipmentStatus || "")}>
-                              {(shipment.shipmentStatus || "").charAt(0).toUpperCase() + (shipment.shipmentStatus || "").slice(1) || "N/A"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {shipment.files ? shipment.files.length : 0}
-                          </TableCell>
+                          {/* Dynamic cells based on visible columns */}
+                          {columns
+                            .filter(col => col.visible)
+                            .map(col => {
+                              const key = col.id as keyof Shipment;
+                              return (
+                                <TableCell key={col.id}>
+                                  {key === "viazId" ? (
+                                    <span className="font-medium">{shipment[key]}</span>
+                                  ) : key === "origin" || key === "destination" ? (
+                                    <div className="flex items-center">
+                                      <MapPin className="mr-1 h-3 w-3 text-muted-foreground" />
+                                      {shipment[key] || "N/A"}
+                                    </div>
+                                  ) : key === "shipmentStatus" ? (
+                                    <Badge className={getStatusColor(shipment[key] as string || "")}>
+                                      {(shipment[key] as string || "").charAt(0).toUpperCase() + 
+                                       (shipment[key] as string || "").slice(1) || "N/A"}
+                                    </Badge>
+                                  ) : key === "files" ? (
+                                    shipment.files ? shipment.files.length : 0
+                                  ) : (
+                                    shipment[key] || "N/A"
+                                  )}
+                                </TableCell>
+                              );
+                            })}
+                          
+                          {/* Actions column - always visible */}
                           <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -749,7 +841,7 @@ const Shipments = () => {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={9} className="h-24 text-center">
+                        <TableCell colSpan={visibleColumns.length + 1} className="h-24 text-center">
                           No shipments found.
                         </TableCell>
                       </TableRow>

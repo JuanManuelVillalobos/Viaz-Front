@@ -10,8 +10,8 @@ export interface ShipmentFile {
 
 export interface Shipment {
   viazId: string;
-  year: number;
-  sequence: number;
+  year: number; // Managed by backend
+  sequence: number; // Managed by backend
   typeOfService?: string;
   customerServiceAgent?: string;
   client?: string;
@@ -21,7 +21,7 @@ export interface Shipment {
   shipmentStatus?: string;
   container?: string;
   containerType?: string;
-  containerDate?: string; 
+  containerDate?: string;
   transportProvider?: string;
   shipmentOperator?: string;
   shipmentTerminal?: string;
@@ -41,3 +41,20 @@ export interface Shipment {
   observations?: string;
   files?: ShipmentFile[];
 }
+
+export interface TableColumn {
+  id: string;
+  label: string;
+  visible: boolean;
+}
+
+// Predefined shipment table columns
+export const defaultShipmentColumns: TableColumn[] = [
+  { id: "viazId", label: "ID", visible: true },
+  { id: "origin", label: "Origin", visible: true },
+  { id: "destination", label: "Destination", visible: true },
+  { id: "client", label: "Client", visible: true },
+  { id: "transportProvider", label: "Transport Provider", visible: true },
+  { id: "shipmentStatus", label: "Status", visible: true },
+  { id: "files", label: "Files", visible: true },
+];
