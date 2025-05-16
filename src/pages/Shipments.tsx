@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { 
-  Package, Search, Filter, ArrowUpDown, 
-  Download, MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter
+  Package, Search, ArrowUpDown,
+  MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Shipment, TableColumn, defaultShipmentColumns } from "@/types/shipment";
 import { getStatusColor } from "@/services/shipmentService";
 import { ScrollArea } from "@/components/ui/scroll-area";
