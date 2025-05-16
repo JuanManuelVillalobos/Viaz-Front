@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { 
+import {
   Package, Search, ArrowUpDown,
   MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter
 } from "lucide-react";
@@ -409,7 +409,7 @@ const Shipments = () => {
               
               {/* Excel Export Button */}
               <Button variant="outline" size="sm" onClick={handleExportExcel}>
-                <FileUp className="mr-2 h-4 w-4" />
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
                 Export Excel
               </Button>
               
