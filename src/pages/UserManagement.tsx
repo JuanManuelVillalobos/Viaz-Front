@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { UsersIcon, Search, MoreHorizontal, Mail, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,65 +36,75 @@ import {
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
+import {userService} from "@/services/api";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ViazUserDTO, UserStatus } from "@/types/api";
+import { format } from "date-fns";
 
-// Mock data for users
-const users = [
-  {
-    id: 1,
-    name: "John Smith",
-    email: "john.smith@example.com",
-    role: "Admin",
-    status: "active",
-    lastActive: "Today at 2:30 PM"
-  },
-  {
-    id: 2,
-    name: "Emily Johnson",
-    email: "emily.j@example.com",
-    role: "Manager",
-    status: "active",
-    lastActive: "Today at 10:15 AM"
-  },
-  {
-    id: 3,
-    name: "Michael Brown",
-    email: "m.brown@example.com",
-    role: "Operator",
-    status: "active",
-    lastActive: "Yesterday at 4:45 PM"
-  },
-  {
-    id: 4,
-    name: "Sarah Williams",
-    email: "s.williams@example.com",
-    role: "Operator",
-    status: "inactive",
-    lastActive: "3 days ago"
-  },
-  {
-    id: 5,
-    name: "Daniel Jones",
-    email: "daniel.jones@example.com",
-    role: "Manager",
-    status: "pending",
-    lastActive: "Invite sent 2 days ago"
-  }
-];
+
 
 const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("");
+  const [users, setUsers] = useState<ViazUserDTO[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<ViazUserDTO | null>(null);
   
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase())
+      user.roles.some(role => role.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const fetchedUsers = await userService.getAllUsers();
+      setUsers(fetchedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load users. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete?.userId) return;
+    
+    try {
+      await userService.deleteUser(userToDelete.userId);
+      
+      toast({
+        title: "User Deleted",
+        description: `User ${userToDelete.username} has been deleted.`,
+      });
+      
+      // Refresh the user list
+      fetchUsers();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    }
+  };
+
   const handleInvite = () => {
+    console.log(inviteEmail, inviteRole);
     if (inviteEmail && inviteRole) {
       toast({
         title: "Invitation Sent",
@@ -106,13 +116,11 @@ const UserManagement = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: UserStatus) => {
     switch (status) {
-      case "active":
+      case UserStatus.ACTIVE:
         return <Badge className="bg-green-500">Active</Badge>;
-      case "inactive":
-        return <Badge variant="secondary">Inactive</Badge>;
-      case "pending":
+      case UserStatus.PENDING:
         return <Badge className="bg-yellow-500">Pending</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -126,6 +134,27 @@ const UserManagement = () => {
       .join("")
       .toUpperCase();
   };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Never';
+    try {
+      return format(new Date(dateString), 'PPP');
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  const getPrimaryRole = (roles: string[]) => {
+    if (roles.includes('ADMIN')) return 'Admin';
+    if (roles.includes('MANAGER')) return 'Manager';
+    if (roles.includes('OPERATOR')) return 'Operator';
+    if (roles.includes('USER')) return 'User';
+    return roles[0] || 'N/A';
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -183,9 +212,8 @@ const UserManagement = () => {
                           <SelectValue placeholder="Select a role" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
-                          <SelectItem value="operator">Operator</SelectItem>
+                          <SelectItem value="ADMIN">Admin</SelectItem>
+                          <SelectItem value="USER">User</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -214,66 +242,110 @@ const UserManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{user.name}</div>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.role}</TableCell>
-                    <TableCell>{getStatusBadge(user.status)}</TableCell>
-                    <TableCell>{user.lastActive}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>Edit User</DropdownMenuItem>
-                          <DropdownMenuItem>Change Role</DropdownMenuItem>
-                          {user.status === "pending" ? (
-                            <>
-                              <DropdownMenuItem>
-                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                Approve
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                                Reject
-                              </DropdownMenuItem>
-                            </>
-                          ) : (
-                            <>
-                              {user.status === "active" ? (
-                                <DropdownMenuItem>Deactivate</DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem>Activate</DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-red-500">Remove User</DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      Loading users...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      No users found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <TableRow key={user.userId}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{user.username}</div>
+                            <div className="text-sm text-muted-foreground">{user.email}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getPrimaryRole(user.roles)}</TableCell>
+                      <TableCell>{getStatusBadge(user.status)}</TableCell>
+                      <TableCell>{formatDate(user.lastLoginDate)}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>Edit User</DropdownMenuItem>
+                            <DropdownMenuItem>Change Role</DropdownMenuItem>
+                            {user.status === UserStatus.PENDING ? (
+                              <>
+                                <DropdownMenuItem>
+                                  <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                  Approve
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                                  Reject
+                                </DropdownMenuItem>
+                              </>
+                            ) : (
+                              <>
+                                {user.status === UserStatus.ACTIVE ? (
+                                  <DropdownMenuItem>Deactivate</DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem>Activate</DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="text-red-500"
+                                  onClick={() => {
+                                    setUserToDelete(user);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                >
+                                  Remove User
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the user 
+              {userToDelete && ` ${userToDelete.username}`} and remove their data from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

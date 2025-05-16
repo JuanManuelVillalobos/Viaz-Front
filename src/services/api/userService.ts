@@ -1,4 +1,3 @@
-
 import apiClient from './apiClient';
 import { ViazUserDTO } from '@/types/api';
 
@@ -8,37 +7,37 @@ export const userService = {
     const response = await apiClient.get('/api/user/get-all-users');
     return response.data;
   },
-  
+
   // Delete a user
   deleteUser: async (userId: number): Promise<void> => {
     await apiClient.delete(`/api/user/delete-user/${userId}`);
   },
-  
+
   // Get current user profile
   getCurrentUser: async (): Promise<ViazUserDTO> => {
-    // This endpoint doesn't exist in your Spring controller, but it's common to have one
-    // You might need to add it to your backend or adapt this client
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('No token found');
+    }
+
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('No token found');
-      }
-      
-      // For now, just return what we have in localStorage as a fallback
+      const response = await apiClient.get('/api/user/current');
+      return response.data;
+    } catch (apiError) {
+      console.error("Error fetching current user from API", apiError);
+
       const userStr = localStorage.getItem('user');
-      let user = null;
       if (userStr) {
         try {
-          user = JSON.parse(userStr);
+          const user = JSON.parse(userStr);
+          // Consider adding validation here to ensure parsed data matches ViazUserDTO
           return user as ViazUserDTO;
         } catch (e) {
-          console.error("Error parsing user data", e);
+          console.error("Error parsing user data from localStorage", e);
+          // Consider removing invalid localStorage item
         }
       }
-      
-      throw new Error('User not found');
-    } catch (error) {
-      throw error;
+      throw new Error('User not found after API fallback');
     }
   }
 };
