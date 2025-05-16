@@ -51,8 +51,6 @@ export interface ShipmentFile {
 // Shipment types from our backend
 export interface ApiShipment {
   viazId: string;
-  year: number; // Managed by backend
-  sequence: number; // Managed by backend
   typeOfService?: string;
   customerServiceAgent?: string;
   client?: string;
