@@ -30,19 +30,11 @@ const ShipmentDetail = () => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [editedShipment, setEditedShipment] = useState<ApiShipment | null>(null);
-  const [isAddingFile, setIsAddingFile] = useState(false);
-  const [newFile, setNewFile] = useState<Partial<ShipmentFile>>({
-    name: "",
-    type: "application/pdf",
-    size: 0,
-  });
   const [draggedFile, setDraggedFile] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [fileToDelete, setFileToDelete] = useState<string | null>(null);
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<{objectKey: string, fileName: string, url: string} | null>(null);
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Fetch shipment data
   const { 
@@ -87,6 +79,48 @@ const ShipmentDetail = () => {
     queryFn: () => id ? apiShipmentService.getShipmentDocuments(id) : Promise.reject('No ID provided'),
     enabled: !!id
   });
+
+  // File upload mutation
+  const uploadFileMutation = useMutation({
+    mutationFn: ({ viazId, file }: { viazId: string, file: File }) => 
+      apiShipmentService.uploadFile(viazId, file),
+    onSuccess: () => {
+      refetchDocuments();
+      toast({
+        title: "Success",
+        description: "File uploaded successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error uploading file:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload file.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete document mutation
+  const deleteDocumentMutation = useMutation({
+    mutationFn: ({ viazId, objectKey }: { viazId: string, objectKey: string }) => 
+      apiShipmentService.deleteDocument(viazId, objectKey),
+    onSuccess: () => {
+      refetchDocuments();
+      toast({
+        title: "Success",
+        description: "File deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete file.",
+        variant: "destructive",
+      });
+    }
+  });
   
   useEffect(() => {
     if (shipment) {
@@ -121,25 +155,9 @@ const ShipmentDetail = () => {
     }
   };
   
-  const handleAddFile = () => {
-    // In a real implementation, this would upload the file to the server
-    if (id && newFile.name) {
-      setNewFile({
-        name: "",
-        type: "application/pdf",
-        size: 0,
-      });
-      
-      setIsAddingFile(false);
-      
-      // Refresh document list
-      refetchDocuments();
-      
-      toast({
-        title: "Success",
-        description: `File "${newFile.name}" added successfully.`,
-      });
-    }
+  const handleUploadFile = async (file: File) => {
+    if (!id) return;
+    return uploadFileMutation.mutateAsync({ viazId: id, file });
   };
   
   const handleDragStart = (objectKey: string) => {
@@ -172,65 +190,12 @@ const ShipmentDetail = () => {
   const confirmDeleteFile = async () => {
     if (fileToDelete && id) {
       try {
-        // Here you would delete the file from the server
-        
+        await deleteDocumentMutation.mutateAsync({ viazId: id, objectKey: fileToDelete });
         setFileToDelete(null);
-        
-        // Refresh document list
-        refetchDocuments();
-        
-        toast({
-          title: "File Deleted",
-          description: "File has been removed."
-        });
       } catch (error) {
         console.error("Error deleting file:", error);
-        toast({
-          title: "Error",
-          description: "Failed to delete file.",
-          variant: "destructive",
-        });
       }
     }
-  };
-  
-  const handleFileDrop = (event: React.DragEvent) => {
-    event.preventDefault();
-    setIsDraggingOver(false);
-    
-    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-      const droppedFile = event.dataTransfer.files[0];
-      setNewFile({
-        name: droppedFile.name,
-        type: droppedFile.type || "application/octet-stream",
-        size: droppedFile.size,
-      });
-    }
-  };
-  
-  const handleDragOver = (event: React.DragEvent) => {
-    event.preventDefault();
-    setIsDraggingOver(true);
-  };
-  
-  const handleDragLeave = () => {
-    setIsDraggingOver(false);
-  };
-  
-  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      const selectedFile = files[0];
-      setNewFile({
-        name: selectedFile.name,
-        type: selectedFile.type || "application/octet-stream",
-        size: selectedFile.size,
-      });
-    }
-  };
-  
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
   };
   
   // Extract file name from object key - safely handles undefined values and full paths
@@ -379,28 +344,19 @@ const ShipmentDetail = () => {
         />
         
         <ShipmentFilesCard
+          viazId={id || ''}
           isEditing={isEditing}
           documents={documents}
           isLoadingDocuments={isLoadingDocuments}
-          handleAddFile={handleAddFile}
           handleDeleteFile={handleDeleteFile}
           handleViewDocument={handleViewDocument}
           getFileNameFromObjectKey={getFileNameFromObjectKey}
           getFileExtension={getFileExtension}
           guessFileTypeFromExtension={guessFileTypeFromExtension}
           isLoadingDocument={isLoadingDocument}
-          isDraggingOver={isDraggingOver}
-          setIsDraggingOver={setIsDraggingOver}
-          handleFileDrop={handleFileDrop}
-          handleDragOver={handleDragOver}
-          handleDragLeave={handleDragLeave}
-          triggerFileInput={triggerFileInput}
-          fileInputRef={fileInputRef}
-          handleFileInputChange={handleFileInputChange}
-          newFile={newFile}
-          setNewFile={setNewFile}
-          isAddingFile={isAddingFile}
-          setIsAddingFile={setIsAddingFile}
+          handleUploadFile={handleUploadFile}
+          refetchDocuments={refetchDocuments}
+          isUploading={uploadFileMutation.isPending}
           handleDragStart={handleDragStart}
           handleDragEnter={handleDragEnter}
           handleDragEnd={handleDragEnd}

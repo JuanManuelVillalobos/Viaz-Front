@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { 
   Package, Search, Filter, ArrowUpDown, 
-  Download, MoreHorizontal, MapPin, Columns, FileExcel, ListFilter 
+  Download, MoreHorizontal, MapPin, Columns, FileUp, ListFilter 
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -410,7 +409,7 @@ const Shipments = () => {
               
               {/* Excel Export Button */}
               <Button variant="outline" size="sm" onClick={handleExportExcel}>
-                <FileExcel className="mr-2 h-4 w-4" />
+                <FileUp className="mr-2 h-4 w-4" />
                 Export Excel
               </Button>
               
