@@ -114,7 +114,7 @@ export const ShipmentFilesCard = ({
             });
         }
     };
-
+  
     const clearSelectedFile = () => {
         setSelectedFile(null);
         if (fileInputRef.current) {
