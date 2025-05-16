@@ -7,14 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -28,7 +28,7 @@ import { toast } from "@/hooks/use-toast";
 import { ShipmentFile } from "@/types/api";
 
 interface ShipmentFilesCardProps {
-  viazId: string; // Add the ID to use for upload
+  viazId: string;
   isEditing: boolean;
   documents: string[];
   isLoadingDocuments: boolean;
@@ -136,34 +136,41 @@ export const ShipmentFilesCard = ({
             Files
           </div>
           {isEditing && (
-            <Dialog open={isAddingFile} onOpenChange={setIsAddingFile}>
-              <DialogTrigger asChild>
+            <Sheet open={isAddingFile} onOpenChange={setIsAddingFile}>
+              <SheetTrigger asChild>
                 <Button size="sm">
                   <Upload className="h-4 w-4 mr-2" />
                   Add File
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Upload File</DialogTitle>
-                  <DialogDescription>
+              </SheetTrigger>
+              <SheetContent side="center" className="sm:max-w-md">
+                <SheetHeader>
+                  <SheetTitle>Upload File</SheetTitle>
+                  <SheetDescription>
                     Upload a file to this shipment.
-                  </DialogDescription>
-                </DialogHeader>
+                  </SheetDescription>
+                </SheetHeader>
                 <div className="grid gap-4 py-4">
                   <div 
-                    className={`grid gap-2 border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors ${
+                    className={`grid gap-2 border-2 border-dashed rounded-md p-10 text-center cursor-pointer transition-colors ${
                       isDraggingOver ? "border-primary bg-primary/5" : "border-muted-foreground/25"
-                    }`}
+                    } h-[200px] flex items-center justify-center`}
                     onClick={triggerFileInput}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleFileDrop}
                   >
-                    <Upload className="h-10 w-10 mx-auto text-muted-foreground" />
-                    <p className="text-sm font-medium">
-                      {isDraggingOver ? "Drop file here" : "Drag & drop file or click to browse"}
+                    <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
+                    <p className="text-base font-medium">
+                      {isDraggingOver ? "Drop file here" : "Drag & drop file here"}
                     </p>
+                    <p className="text-sm text-muted-foreground">or</p>
+                    <Button variant="outline" onClick={(e) => {
+                      e.stopPropagation();
+                      triggerFileInput();
+                    }} className="mt-2">
+                      Choose file
+                    </Button>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -173,29 +180,34 @@ export const ShipmentFilesCard = ({
                   </div>
                   
                   {selectedFile && (
-                    <div className="bg-muted/50 p-3 rounded-md">
+                    <div className="bg-muted/50 p-4 rounded-md">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <File className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{selectedFile.name}</span>
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <File className="h-5 w-5 text-primary flex-shrink-0" />
+                          <div className="overflow-hidden">
+                            <p className="font-medium text-sm truncate">{selectedFile.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(selectedFile.size / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
                         </div>
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           onClick={clearSelectedFile}
-                          className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {selectedFile ? `${(selectedFile.size / (1024)).toFixed(1)} KB` : ''}
-                      </div>
                     </div>
                   )}
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddingFile(false)}>
+                <SheetFooter>
+                  <Button variant="outline" onClick={() => {
+                    setIsAddingFile(false);
+                    clearSelectedFile();
+                  }}>
                     Cancel
                   </Button>
                   <Button 
@@ -204,9 +216,9 @@ export const ShipmentFilesCard = ({
                   >
                     {isUploading ? "Uploading..." : "Upload File"}
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
           )}
         </CardTitle>
       </CardHeader>
