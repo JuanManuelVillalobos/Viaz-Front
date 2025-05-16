@@ -31,7 +31,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -61,8 +61,6 @@ const Shipments = () => {
   const [filters, setFilters] = useState<FilterOption>({ status: [], carrier: [] });
   const [newShipmentOpen, setNewShipmentOpen] = useState(false);
   const [newShipment, setNewShipment] = useState<Partial<Shipment>>({
-    year: new Date().getFullYear(),
-    sequence: Math.floor(Math.random() * 1000),
     origin: "",
     destination: "",
     client: "",
@@ -112,8 +110,6 @@ const Shipments = () => {
   // Reset new shipment form
   const resetNewShipment = () => {
     setNewShipment({
-      year: new Date().getFullYear(),
-      sequence: Math.floor(Math.random() * 1000),
       origin: "",
       destination: "",
       client: "",
@@ -347,27 +343,6 @@ const Shipments = () => {
                     
                     {/* Basic Info Tab */}
                     <TabsContent value="basic" className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="year">Year</Label>
-                          <Input 
-                            id="year" 
-                            type="number"
-                            value={newShipment.year}
-                            onChange={e => handleInputChange("year", parseInt(e.target.value))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="sequence">Sequence</Label>
-                          <Input 
-                            id="sequence" 
-                            type="number"
-                            value={newShipment.sequence}
-                            onChange={e => handleInputChange("sequence", parseInt(e.target.value))}
-                          />
-                        </div>
-                      </div>
-                      
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="origin">Origin*</Label>
@@ -705,11 +680,6 @@ const Shipments = () => {
                       <TableHead>
                         <Button variant="ghost" className="p-0 h-8">
                           Client <ArrowUpDown className="ml-1 h-3 w-3" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" className="p-0 h-8">
-                          Year <ArrowUpDown className="ml-1 h-3 w-3" />
                         </Button>
                       </TableHead>
                       <TableHead>Transport Provider</TableHead>
