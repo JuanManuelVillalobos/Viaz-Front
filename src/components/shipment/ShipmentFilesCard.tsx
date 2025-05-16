@@ -224,7 +224,6 @@ export const ShipmentFilesCard = ({
                     <TableHead className="w-[5%]"></TableHead>
                     <TableHead className="w-[35%]">Name</TableHead>
                     <TableHead className="w-[20%]">Type</TableHead>
-                    <TableHead className="w-[30%]">Object Key</TableHead>
                     <TableHead className="w-[10%]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -251,9 +250,6 @@ export const ShipmentFilesCard = ({
                       </TableCell>
                       <TableCell>
                         {getFileExtension(objectKey)}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground font-mono truncate">
-                        {objectKey}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-1">
