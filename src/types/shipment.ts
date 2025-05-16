@@ -10,8 +10,6 @@ export interface ShipmentFile {
 
 export interface Shipment {
   viazId: string;
-  year: number; // Managed by backend
-  sequence: number; // Managed by backend
   typeOfService?: string;
   customerServiceAgent?: string;
   client?: string;
