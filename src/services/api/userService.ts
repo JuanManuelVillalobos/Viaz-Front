@@ -16,23 +16,28 @@ export const userService = {
   
   // Get current user profile
   getCurrentUser: async (): Promise<ViazUserDTO> => {
-    // This endpoint doesn't exist in your Spring controller, but it's common to have one
-    // You might need to add it to your backend or adapt this client
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
         throw new Error('No token found');
       }
       
-      // For now, just return what we have in localStorage as a fallback
-      const userStr = localStorage.getItem('user');
-      let user = null;
-      if (userStr) {
-        try {
-          user = JSON.parse(userStr);
-          return user as ViazUserDTO;
-        } catch (e) {
-          console.error("Error parsing user data", e);
+      // Try to get the user from the API
+      try {
+        const response = await apiClient.get('/api/user/current');
+        return response.data;
+      } catch (apiError) {
+        console.error("Error fetching current user from API", apiError);
+        
+        // Fallback to localStorage if API call fails
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            return user as ViazUserDTO;
+          } catch (e) {
+            console.error("Error parsing user data", e);
+          }
         }
       }
       
