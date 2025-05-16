@@ -1,3 +1,4 @@
+
 // Authentication types
 export interface LoginRequest {
   email: string;
@@ -50,8 +51,8 @@ export interface ShipmentFile {
 // Shipment types from our backend
 export interface ApiShipment {
   viazId: string;
-  year?: number;
-  sequence?: number;
+  year: number;
+  sequence: number;
   typeOfService?: string;
   customerServiceAgent?: string;
   client?: string;

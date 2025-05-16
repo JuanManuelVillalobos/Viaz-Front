@@ -38,12 +38,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
 import { Shipment } from "@/types/shipment";
 import { getStatusColor } from "@/services/shipmentService";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiShipmentService } from "@/services/api";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type FilterOption = {
   status: string[];
@@ -57,11 +60,30 @@ const Shipments = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOption>({ status: [], carrier: [] });
   const [newShipmentOpen, setNewShipmentOpen] = useState(false);
-  const [newShipment, setNewShipment] = useState({
+  const [newShipment, setNewShipment] = useState<Partial<Shipment>>({
+    year: new Date().getFullYear(),
+    sequence: Math.floor(Math.random() * 1000),
     origin: "",
     destination: "",
     client: "",
     transportProvider: "",
+    typeOfService: "",
+    customerServiceAgent: "",
+    customsAgent: "",
+    shipmentStatus: "processing",
+    container: "",
+    containerType: "",
+    shipmentOperator: "",
+    shipmentTerminal: "",
+    ci: false,
+    ccp: false,
+    taxFolio: false,
+    loadManoeuvre: false,
+    pisVinculation: false,
+    vacuumManoeuvre: "",
+    portOfDischarge: "",
+    eir: "",
+    observations: ""
   });
   
   // Fetch shipments with React Query
@@ -83,14 +105,38 @@ const Shipments = () => {
         description: `New shipment from ${newShipment.origin} to ${newShipment.destination} has been created.`,
       });
       
-      setNewShipment({
-        origin: "",
-        destination: "",
-        client: "",
-        transportProvider: "",
-      });
+      resetNewShipment();
     },
   });
+  
+  // Reset new shipment form
+  const resetNewShipment = () => {
+    setNewShipment({
+      year: new Date().getFullYear(),
+      sequence: Math.floor(Math.random() * 1000),
+      origin: "",
+      destination: "",
+      client: "",
+      transportProvider: "",
+      typeOfService: "",
+      customerServiceAgent: "",
+      customsAgent: "",
+      shipmentStatus: "processing",
+      container: "",
+      containerType: "",
+      shipmentOperator: "",
+      shipmentTerminal: "",
+      ci: false,
+      ccp: false,
+      taxFolio: false,
+      loadManoeuvre: false,
+      pisVinculation: false,
+      vacuumManoeuvre: "",
+      portOfDischarge: "",
+      eir: "",
+      observations: ""
+    });
+  };
   
   // Delete shipment mutation
   const deleteShipmentMutation = useMutation({
@@ -123,27 +169,25 @@ const Shipments = () => {
     setFilters({ status: [], carrier: [] });
   };
   
+  const handleInputChange = (field: keyof Shipment, value: any) => {
+    setNewShipment(prev => ({ ...prev, [field]: value }));
+  };
+  
   const handleNewShipmentSubmit = () => {
-    if (!newShipment.origin || !newShipment.destination || !newShipment.client || !newShipment.transportProvider) {
+    const requiredFields = ['origin', 'destination', 'client', 'transportProvider'];
+    const missingFields = requiredFields.filter(field => !newShipment[field as keyof Shipment]);
+    
+    if (missingFields.length > 0) {
       toast({
         title: "Validation Error",
-        description: "All fields are required",
+        description: `Required fields missing: ${missingFields.join(', ')}`,
         variant: "destructive",
       });
       return;
     }
     
     // Create a new shipment with the API
-    createShipmentMutation.mutate({
-      viazId: "", // Backend will generate this
-      year: new Date().getFullYear(),
-      sequence: Math.floor(Math.random() * 1000), // This would come from the backend normally
-      origin: newShipment.origin,
-      destination: newShipment.destination,
-      client: newShipment.client,
-      transportProvider: newShipment.transportProvider,
-      shipmentStatus: "processing",
-    });
+    createShipmentMutation.mutate(newShipment as any);
   };
   
   const filteredShipments = shipments.filter(
@@ -287,55 +331,349 @@ const Shipments = () => {
                 <DialogTrigger asChild>
                   <Button size="sm">+ New Shipment</Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-auto">
                   <DialogHeader>
                     <DialogTitle>Create New Shipment</DialogTitle>
                     <DialogDescription>
                       Fill in the details to create a new shipment
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="origin">Origin</Label>
+                  <Tabs defaultValue="basic">
+                    <TabsList className="grid grid-cols-3 mb-4">
+                      <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                      <TabsTrigger value="transport">Transportation</TabsTrigger>
+                      <TabsTrigger value="documents">Documents & Dates</TabsTrigger>
+                    </TabsList>
+                    
+                    {/* Basic Info Tab */}
+                    <TabsContent value="basic" className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="year">Year</Label>
+                          <Input 
+                            id="year" 
+                            type="number"
+                            value={newShipment.year}
+                            onChange={e => handleInputChange("year", parseInt(e.target.value))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="sequence">Sequence</Label>
+                          <Input 
+                            id="sequence" 
+                            type="number"
+                            value={newShipment.sequence}
+                            onChange={e => handleInputChange("sequence", parseInt(e.target.value))}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="origin">Origin*</Label>
+                          <Input 
+                            id="origin" 
+                            value={newShipment.origin}
+                            onChange={e => handleInputChange("origin", e.target.value)}
+                            placeholder="City, Country"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="destination">Destination*</Label>
+                          <Input 
+                            id="destination" 
+                            value={newShipment.destination}
+                            onChange={e => handleInputChange("destination", e.target.value)}
+                            placeholder="City, Country"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="client">Client*</Label>
                         <Input 
-                          id="origin" 
-                          value={newShipment.origin}
-                          onChange={e => setNewShipment({...newShipment, origin: e.target.value})}
-                          placeholder="City, Country"
+                          id="client" 
+                          value={newShipment.client}
+                          onChange={e => handleInputChange("client", e.target.value)}
+                          placeholder="Client Name"
                         />
                       </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="destination">Destination</Label>
-                        <Input 
-                          id="destination" 
-                          value={newShipment.destination}
-                          onChange={e => setNewShipment({...newShipment, destination: e.target.value})}
-                          placeholder="City, Country"
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="customerServiceAgent">Customer Service Agent</Label>
+                          <Input 
+                            id="customerServiceAgent" 
+                            value={newShipment.customerServiceAgent}
+                            onChange={e => handleInputChange("customerServiceAgent", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="customsAgent">Customs Agent</Label>
+                          <Input 
+                            id="customsAgent" 
+                            value={newShipment.customsAgent}
+                            onChange={e => handleInputChange("customsAgent", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="typeOfService">Type of Service</Label>
+                          <Select
+                            value={newShipment.typeOfService}
+                            onValueChange={value => handleInputChange("typeOfService", value)}
+                          >
+                            <SelectTrigger id="typeOfService">
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="standard">Standard</SelectItem>
+                              <SelectItem value="express">Express</SelectItem>
+                              <SelectItem value="priority">Priority</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="shipmentStatus">Status</Label>
+                          <Select
+                            value={newShipment.shipmentStatus}
+                            onValueChange={value => handleInputChange("shipmentStatus", value)}
+                          >
+                            <SelectTrigger id="shipmentStatus">
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="processing">Processing</SelectItem>
+                              <SelectItem value="in-transit">In Transit</SelectItem>
+                              <SelectItem value="delivered">Delivered</SelectItem>
+                              <SelectItem value="delayed">Delayed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    {/* Transportation Tab */}
+                    <TabsContent value="transport" className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="transportProvider">Transport Provider*</Label>
+                          <Input 
+                            id="transportProvider" 
+                            value={newShipment.transportProvider}
+                            onChange={e => handleInputChange("transportProvider", e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="shipmentOperator">Shipment Operator</Label>
+                          <Input 
+                            id="shipmentOperator" 
+                            value={newShipment.shipmentOperator}
+                            onChange={e => handleInputChange("shipmentOperator", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="shipmentTerminal">Shipment Terminal</Label>
+                          <Input 
+                            id="shipmentTerminal" 
+                            value={newShipment.shipmentTerminal}
+                            onChange={e => handleInputChange("shipmentTerminal", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="vacuumManoeuvre">Vacuum Manoeuvre</Label>
+                          <Input 
+                            id="vacuumManoeuvre" 
+                            value={newShipment.vacuumManoeuvre}
+                            onChange={e => handleInputChange("vacuumManoeuvre", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="container">Container</Label>
+                          <Input 
+                            id="container" 
+                            value={newShipment.container}
+                            onChange={e => handleInputChange("container", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="containerType">Container Type</Label>
+                          <Input 
+                            id="containerType" 
+                            value={newShipment.containerType}
+                            onChange={e => handleInputChange("containerType", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="containerDate">Container Date</Label>
+                          <Input 
+                            id="containerDate" 
+                            type="datetime-local"
+                            value={newShipment.containerDate}
+                            onChange={e => handleInputChange("containerDate", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="portOfDischarge">Port of Discharge</Label>
+                          <Input 
+                            id="portOfDischarge" 
+                            value={newShipment.portOfDischarge}
+                            onChange={e => handleInputChange("portOfDischarge", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    {/* Documents & Dates Tab */}
+                    <TabsContent value="documents" className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="portDepartureDate">Port Departure Date</Label>
+                          <Input 
+                            id="portDepartureDate" 
+                            type="date"
+                            value={newShipment.portDepartureDate}
+                            onChange={e => handleInputChange("portDepartureDate", e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="portArrivalDate">Port Arrival Date</Label>
+                          <Input 
+                            id="portArrivalDate" 
+                            type="datetime-local"
+                            value={newShipment.portArrivalDate}
+                            onChange={e => handleInputChange("portArrivalDate", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="portUnloadDate">Port Unload Date</Label>
+                          <Input 
+                            id="portUnloadDate" 
+                            type="datetime-local"
+                            value={newShipment.portUnloadDate}
+                            onChange={e => handleInputChange("portUnloadDate", e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="portOfDischargeDate">Port of Discharge Date</Label>
+                          <Input 
+                            id="portOfDischargeDate" 
+                            type="date"
+                            value={newShipment.portOfDischargeDate}
+                            onChange={e => handleInputChange("portOfDischargeDate", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="vacuumArrival">Vacuum Arrival</Label>
+                          <Input 
+                            id="vacuumArrival" 
+                            type="date"
+                            value={newShipment.vacuumArrival}
+                            onChange={e => handleInputChange("vacuumArrival", e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="eir">EIR</Label>
+                          <Input 
+                            id="eir" 
+                            value={newShipment.eir}
+                            onChange={e => handleInputChange("eir", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <fieldset className="border rounded-md p-4">
+                        <legend className="text-sm font-medium px-2">Required Documents</legend>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="ci" 
+                              checked={newShipment.ci}
+                              onCheckedChange={checked => handleInputChange("ci", checked)}
+                            />
+                            <Label htmlFor="ci">CI</Label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="ccp" 
+                              checked={newShipment.ccp}
+                              onCheckedChange={checked => handleInputChange("ccp", checked)}
+                            />
+                            <Label htmlFor="ccp">CCP</Label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="taxFolio" 
+                              checked={newShipment.taxFolio}
+                              onCheckedChange={checked => handleInputChange("taxFolio", checked)}
+                            />
+                            <Label htmlFor="taxFolio">Tax Folio</Label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="loadManoeuvre" 
+                              checked={newShipment.loadManoeuvre}
+                              onCheckedChange={checked => handleInputChange("loadManoeuvre", checked)}
+                            />
+                            <Label htmlFor="loadManoeuvre">Load Manoeuvre</Label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="pisVinculation" 
+                              checked={newShipment.pisVinculation}
+                              onCheckedChange={checked => handleInputChange("pisVinculation", checked)}
+                            />
+                            <Label htmlFor="pisVinculation">PIS Vinculation</Label>
+                          </div>
+                        </div>
+                      </fieldset>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="observations">Observations</Label>
+                        <Textarea 
+                          id="observations" 
+                          value={newShipment.observations}
+                          onChange={e => handleInputChange("observations", e.target.value)}
+                          placeholder="Add any additional notes here..."
+                          rows={3}
                         />
                       </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="client">Client</Label>
-                      <Input 
-                        id="client" 
-                        value={newShipment.client}
-                        onChange={e => setNewShipment({...newShipment, client: e.target.value})}
-                        placeholder="Client Name"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="transportProvider">Transport Provider</Label>
-                      <Input 
-                        id="transportProvider" 
-                        value={newShipment.transportProvider}
-                        onChange={e => setNewShipment({...newShipment, transportProvider: e.target.value})}
-                        placeholder="Transport Provider Name"
-                      />
-                    </div>
-                  </div>
+                    </TabsContent>
+                  </Tabs>
+                  
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setNewShipmentOpen(false)}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        resetNewShipment();
+                        setNewShipmentOpen(false);
+                      }}
+                    >
                       Cancel
                     </Button>
                     <Button 

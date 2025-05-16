@@ -1,41 +1,10 @@
+
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { 
-  Package, ArrowLeft, Edit, Save, X, Plus,
-  FileText, File, Calendar, Truck, MapPin, User,
-  GripVertical, Trash2, Upload, Download, Eye
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Package, ArrowLeft, Edit, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,14 +15,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { ApiShipment, ShipmentFile } from "@/types/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiShipmentService } from "@/services/api/shipmentService";
+import { getStatusColor } from "@/services/shipmentService";
+
+import { ShipmentDetailForm } from "@/components/shipment/ShipmentDetailForm";
+import { ShipmentFilesCard } from "@/components/shipment/ShipmentFilesCard";
+import { DocumentViewer } from "@/components/shipment/DocumentViewer";
 
 const ShipmentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [editedShipment, setEditedShipment] = useState<ApiShipment | null>(null);
   const [isAddingFile, setIsAddingFile] = useState(false);
@@ -79,6 +53,28 @@ const ShipmentDetail = () => {
     queryKey: ['shipment', id],
     queryFn: () => id ? apiShipmentService.getShipmentById(id) : Promise.reject('No ID provided'),
     enabled: !!id
+  });
+
+  // Update shipment mutation
+  const updateShipmentMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string, updates: Partial<ApiShipment> }) => 
+      apiShipmentService.updateShipment(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shipment', id] });
+      setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Shipment details updated successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error updating shipment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update shipment details.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Fetch shipment documents
@@ -115,26 +111,11 @@ const ShipmentDetail = () => {
   
   const handleSave = async () => {
     if (editedShipment && id) {
-      try {
-        const updated = await apiShipmentService.updateShipment(id, editedShipment);
-        setEditedShipment(updated);
-        setIsEditing(false);
-        toast({
-          title: "Success",
-          description: "Shipment details updated successfully.",
-        });
-      } catch (error) {
-        console.error("Error updating shipment:", error);
-        toast({
-          title: "Error",
-          description: "Failed to update shipment details.",
-          variant: "destructive",
-        });
-      }
+      updateShipmentMutation.mutate({ id, updates: editedShipment });
     }
   };
   
-  const handleInputChange = (field: keyof ApiShipment, value: string | boolean) => {
+  const handleInputChange = (field: keyof ApiShipment, value: any) => {
     if (editedShipment) {
       setEditedShipment({ ...editedShipment, [field]: value });
     }
@@ -252,8 +233,8 @@ const ShipmentDetail = () => {
     fileInputRef.current?.click();
   };
   
-  // Extract file name from object key - Updated to handle full paths
-  const getFileNameFromObjectKey = (objectKey: string | undefined): string => {
+  // Extract file name from object key - safely handles undefined values and full paths
+  const getFileNameFromObjectKey = (objectKey?: string): string => {
     if (!objectKey) return 'Unknown';
     try {
       const parts = objectKey.split('/');
@@ -264,8 +245,8 @@ const ShipmentDetail = () => {
     }
   };
   
-  // Get file extension from object key
-  const getFileExtension = (objectKey: string | undefined): string => {
+  // Get file extension from object key - safely handles undefined values
+  const getFileExtension = (objectKey?: string): string => {
     if (!objectKey) return 'UNKNOWN';
     try {
       const fileName = getFileNameFromObjectKey(objectKey);
@@ -305,29 +286,6 @@ const ShipmentDetail = () => {
         return 'text/csv';
       default:
         return 'application/octet-stream';
-    }
-  };
-  
-  // Format file size
-  const formatFileSize = (size: number) => {
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-  };
-  
-  // Get status color
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case "delivered":
-        return "bg-green-500";
-      case "in-transit":
-        return "bg-blue-500";
-      case "processing":
-        return "bg-yellow-500";
-      case "delayed":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
     }
   };
   
@@ -382,338 +340,76 @@ const ShipmentDetail = () => {
         </Button>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{shipment.viazId}</h1>
         {!isEditing ? (
-          <Button onClick={handleEdit} className="ml-auto">
+          <Button 
+            onClick={handleEdit} 
+            className="ml-auto"
+            disabled={updateShipmentMutation.isPending}
+          >
             <Edit className="h-4 w-4 mr-2" />
             Edit Shipment
           </Button>
         ) : (
           <div className="ml-auto space-x-2">
-            <Button variant="outline" onClick={handleCancel}>
+            <Button 
+              variant="outline" 
+              onClick={handleCancel}
+              disabled={updateShipmentMutation.isPending}
+            >
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button onClick={handleSave}>
+            <Button 
+              onClick={handleSave}
+              disabled={updateShipmentMutation.isPending}
+            >
               <Save className="h-4 w-4 mr-2" />
-              Save Changes
+              {updateShipmentMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         )}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center">
-              <Package className="mr-2 h-5 w-5" />
-              Shipment Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isEditing ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="origin">Origin</Label>
-                    <div className="flex items-center">
-                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <Input 
-                        id="origin" 
-                        value={editedShipment.origin || ''}
-                        onChange={(e) => handleInputChange("origin", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="destination">Destination</Label>
-                    <div className="flex items-center">
-                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <Input 
-                        id="destination" 
-                        value={editedShipment.destination || ''}
-                        onChange={(e) => handleInputChange("destination", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="client">Client</Label>
-                  <div className="flex items-center">
-                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <Input 
-                      id="client" 
-                      value={editedShipment.client || ''}
-                      onChange={(e) => handleInputChange("client", e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="transportProvider">Transport Provider</Label>
-                  <div className="flex items-center">
-                    <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <Input 
-                      id="transportProvider" 
-                      value={editedShipment.transportProvider || ''}
-                      onChange={(e) => handleInputChange("transportProvider", e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="containerDate">Container Date</Label>
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <Input 
-                      id="containerDate" 
-                      type="datetime-local"
-                      value={editedShipment.containerDate ? editedShipment.containerDate.toString().slice(0, 16) : ''}
-                      onChange={(e) => handleInputChange("containerDate", e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="shipmentStatus">Status</Label>
-                  <Select
-                    value={editedShipment.shipmentStatus || ''}
-                    onValueChange={(value) => handleInputChange("shipmentStatus", value)}
-                  >
-                    <SelectTrigger id="shipmentStatus">
-                      <SelectValue placeholder="Select a status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="processing">Processing</SelectItem>
-                      <SelectItem value="in-transit">In Transit</SelectItem>
-                      <SelectItem value="delivered">Delivered</SelectItem>
-                      <SelectItem value="delayed">Delayed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Origin</p>
-                    <div className="flex items-center mt-1">
-                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <p className="text-base">{shipment.origin || 'N/A'}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Destination</p>
-                    <div className="flex items-center mt-1">
-                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <p className="text-base">{shipment.destination || 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Client</p>
-                  <div className="flex items-center mt-1">
-                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <p className="text-base">{shipment.client || 'N/A'}</p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Transport Provider</p>
-                  <div className="flex items-center mt-1">
-                    <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <p className="text-base">{shipment.transportProvider || 'N/A'}</p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Container Date</p>
-                  <div className="flex items-center mt-1">
-                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <p className="text-base">
-                      {shipment.containerDate ? 
-                        new Date(shipment.containerDate).toLocaleString() : 
-                        'N/A'}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Status</p>
-                  <div className="mt-1">
-                    <Badge className={getStatusColor(shipment.shipmentStatus || '')}>
-                      {shipment.shipmentStatus ? 
-                        shipment.shipmentStatus.charAt(0).toUpperCase() + 
-                        shipment.shipmentStatus.slice(1) : 
-                        'Unknown'}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ShipmentDetailForm 
+          shipment={shipment}
+          isEditing={isEditing}
+          editedShipment={editedShipment || shipment}
+          handleInputChange={handleInputChange}
+          getStatusColor={getStatusColor}
+        />
         
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center">
-                <FileText className="mr-2 h-5 w-5" />
-                Files
-              </div>
-              <Dialog open={isAddingFile} onOpenChange={setIsAddingFile}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add File
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New File</DialogTitle>
-                    <DialogDescription>
-                      Add file details to this shipment.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div 
-                      className={`grid gap-2 border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors ${
-                        isDraggingOver ? "border-primary bg-primary/5" : "border-muted-foreground/25"
-                      }`}
-                      onClick={triggerFileInput}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleFileDrop}
-                    >
-                      <Upload className="h-10 w-10 mx-auto text-muted-foreground" />
-                      <p className="text-sm font-medium">
-                        {isDraggingOver ? "Drop file here" : "Drag & drop file or click to browse"}
-                      </p>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        className="hidden"
-                        onChange={handleFileInputChange}
-                      />
-                    </div>
-                    
-                    {newFile.name && (
-                      <div className="bg-muted/50 p-3 rounded-md">
-                        <div className="flex items-center gap-2">
-                          <File className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{newFile.name}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {formatFileSize(newFile.size || 0)}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="grid gap-2">
-                      <Label htmlFor="filetype">File Type</Label>
-                      <Select
-                        value={newFile.type}
-                        onValueChange={(value) => setNewFile({...newFile, type: value})}
-                      >
-                        <SelectTrigger id="filetype">
-                          <SelectValue placeholder="Select file type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="application/pdf">PDF Document (.pdf)</SelectItem>
-                          <SelectItem value="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">Excel Spreadsheet (.xlsx)</SelectItem>
-                          <SelectItem value="application/vnd.openxmlformats-officedocument.wordprocessingml.document">Word Document (.docx)</SelectItem>
-                          <SelectItem value="image/jpeg">JPEG Image (.jpg)</SelectItem>
-                          <SelectItem value="image/png">PNG Image (.png)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsAddingFile(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAddFile} disabled={!newFile.name}>Add File</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoadingDocuments ? (
-              <div className="flex items-center justify-center h-48">
-                <p>Loading documents...</p>
-              </div>
-            ) : documents.length > 0 ? (
-              <ScrollArea className="h-[300px]">
-                <div className="w-full min-w-[500px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[5%]"></TableHead>
-                        <TableHead className="w-[35%]">Name</TableHead>
-                        <TableHead className="w-[20%]">Type</TableHead>
-                        <TableHead className="w-[30%]">Object Key</TableHead>
-                        <TableHead className="w-[10%]">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {documents.map((objectKey, index) => (
-                        <TableRow 
-                          key={objectKey}
-                          draggable
-                          onDragStart={() => handleDragStart(objectKey)}
-                          onDragEnter={() => handleDragEnter(index)}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDragEnd={handleDragEnd}
-                          onDrop={() => handleDrop(index)}
-                          className={`cursor-move ${dragOverIndex === index ? 'bg-muted/80 border-dashed border-2 border-primary/50' : ''}`}
-                        >
-                          <TableCell className="py-2">
-                            <GripVertical className="h-4 w-4 text-muted-foreground" />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <File className="h-4 w-4 mr-2 text-muted-foreground" />
-                              {getFileNameFromObjectKey(objectKey)}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {getFileExtension(objectKey)}
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground font-mono truncate">
-                            {objectKey}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleViewDocument(objectKey)}
-                                className="h-8 w-8 hover:bg-primary/10"
-                                disabled={isLoadingDocument}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              {isEditing && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeleteFile(objectKey)}
-                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </ScrollArea>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-48 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No files attached to this shipment</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ShipmentFilesCard
+          isEditing={isEditing}
+          documents={documents}
+          isLoadingDocuments={isLoadingDocuments}
+          handleAddFile={handleAddFile}
+          handleDeleteFile={handleDeleteFile}
+          handleViewDocument={handleViewDocument}
+          getFileNameFromObjectKey={getFileNameFromObjectKey}
+          getFileExtension={getFileExtension}
+          guessFileTypeFromExtension={guessFileTypeFromExtension}
+          isLoadingDocument={isLoadingDocument}
+          isDraggingOver={isDraggingOver}
+          setIsDraggingOver={setIsDraggingOver}
+          handleFileDrop={handleFileDrop}
+          handleDragOver={handleDragOver}
+          handleDragLeave={handleDragLeave}
+          triggerFileInput={triggerFileInput}
+          fileInputRef={fileInputRef}
+          handleFileInputChange={handleFileInputChange}
+          newFile={newFile}
+          setNewFile={setNewFile}
+          isAddingFile={isAddingFile}
+          setIsAddingFile={setIsAddingFile}
+          handleDragStart={handleDragStart}
+          handleDragEnter={handleDragEnter}
+          handleDragEnd={handleDragEnd}
+          handleDrop={handleDrop}
+          dragOverIndex={dragOverIndex}
+        />
       </div>
       
+      {/* Delete File Confirmation Dialog */}
       <AlertDialog open={!!fileToDelete} onOpenChange={(open) => !open && setFileToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -731,67 +427,12 @@ const ShipmentDetail = () => {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Document Viewer Modal */}
-      <Dialog open={!!viewingDocument} onOpenChange={(open) => !open && setViewingDocument(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>
-              {viewingDocument?.fileName || 'Document'}
-            </DialogTitle>
-            <DialogDescription>
-              {getFileExtension(viewingDocument?.objectKey || '')} - Object key: {viewingDocument?.objectKey}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-hidden my-4">
-            {viewingDocument && (
-              guessFileTypeFromExtension(viewingDocument.objectKey).includes('pdf') ? (
-                <iframe 
-                  src={viewingDocument.url} 
-                  className="w-full h-[60vh] border rounded"
-                  title={viewingDocument.fileName}
-                />
-              ) : guessFileTypeFromExtension(viewingDocument.objectKey).includes('image') ? (
-                <img 
-                  src={viewingDocument.url} 
-                  alt={viewingDocument.fileName}
-                  className="max-w-full max-h-[60vh] mx-auto"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-[60vh]">
-                  <File className="h-16 w-16 mb-4 text-muted-foreground" />
-                  <p className="mb-4">Preview not available for this file type</p>
-                  <Button asChild>
-                    <a href={viewingDocument.url} target="_blank" rel="noopener noreferrer">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download File
-                    </a>
-                  </Button>
-                </div>
-              )
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDocumentModal}>
-              Close
-            </Button>
-            {viewingDocument && (
-              <Button asChild>
-                <a 
-                  href={viewingDocument.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  download={viewingDocument.fileName}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </a>
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Document Viewer Dialog */}
+      <DocumentViewer
+        viewingDocument={viewingDocument}
+        handleCloseDocumentModal={handleCloseDocumentModal}
+        guessFileTypeFromExtension={guessFileTypeFromExtension}
+      />
     </div>
   );
 };
