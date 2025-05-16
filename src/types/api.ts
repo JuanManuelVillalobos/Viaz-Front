@@ -12,20 +12,30 @@ export interface Token {
 
 // User types
 export interface ViazUserDTO {
-  id?: number;
-  firstName?: string;
-  lastName?: string;
+  userId: number;
+  username: string;
   email: string;
-  role?: string;
-  password?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  roles: string[];
+}
+
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  PENDING = 'PENDING', 
 }
 
 export interface ViazUser {
   id?: number;
   email: string;
   password?: string;
+}
+
+export interface ViazUserDTO {
+  userId: number;
+  username: string;
+  email: string;
+  lastLoginDate?: string;
+  status: UserStatus;
+  roles: string[];
 }
 
 // Shipment file type
