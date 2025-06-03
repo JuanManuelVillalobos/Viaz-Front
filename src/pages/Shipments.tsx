@@ -6,9 +6,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
+import {
+  Table, TableBody, TableCell, TableHead,
+  TableHeader, TableRow
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -47,6 +47,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiShipmentService } from "@/services/api";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {ApiShipment} from "@/types/api.ts";
 
 type FilterOption = {
   status: string[];
@@ -65,7 +66,7 @@ const Shipments = () => {
     const savedColumns = localStorage.getItem("shipmentColumns");
     return savedColumns ? JSON.parse(savedColumns) : defaultShipmentColumns;
   });
-  
+
   const [newShipment, setNewShipment] = useState<Partial<Shipment>>({
     origin: "",
     destination: "",
@@ -87,34 +88,35 @@ const Shipments = () => {
     vacuumManoeuvre: "",
     portOfDischarge: "",
     eir: "",
-    observations: ""
+    observations: "",
+    files: 0
   });
-  
+
   // Save column visibility preferences when they change
   useEffect(() => {
     localStorage.setItem("shipmentColumns", JSON.stringify(columns));
   }, [columns]);
-  
+
   // Fetch shipments with React Query
   const { data: shipments = [], isLoading, error } = useQuery({
     queryKey: ['shipments'],
     queryFn: apiShipmentService.getAllShipments,
   });
-  
+
   // Toggle column visibility
   const toggleColumnVisibility = (columnId: string) => {
-    setColumns(prev => 
-      prev.map(col => 
+    setColumns(prev =>
+      prev.map(col =>
         col.id === columnId ? { ...col, visible: !col.visible } : col
       )
     );
   };
-  
+
   // Reset column visibility to defaults
   const resetColumns = () => {
     setColumns(defaultShipmentColumns);
   };
-  
+
   // Create shipment mutation
   const createShipmentMutation = useMutation({
     mutationFn: apiShipmentService.createShipment,
@@ -122,16 +124,16 @@ const Shipments = () => {
       // Invalidate and refetch shipments query
       queryClient.invalidateQueries({ queryKey: ['shipments'] });
       setNewShipmentOpen(false);
-      
+
       toast({
         title: "Shipment Created",
         description: `New shipment from ${newShipment.origin} to ${newShipment.destination} has been created.`,
       });
-      
+
       resetNewShipment();
     },
   });
-  
+
   // Reset new shipment form
   const resetNewShipment = () => {
     setNewShipment({
@@ -158,46 +160,46 @@ const Shipments = () => {
       observations: ""
     });
   };
-  
+
   // Delete shipment mutation
   const deleteShipmentMutation = useMutation({
     mutationFn: apiShipmentService.deleteShipment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipments'] });
-      
+
       toast({
         title: "Shipment Deleted",
         description: "The shipment has been successfully deleted.",
       });
     },
   });
-  
+
   // Extract unique carriers and statuses for filters
   const carriers = [...new Set(shipments.map(shipment => shipment.transportProvider || '').filter(Boolean))];
   const statuses = [...new Set(shipments.map(shipment => shipment.shipmentStatus || '').filter(Boolean))];
-  
+
   const handleFilterChange = (type: "status" | "carrier", value: string) => {
     setFilters(prev => {
       const newValues = prev[type].includes(value)
         ? prev[type].filter(v => v !== value)
         : [...prev[type], value];
-      
+
       return { ...prev, [type]: newValues };
     });
   };
-  
+
   const resetFilters = () => {
     setFilters({ status: [], carrier: [] });
   };
-  
-  const handleInputChange = (field: keyof Shipment, value: any) => {
+
+  const handleInputChange = (field: keyof Shipment, value: Shipment[keyof Shipment]) => {
     setNewShipment(prev => ({ ...prev, [field]: value }));
   };
-  
+
   const handleNewShipmentSubmit = () => {
     const requiredFields = ['origin', 'destination', 'client', 'transportProvider'];
     const missingFields = requiredFields.filter(field => !newShipment[field as keyof Shipment]);
-    
+
     if (missingFields.length > 0) {
       toast({
         title: "Validation Error",
@@ -206,35 +208,35 @@ const Shipments = () => {
       });
       return;
     }
-    
+
     // Create a new shipment with the API
-    createShipmentMutation.mutate(newShipment as any);
+    createShipmentMutation.mutate(newShipment as ApiShipment);
   };
-  
+
   const filteredShipments = shipments.filter(
     (shipment) => {
-      const matchesSearch = 
+      const matchesSearch =
         shipment.viazId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.destination?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = 
-        filters.status.length === 0 || 
+
+      const matchesStatus =
+        filters.status.length === 0 ||
         (shipment.shipmentStatus && filters.status.includes(shipment.shipmentStatus));
-      
-      const matchesCarrier = 
-        filters.carrier.length === 0 || 
+
+      const matchesCarrier =
+        filters.carrier.length === 0 ||
         (shipment.transportProvider && filters.carrier.includes(shipment.transportProvider));
-      
+
       return matchesSearch && matchesStatus && matchesCarrier;
     }
   );
-  
+
   const handleViewShipment = (id: string) => {
     navigate(`/shipments/${id}`);
   };
-  
+
   const handleDeleteShipment = (id: string) => {
     if (confirm("Are you sure you want to delete this shipment?")) {
       deleteShipmentMutation.mutate(id);
@@ -245,7 +247,7 @@ const Shipments = () => {
   const handleExportExcel = async () => {
     try {
       const blob = await apiShipmentService.exportShipmentsExcel(filteredShipments);
-      
+
       // Create a download link and trigger download
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -253,11 +255,11 @@ const Shipments = () => {
       link.setAttribute('download', `shipments-export-${new Date().toISOString().split('T')[0]}.xlsx`);
       document.body.appendChild(link);
       link.click();
-      
+
       // Clean up
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       toast({
         title: "Export Successful",
         description: "Shipments have been exported to Excel.",
@@ -305,7 +307,7 @@ const Shipments = () => {
         <h1 className="text-3xl font-bold tracking-tight">Shipments</h1>
         <p className="text-muted-foreground">Manage and track all your shipments</p>
       </div>
-      
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center">
@@ -349,13 +351,13 @@ const Shipments = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              
+
               {/* Filter Dialog */}
               <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
                     <ListFilter className="mr-2 h-4 w-4" />
-                    Filter {(filters.status.length > 0 || filters.carrier.length > 0) && 
+                    Filter {(filters.status.length > 0 || filters.carrier.length > 0) &&
                       <Badge className="ml-1 bg-primary px-1 text-[10px]">
                         {filters.status.length + filters.carrier.length}
                       </Badge>}
@@ -373,7 +375,7 @@ const Shipments = () => {
                       <Label>Status</Label>
                       <div className="flex flex-wrap gap-2">
                         {statuses.map((status) => (
-                          <Badge 
+                          <Badge
                             key={status}
                             variant={filters.status.includes(status) ? "default" : "outline"}
                             className="cursor-pointer"
@@ -388,7 +390,7 @@ const Shipments = () => {
                       <Label>Carrier</Label>
                       <div className="flex flex-wrap gap-2">
                         {carriers.map((carrier) => (
-                          <Badge 
+                          <Badge
                             key={carrier}
                             variant={filters.carrier.includes(carrier) ? "default" : "outline"}
                             className="cursor-pointer"
@@ -406,13 +408,13 @@ const Shipments = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              
+
               {/* Excel Export Button */}
               <Button variant="outline" size="sm" onClick={handleExportExcel}>
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                 Export Excel
               </Button>
-              
+
               {/* New Shipment Dialog */}
               <Dialog open={newShipmentOpen} onOpenChange={setNewShipmentOpen}>
                 <DialogTrigger asChild>
@@ -427,66 +429,66 @@ const Shipments = () => {
                   </DialogHeader>
                   <Tabs defaultValue="basic">
                     <TabsList className="grid grid-cols-3 mb-4">
-                      <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                      <TabsTrigger value="transport">Transportation</TabsTrigger>
-                      <TabsTrigger value="documents">Documents & Dates</TabsTrigger>
+                      <TabsTrigger value="basic">Información Básica</TabsTrigger>
+                      <TabsTrigger value="transport">Transporte</TabsTrigger>
+                      <TabsTrigger value="documents">Documentos & Fechas</TabsTrigger>
                     </TabsList>
-                    
+
                     {/* Basic Info Tab */}
                     <TabsContent value="basic" className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="origin">Origin*</Label>
-                          <Input 
-                            id="origin" 
+                          <Label htmlFor="origin">Origen*</Label>
+                          <Input
+                            id="origin"
                             value={newShipment.origin}
                             onChange={e => handleInputChange("origin", e.target.value)}
-                            placeholder="City, Country"
+                            placeholder="Ciudad, País"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="destination">Destination*</Label>
-                          <Input 
-                            id="destination" 
+                          <Label htmlFor="destination">Destino*</Label>
+                          <Input
+                            id="destination"
                             value={newShipment.destination}
                             onChange={e => handleInputChange("destination", e.target.value)}
-                            placeholder="City, Country"
+                            placeholder="Ciudad, País"
                           />
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
-                        <Label htmlFor="client">Client*</Label>
-                        <Input 
-                          id="client" 
+                        <Label htmlFor="client">Cliente*</Label>
+                        <Input
+                          id="client"
                           value={newShipment.client}
                           onChange={e => handleInputChange("client", e.target.value)}
-                          placeholder="Client Name"
+                          placeholder="Nombre del cliente"
                         />
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="customerServiceAgent">Customer Service Agent</Label>
-                          <Input 
-                            id="customerServiceAgent" 
+                          <Label htmlFor="customerServiceAgent">Customer Service</Label>
+                          <Input
+                            id="customerServiceAgent"
                             value={newShipment.customerServiceAgent}
                             onChange={e => handleInputChange("customerServiceAgent", e.target.value)}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="customsAgent">Customs Agent</Label>
-                          <Input 
-                            id="customsAgent" 
+                          <Label htmlFor="customsAgent">Agente Aduanal</Label>
+                          <Input
+                            id="customsAgent"
                             value={newShipment.customsAgent}
                             onChange={e => handleInputChange("customsAgent", e.target.value)}
                           />
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="typeOfService">Type of Service</Label>
+                          <Label htmlFor="typeOfService">Tipo de Servicio</Label>
                           <Select
                             value={newShipment.typeOfService}
                             onValueChange={value => handleInputChange("typeOfService", value)}
@@ -520,72 +522,72 @@ const Shipments = () => {
                         </div>
                       </div>
                     </TabsContent>
-                    
+
                     {/* Transportation Tab */}
                     <TabsContent value="transport" className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="transportProvider">Transport Provider*</Label>
-                          <Input 
-                            id="transportProvider" 
+                          <Input
+                            id="transportProvider"
                             value={newShipment.transportProvider}
                             onChange={e => handleInputChange("transportProvider", e.target.value)}
                           />
                         </div>
-                        
+
                         <div className="space-y-2">
                           <Label htmlFor="shipmentOperator">Shipment Operator</Label>
-                          <Input 
-                            id="shipmentOperator" 
+                          <Input
+                            id="shipmentOperator"
                             value={newShipment.shipmentOperator}
                             onChange={e => handleInputChange("shipmentOperator", e.target.value)}
                           />
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="shipmentTerminal">Shipment Terminal</Label>
-                          <Input 
-                            id="shipmentTerminal" 
+                          <Input
+                            id="shipmentTerminal"
                             value={newShipment.shipmentTerminal}
                             onChange={e => handleInputChange("shipmentTerminal", e.target.value)}
                           />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="vacuumManoeuvre">Vacuum Manoeuvre</Label>
-                          <Input 
-                            id="vacuumManoeuvre" 
+                          <Input
+                            id="vacuumManoeuvre"
                             value={newShipment.vacuumManoeuvre}
                             onChange={e => handleInputChange("vacuumManoeuvre", e.target.value)}
                           />
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="container">Container</Label>
-                          <Input 
-                            id="container" 
+                          <Input
+                            id="container"
                             value={newShipment.container}
                             onChange={e => handleInputChange("container", e.target.value)}
                           />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="containerType">Container Type</Label>
-                          <Input 
-                            id="containerType" 
+                          <Input
+                            id="containerType"
                             value={newShipment.containerType}
                             onChange={e => handleInputChange("containerType", e.target.value)}
                           />
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="containerDate">Container Date</Label>
-                          <Input 
-                            id="containerDate" 
+                          <Input
+                            id="containerDate"
                             type="datetime-local"
                             value={newShipment.containerDate}
                             onChange={e => handleInputChange("containerDate", e.target.value)}
@@ -593,124 +595,124 @@ const Shipments = () => {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="portOfDischarge">Port of Discharge</Label>
-                          <Input 
-                            id="portOfDischarge" 
+                          <Input
+                            id="portOfDischarge"
                             value={newShipment.portOfDischarge}
                             onChange={e => handleInputChange("portOfDischarge", e.target.value)}
                           />
                         </div>
                       </div>
                     </TabsContent>
-                    
+
                     {/* Documents & Dates Tab */}
                     <TabsContent value="documents" className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="portDepartureDate">Port Departure Date</Label>
-                          <Input 
-                            id="portDepartureDate" 
+                          <Input
+                            id="portDepartureDate"
                             type="date"
                             value={newShipment.portDepartureDate}
                             onChange={e => handleInputChange("portDepartureDate", e.target.value)}
                           />
                         </div>
-                        
+
                         <div className="space-y-2">
                           <Label htmlFor="portArrivalDate">Port Arrival Date</Label>
-                          <Input 
-                            id="portArrivalDate" 
+                          <Input
+                            id="portArrivalDate"
                             type="datetime-local"
                             value={newShipment.portArrivalDate}
                             onChange={e => handleInputChange("portArrivalDate", e.target.value)}
                           />
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="portUnloadDate">Port Unload Date</Label>
-                          <Input 
-                            id="portUnloadDate" 
+                          <Input
+                            id="portUnloadDate"
                             type="datetime-local"
                             value={newShipment.portUnloadDate}
                             onChange={e => handleInputChange("portUnloadDate", e.target.value)}
                           />
                         </div>
-                        
+
                         <div className="space-y-2">
                           <Label htmlFor="portOfDischargeDate">Port of Discharge Date</Label>
-                          <Input 
-                            id="portOfDischargeDate" 
+                          <Input
+                            id="portOfDischargeDate"
                             type="date"
                             value={newShipment.portOfDischargeDate}
                             onChange={e => handleInputChange("portOfDischargeDate", e.target.value)}
                           />
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="vacuumArrival">Vacuum Arrival</Label>
-                          <Input 
-                            id="vacuumArrival" 
+                          <Input
+                            id="vacuumArrival"
                             type="date"
                             value={newShipment.vacuumArrival}
                             onChange={e => handleInputChange("vacuumArrival", e.target.value)}
                           />
                         </div>
-                        
+
                         <div className="space-y-2">
                           <Label htmlFor="eir">EIR</Label>
-                          <Input 
-                            id="eir" 
+                          <Input
+                            id="eir"
                             value={newShipment.eir}
                             onChange={e => handleInputChange("eir", e.target.value)}
                           />
                         </div>
                       </div>
-                      
+
                       <fieldset className="border rounded-md p-4">
                         <legend className="text-sm font-medium px-2">Required Documents</legend>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id="ci" 
+                            <Checkbox
+                              id="ci"
                               checked={newShipment.ci}
                               onCheckedChange={checked => handleInputChange("ci", checked)}
                             />
                             <Label htmlFor="ci">CI</Label>
                           </div>
-                          
+
                           <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id="ccp" 
+                            <Checkbox
+                              id="ccp"
                               checked={newShipment.ccp}
                               onCheckedChange={checked => handleInputChange("ccp", checked)}
                             />
                             <Label htmlFor="ccp">CCP</Label>
                           </div>
-                          
+
                           <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id="taxFolio" 
+                            <Checkbox
+                              id="taxFolio"
                               checked={newShipment.taxFolio}
                               onCheckedChange={checked => handleInputChange("taxFolio", checked)}
                             />
                             <Label htmlFor="taxFolio">Tax Folio</Label>
                           </div>
-                          
+
                           <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id="loadManoeuvre" 
+                            <Checkbox
+                              id="loadManoeuvre"
                               checked={newShipment.loadManoeuvre}
                               onCheckedChange={checked => handleInputChange("loadManoeuvre", checked)}
                             />
                             <Label htmlFor="loadManoeuvre">Load Manoeuvre</Label>
                           </div>
-                          
+
                           <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id="pisVinculation" 
+                            <Checkbox
+                              id="pisVinculation"
                               checked={newShipment.pisVinculation}
                               onCheckedChange={checked => handleInputChange("pisVinculation", checked)}
                             />
@@ -718,11 +720,11 @@ const Shipments = () => {
                           </div>
                         </div>
                       </fieldset>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="observations">Observations</Label>
-                        <Textarea 
-                          id="observations" 
+                        <Textarea
+                          id="observations"
                           value={newShipment.observations}
                           onChange={e => handleInputChange("observations", e.target.value)}
                           placeholder="Add any additional notes here..."
@@ -731,10 +733,10 @@ const Shipments = () => {
                       </div>
                     </TabsContent>
                   </Tabs>
-                  
+
                   <DialogFooter>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => {
                         resetNewShipment();
                         setNewShipmentOpen(false);
@@ -742,7 +744,7 @@ const Shipments = () => {
                     >
                       Cancel
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleNewShipmentSubmit}
                       disabled={createShipmentMutation.isPending}
                     >
@@ -794,18 +796,18 @@ const Shipments = () => {
                                     </div>
                                   ) : key === "shipmentStatus" ? (
                                     <Badge className={getStatusColor(shipment[key] as string || "")}>
-                                      {(shipment[key] as string || "").charAt(0).toUpperCase() + 
+                                      {(shipment[key] as string || "").charAt(0).toUpperCase() +
                                        (shipment[key] as string || "").slice(1) || "N/A"}
                                     </Badge>
                                   ) : key === "files" ? (
-                                    shipment.files ? shipment.files.length : 0
+                                    shipment.files ? shipment.files : 0
                                   ) : (
-                                    shipment[key] || "N/A"
+                                    "N/A"
                                   )}
                                 </TableCell>
                               );
                             })}
-                          
+
                           {/* Actions column - always visible */}
                           <TableCell>
                             <DropdownMenu>
@@ -823,13 +825,13 @@ const Shipments = () => {
                                 <DropdownMenuItem>Track Shipment</DropdownMenuItem>
                                 <DropdownMenuItem>Update Status</DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   className="text-red-500"
                                   onClick={() => handleDeleteShipment(shipment.viazId)}
                                   disabled={deleteShipmentMutation.isPending}
                                 >
-                                  {deleteShipmentMutation.isPending && deleteShipmentMutation.variables === shipment.viazId 
-                                    ? "Deleting..." 
+                                  {deleteShipmentMutation.isPending && deleteShipmentMutation.variables === shipment.viazId
+                                    ? "Deleting..."
                                     : "Delete Shipment"
                                   }
                                 </DropdownMenuItem>
