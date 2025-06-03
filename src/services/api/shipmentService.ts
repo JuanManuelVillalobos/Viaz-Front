@@ -82,7 +82,7 @@ export const apiShipmentService = {
   
   // Delete document from a shipment
   deleteDocument: async (viazId: string, objectKey: string): Promise<void> => {
-    await apiClient.delete(`/api/shipment/${viazId}/delete-file/${encodeURIComponent(objectKey)}`);
+    await apiClient.delete(`/api/shipment/delete-object/${objectKey}`);
   },
   
   // Get document download URL - Updated to use the full objectKey directly

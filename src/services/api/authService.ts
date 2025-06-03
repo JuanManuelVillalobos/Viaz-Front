@@ -50,15 +50,4 @@ export const authService = {
       localStorage.removeItem('user');
     }
   },
-  
-  // Refresh the access token
-  refreshToken: async (): Promise<Token> => {
-    const response = await apiClient.post('/api/auth/refresh-token');
-    
-    if (response.data.accessToken) {
-      localStorage.setItem('accessToken', response.data.accessToken);
-    }
-    
-    return response.data;
-  }
 };

@@ -1,11 +1,11 @@
 // Get status colors
 export const getStatusColor = (status: string): string => {
   switch (status) {
-    case "delivered":
+    case "Entregado":
       return "bg-green-500";
     case "in-transit":
       return "bg-blue-500";
-    case "processing":
+    case "Ingresado":
       return "bg-yellow-500";
     case "delayed":
       return "bg-red-500";
