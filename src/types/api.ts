@@ -78,7 +78,7 @@ export interface ApiShipment {
   vacuumArrival?: string;
   eir?: string;
   observations?: string;
-  files?: ShipmentFile[];
+  files?: number;
   createdAt?: string;
   updatedAt?: string;
 }
