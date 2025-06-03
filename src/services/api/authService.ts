@@ -1,6 +1,5 @@
-
 import apiClient from './apiClient';
-import { LoginRequest, Token, ViazUserDTO, ViazUser } from '@/types/api';
+import { LoginRequest, Token, ViazUserDTO, ViazUser, UserStatus } from '@/types/api';
 
 export const authService = {
   // Login user
@@ -49,5 +48,23 @@ export const authService = {
       localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('user');
     }
+  },
+  
+  // Invite user - send registration data
+  inviteUser: async (userData: {
+    username: string;
+    email: string;
+    roles: string[];
+  }): Promise<ViazUserDTO> => {
+    const inviteData = {
+      username: userData.username,
+      email: userData.email,
+      lastLoginDate: null,
+      status: UserStatus.PENDING,
+      roles: userData.roles
+    };
+    
+    const response = await apiClient.post('/api/auth/register', inviteData);
+    return response.data;
   },
 };

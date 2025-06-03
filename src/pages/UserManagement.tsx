@@ -1,4 +1,3 @@
-
 import {useEffect, useState} from "react";
 import { UsersIcon, Search, MoreHorizontal, Mail, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,20 +35,20 @@ import {
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
-import {userService} from "@/services/api";
+import {userService, authService} from "@/services/api";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ViazUserDTO, UserStatus } from "@/types/api";
 import { format } from "date-fns";
-
-
 
 const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteUsername, setInviteUsername] = useState("");
   const [inviteRole, setInviteRole] = useState("");
   const [users, setUsers] = useState<ViazUserDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInviting, setIsInviting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<ViazUserDTO | null>(null);
   
@@ -103,16 +102,45 @@ const UserManagement = () => {
     }
   };
 
-  const handleInvite = () => {
-    console.log(inviteEmail, inviteRole);
-    if (inviteEmail && inviteRole) {
+  const handleInvite = async () => {
+    if (!inviteEmail || !inviteUsername || !inviteRole) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsInviting(true);
+    try {
+      await authService.inviteUser({
+        username: inviteUsername,
+        email: inviteEmail,
+        roles: [inviteRole]
+      });
+      
       toast({
         title: "Invitation Sent",
-        description: `An invitation has been sent to ${inviteEmail}`,
+        description: `User ${inviteUsername} has been invited successfully`,
       });
+      
       setInviteEmail("");
+      setInviteUsername("");
       setInviteRole("");
       setInviteDialogOpen(false);
+      
+      // Refresh the user list
+      fetchUsers();
+    } catch (error) {
+      console.error("Error inviting user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to invite user. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsInviting(false);
     }
   };
 
@@ -191,10 +219,19 @@ const UserManagement = () => {
                   <DialogHeader>
                     <DialogTitle>Invite New User</DialogTitle>
                     <DialogDescription>
-                      Send an invitation email to add a new team member.
+                      Send an invitation to add a new team member.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        placeholder="Enter username"
+                        value={inviteUsername}
+                        onChange={(e) => setInviteUsername(e.target.value)}
+                      />
+                    </div>
                     <div className="grid gap-2">
                       <Label htmlFor="email">Email</Label>
                       <Input
@@ -213,6 +250,8 @@ const UserManagement = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="ADMIN">Admin</SelectItem>
+                          <SelectItem value="MANAGER">Manager</SelectItem>
+                          <SelectItem value="OPERATOR">Operator</SelectItem>
                           <SelectItem value="USER">User</SelectItem>
                         </SelectContent>
                       </Select>
@@ -222,7 +261,9 @@ const UserManagement = () => {
                     <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleInvite}>Send Invitation</Button>
+                    <Button onClick={handleInvite} disabled={isInviting}>
+                      {isInviting ? "Sending..." : "Send Invitation"}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
