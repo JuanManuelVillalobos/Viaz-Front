@@ -3,7 +3,7 @@ import axios, { AxiosInstance } from 'axios';
 import { toast } from '@/hooks/use-toast';
 
 // Base API configuration
-const API_URL = 'http://localhost:8080';
+const API_URL = 'http://localhost:8080/';
 
 // Create axios instance with default config
 const apiClient: AxiosInstance = axios.create({
