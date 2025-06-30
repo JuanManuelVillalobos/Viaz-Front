@@ -40,7 +40,7 @@ apiClient.interceptors.response.use(
       
       try {
         // Call the refresh token endpoint (it will use the refresh token cookie)
-        const response = await axios.post(`${API_URL}/api/auth/refresh-token`, {}, {
+        const response = await axios.post(`${API_URL}api/auth/refresh-token`, {}, {
           withCredentials: true // Needed to include cookies
         });
         
