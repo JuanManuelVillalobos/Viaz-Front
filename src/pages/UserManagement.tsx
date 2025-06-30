@@ -36,7 +36,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
-import {userService} from "@/services/api";
+import {authService, userService} from "@/services/api";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ViazUserDTO, UserStatus } from "@/types/api";
 import { format } from "date-fns";
@@ -103,16 +103,39 @@ const UserManagement = () => {
     }
   };
 
-  const handleInvite = () => {
-    console.log(inviteEmail, inviteRole);
+  const handleInvite = async () => {
     if (inviteEmail && inviteRole) {
-      toast({
-        title: "Invitation Sent",
-        description: `An invitation has been sent to ${inviteEmail}`,
-      });
-      setInviteEmail("");
-      setInviteRole("");
-      setInviteDialogOpen(false);
+      try {
+        const userData: ViazUserDTO = {
+          userId: 0, // This will be assigned by the server
+          username: inviteEmail.split('@')[0], // Default username from email
+          email: inviteEmail,
+          roles: [inviteRole],
+          status: UserStatus.PENDING
+        };
+
+        await authService.register(userData);
+
+        toast({
+          title: "Invitation Sent",
+          description: `An invitation has been sent to ${inviteEmail}`,
+        });
+
+        // Refresh user list after inviting a new user
+        fetchUsers();
+
+        // Reset form and close dialog
+        setInviteEmail("");
+        setInviteRole("");
+        setInviteDialogOpen(false);
+      } catch (error) {
+        console.error("Error sending invitation:", error);
+        toast({
+          title: "Error",
+          description: "Failed to send invitation. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
