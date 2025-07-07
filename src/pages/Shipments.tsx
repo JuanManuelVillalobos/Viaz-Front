@@ -114,9 +114,9 @@ const Shipments = () => {
 
     // Reset column visibility to defaults
     // Reset column visibility to defaults
-  const resetColumns = () => {
-      setColumns(defaultShipmentColumns);
-  };
+    const resetColumns = () => {
+        setColumns(defaultShipmentColumns);
+    };
 
 
     // Create a shipment mutation
@@ -424,9 +424,9 @@ const Shipments = () => {
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-auto">
                                     <DialogHeader>
-                                        <DialogTitle>Create New Shipment</DialogTitle>
+                                        <DialogTitle>Crear nuevo embarque</DialogTitle>
                                         <DialogDescription>
-                                            Fill in the details to create a new shipment
+                                            Llena la información para crear un nuevo embarque.
                                         </DialogDescription>
                                     </DialogHeader>
                                     <Tabs defaultValue="basic">
@@ -471,6 +471,7 @@ const Shipments = () => {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
+                                                    {/*TODO Make the Cusotmer servide be based upon the cusotmer service table from backend*/}
                                                     <Label htmlFor="customerServiceAgent">Customer Service</Label>
                                                     <Input
                                                         id="customerServiceAgent"
@@ -496,17 +497,16 @@ const Shipments = () => {
                                                         onValueChange={value => handleInputChange("typeOfService", value)}
                                                     >
                                                         <SelectTrigger id="typeOfService">
-                                                            <SelectValue placeholder="Select type"/>
+                                                            <SelectValue placeholder="Selecciona tipo de servicio"/>
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="standard">Standard</SelectItem>
-                                                            <SelectItem value="express">Express</SelectItem>
-                                                            <SelectItem value="priority">Priority</SelectItem>
+                                                            <SelectItem value="full">Full</SelectItem>
+                                                            <SelectItem value="sencillo">Sencillo</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="shipmentStatus">Status</Label>
+                                                    <Label htmlFor="shipmentStatus">Estatus</Label>
                                                     <Select
                                                         value={newShipment.shipmentStatus}
                                                         onValueChange={value => handleInputChange("shipmentStatus", value)}
@@ -515,10 +515,124 @@ const Shipments = () => {
                                                             <SelectValue placeholder="Select status"/>
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="processing">Processing</SelectItem>
-                                                            <SelectItem value="in-transit">In Transit</SelectItem>
-                                                            <SelectItem value="delivered">Delivered</SelectItem>
-                                                            <SelectItem value="delayed">Delayed</SelectItem>
+                                                            <SelectItem value="pending_information">Información
+                                                                Pendiente</SelectItem>
+                                                            <SelectItem value="pending_folio">Folio
+                                                                Pendiente</SelectItem>
+                                                            <SelectItem value="pending_manouvres">Maniobras
+                                                                Pendiente</SelectItem>
+                                                            <SelectItem value="everything_Ok">Todo Ok</SelectItem>
+                                                            <SelectItem value="in_port">En Puerto</SelectItem>
+                                                            <SelectItem value="in_transit">En Transito</SelectItem>
+                                                            <SelectItem value="in_destination">En Destino</SelectItem>
+                                                            <SelectItem value="pending_POD">POD Pendiente</SelectItem>
+                                                            <SelectItem value="pending_vacuum_manouvre">Maniobra de
+                                                                Vacío
+                                                                Pendiente</SelectItem>
+                                                            <SelectItem value="recieved">Ingresado</SelectItem>
+                                                            <SelectItem value="released">Egresado</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
+                                        </TabsContent>
+
+                                        {/*Container Tab*/}
+
+                                        <TabsContent value="container" className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="origin">Origen*</Label>
+                                                    <Input
+                                                        id="origin"
+                                                        value={newShipment.origin}
+                                                        onChange={e => handleInputChange("origin", e.target.value)}
+                                                        placeholder="Ciudad, País"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="destination">Destino*</Label>
+                                                    <Input
+                                                        id="destination"
+                                                        value={newShipment.destination}
+                                                        onChange={e => handleInputChange("destination", e.target.value)}
+                                                        placeholder="Ciudad, País"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="client">Cliente*</Label>
+                                                <Input
+                                                    id="client"
+                                                    value={newShipment.client}
+                                                    onChange={e => handleInputChange("client", e.target.value)}
+                                                    placeholder="Nombre del cliente"
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    {/*TODO Make the Cusotmer servide be based upon the cusotmer service table from backend*/}
+                                                    <Label htmlFor="customerServiceAgent">Customer Service</Label>
+                                                    <Input
+                                                        id="customerServiceAgent"
+                                                        value={newShipment.customerServiceAgent}
+                                                        onChange={e => handleInputChange("customerServiceAgent", e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="customsAgent">Agente Aduanal</Label>
+                                                    <Input
+                                                        id="customsAgent"
+                                                        value={newShipment.customsAgent}
+                                                        onChange={e => handleInputChange("customsAgent", e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="typeOfService">Tipo de Servicio</Label>
+                                                    <Select
+                                                        value={newShipment.typeOfService}
+                                                        onValueChange={value => handleInputChange("typeOfService", value)}
+                                                    >
+                                                        <SelectTrigger id="typeOfService">
+                                                            <SelectValue placeholder="Selecciona tipo de servicio"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="full">Full</SelectItem>
+                                                            <SelectItem value="sencillo">Sencillo</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="shipmentStatus">Estatus</Label>
+                                                    <Select
+                                                        value={newShipment.shipmentStatus}
+                                                        onValueChange={value => handleInputChange("shipmentStatus", value)}
+                                                    >
+                                                        <SelectTrigger id="shipmentStatus">
+                                                            <SelectValue placeholder="Select status"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="pending_information">Información
+                                                                Pendiente</SelectItem>
+                                                            <SelectItem value="pending_folio">Folio
+                                                                Pendiente</SelectItem>
+                                                            <SelectItem value="pending_manouvres">Maniobras
+                                                                Pendiente</SelectItem>
+                                                            <SelectItem value="everything_Ok">Todo Ok</SelectItem>
+                                                            <SelectItem value="in_port">En Puerto</SelectItem>
+                                                            <SelectItem value="in_transit">En Transito</SelectItem>
+                                                            <SelectItem value="in_destination">En Destino</SelectItem>
+                                                            <SelectItem value="pending_POD">POD Pendiente</SelectItem>
+                                                            <SelectItem value="pending_vacuum_manouvre">Maniobra de
+                                                                Vacío
+                                                                Pendiente</SelectItem>
+                                                            <SelectItem value="recieved">Ingresado</SelectItem>
+                                                            <SelectItem value="released">Egresado</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
@@ -529,7 +643,7 @@ const Shipments = () => {
                                         <TabsContent value="transport" className="space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="transportProvider">Transport Provider*</Label>
+                                                    <Label htmlFor="transportProvider">Transporte*</Label>
                                                     <Input
                                                         id="transportProvider"
                                                         value={newShipment.transportProvider}
@@ -538,7 +652,7 @@ const Shipments = () => {
                                                 </div>
 
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="shipmentOperator">Shipment Operator</Label>
+                                                    <Label htmlFor="shipmentOperator">Operador o Referencia</Label>
                                                     <Input
                                                         id="shipmentOperator"
                                                         value={newShipment.shipmentOperator}
@@ -549,7 +663,7 @@ const Shipments = () => {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="shipmentTerminal">Shipment Terminal</Label>
+                                                    <Label htmlFor="shipmentTerminal">Terminal</Label>
                                                     <Input
                                                         id="shipmentTerminal"
                                                         value={newShipment.shipmentTerminal}
@@ -557,18 +671,25 @@ const Shipments = () => {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="vacuumManoeuvre">Vacuum Manoeuvre</Label>
-                                                    <Input
-                                                        id="vacuumManoeuvre"
+                                                    <Label htmlFor="vacuumManoeuvre">Maniobra de Vacío</Label>
+                                                    <Select
                                                         value={newShipment.vacuumManoeuvre}
-                                                        onChange={e => handleInputChange("vacuumManoeuvre", e.target.value)}
-                                                    />
+                                                        onValueChange={value => handleInputChange("shipmentStatus", value)}
+                                                    >
+                                                        <SelectTrigger id="vacuumManoeuvre">
+                                                            <SelectValue placeholder="Select status"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="solicited">Solicitada</SelectItem>
+                                                            <SelectItem value="sent">Enviada</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="container">Container</Label>
+                                                    <Label htmlFor="container">Contenedor</Label>
                                                     <Input
                                                         id="container"
                                                         value={newShipment.container}
@@ -576,18 +697,35 @@ const Shipments = () => {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="containerType">Container Type</Label>
-                                                    <Input
-                                                        id="containerType"
+                                                    <Label htmlFor="containerType">Tipo de Contenedor</Label>
+                                                    <Select
                                                         value={newShipment.containerType}
-                                                        onChange={e => handleInputChange("containerType", e.target.value)}
-                                                    />
+                                                        onValueChange={value => handleInputChange("containerType", value)}
+                                                    >
+                                                        <SelectTrigger id="containerType">
+                                                            <SelectValue
+                                                                placeholder="Selecciona el tipo de contenedor"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="20_IMO">40 HC</SelectItem>
+                                                            <SelectItem value="20_IMO">20 HC</SelectItem>
+                                                            <SelectItem value="20_IMO">40 IMO</SelectItem>
+                                                            <SelectItem value="20_IMO">20 IMO</SelectItem>
+                                                            <SelectItem value="20_IMO">40 DC</SelectItem>
+                                                            <SelectItem value="20_IMO">20 DC</SelectItem>
+                                                            <SelectItem value="20_IMO">Caja 53</SelectItem>
+                                                            <SelectItem value="20_IMO">NISSAN</SelectItem>
+                                                            <SelectItem value="20_IMO">PLATAFORMA</SelectItem>
+                                                            <SelectItem value="20_IMO">CAMA BAJA</SelectItem>
+                                                            <SelectItem value="20_IMO">RABON</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="containerDate">Container Date</Label>
+                                                    <Label htmlFor="containerDate">Fecha Contenedor</Label>
                                                     <Input
                                                         id="containerDate"
                                                         type="datetime-local"
@@ -596,12 +734,20 @@ const Shipments = () => {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="portOfDischarge">Port of Discharge</Label>
-                                                    <Input
-                                                        id="portOfDischarge"
+                                                    <Label htmlFor="portOfDischarge">POD</Label>
+                                                    <Select
                                                         value={newShipment.portOfDischarge}
-                                                        onChange={e => handleInputChange("portOfDischarge", e.target.value)}
-                                                    />
+                                                        onValueChange={value => handleInputChange("containerType", value)}
+                                                    >
+                                                        <SelectTrigger id="portOfDischarge">
+                                                            <SelectValue
+                                                                placeholder="Selecciona el estatus del POD"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="pending">Pendiente</SelectItem>
+                                                            <SelectItem value="sent">Enviado</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
                                                 </div>
                                             </div>
                                         </TabsContent>
@@ -610,7 +756,7 @@ const Shipments = () => {
                                         <TabsContent value="documents" className="space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="portDepartureDate">Port Departure Date</Label>
+                                                    <Label htmlFor="portDepartureDate">Fecha Salida de Puerto</Label>
                                                     <Input
                                                         id="portDepartureDate"
                                                         type="date"
@@ -620,7 +766,7 @@ const Shipments = () => {
                                                 </div>
 
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="portArrivalDate">Port Arrival Date</Label>
+                                                    <Label htmlFor="portArrivalDate">Fecha Llegada a Puerto</Label>
                                                     <Input
                                                         id="portArrivalDate"
                                                         type="datetime-local"
@@ -632,7 +778,7 @@ const Shipments = () => {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="portUnloadDate">Port Unload Date</Label>
+                                                    <Label htmlFor="portUnloadDate">Fecha Descarga</Label>
                                                     <Input
                                                         id="portUnloadDate"
                                                         type="datetime-local"
@@ -642,7 +788,7 @@ const Shipments = () => {
                                                 </div>
 
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="portOfDischargeDate">Port of Discharge Date</Label>
+                                                    <Label htmlFor="portOfDischargeDate">Fecha POD</Label>
                                                     <Input
                                                         id="portOfDischargeDate"
                                                         type="date"
@@ -654,7 +800,7 @@ const Shipments = () => {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="vacuumArrival">Vacuum Arrival</Label>
+                                                    <Label htmlFor="vacuumArrival">Entrega de vacío</Label>
                                                     <Input
                                                         id="vacuumArrival"
                                                         type="date"
@@ -665,16 +811,24 @@ const Shipments = () => {
 
                                                 <div className="space-y-2">
                                                     <Label htmlFor="eir">EIR</Label>
-                                                    <Input
-                                                        id="eir"
+                                                    <Select
                                                         value={newShipment.eir}
-                                                        onChange={e => handleInputChange("eir", e.target.value)}
-                                                    />
+                                                        onValueChange={value => handleInputChange("eir", value)}
+                                                    >
+                                                        <SelectTrigger id="eir">
+                                                            <SelectValue
+                                                                placeholder="Selecciona el EIR"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="pending">No dieron</SelectItem>
+                                                            <SelectItem value="sent">Enviado</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
                                                 </div>
                                             </div>
 
                                             <fieldset className="border rounded-md p-4">
-                                                <legend className="text-sm font-medium px-2">Required Documents</legend>
+                                                <legend className="text-sm font-medium px-2">Documentos</legend>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="flex items-center space-x-2">
                                                         <Checkbox
@@ -700,7 +854,7 @@ const Shipments = () => {
                                                             checked={newShipment.taxFolio}
                                                             onCheckedChange={checked => handleInputChange("taxFolio", checked)}
                                                         />
-                                                        <Label htmlFor="taxFolio">Tax Folio</Label>
+                                                        <Label htmlFor="taxFolio">Folio Fiscal</Label>
                                                     </div>
 
                                                     <div className="flex items-center space-x-2">
@@ -709,7 +863,7 @@ const Shipments = () => {
                                                             checked={newShipment.loadManoeuvre}
                                                             onCheckedChange={checked => handleInputChange("loadManoeuvre", checked)}
                                                         />
-                                                        <Label htmlFor="loadManoeuvre">Load Manoeuvre</Label>
+                                                        <Label htmlFor="loadManoeuvre">Maniobra de Carga</Label>
                                                     </div>
 
                                                     <div className="flex items-center space-x-2">
@@ -718,7 +872,7 @@ const Shipments = () => {
                                                             checked={newShipment.pisVinculation}
                                                             onCheckedChange={checked => handleInputChange("pisVinculation", checked)}
                                                         />
-                                                        <Label htmlFor="pisVinculation">PIS Vinculation</Label>
+                                                        <Label htmlFor="pisVinculation">Vinculacion PIS</Label>
                                                     </div>
                                                 </div>
                                             </fieldset>
