@@ -39,7 +39,7 @@ apiClient.interceptors.response.use(
 
             try {
                 if (localStorage.getItem('accessToken') == null) {
-
+                    return Promise.reject(error);
                 }
                 // Call the refresh token endpoint (it will use the refresh token cookie)
                 const response = await axios.post(`${API_URL}api/auth/refresh-token`, {}, {
