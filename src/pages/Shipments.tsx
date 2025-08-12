@@ -468,7 +468,6 @@ const Shipments = () => {
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="t_m">T/M</Label>
-                                            {/*TODO CHECAR QUE ES T/M PARA SABER COMO FUNCIONA TODO*/}
                                             <Select
                                                 value={newShipment.typeOfService}
                                                 onValueChange={value => handleInputChange("typeOfService", value)}
@@ -477,8 +476,8 @@ const Shipments = () => {
                                                     <SelectValue placeholder="Selecciona tipo de servicio"/>
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="t">T</SelectItem>
-                                                    <SelectItem value="m">M</SelectItem>
+                                                    <SelectItem value="terreste">Terrestre</SelectItem>
+                                                    <SelectItem value="maritimo">Marítimo</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
