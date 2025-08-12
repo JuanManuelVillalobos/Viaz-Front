@@ -3,7 +3,7 @@ import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Package, PackageCheck, TruckIcon, UserPlus, 
-  AlertCircle, Anchor, Ship, Map 
+  AlertCircle, Anchor, Ship
 } from "lucide-react";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, 
@@ -38,27 +38,27 @@ const Index = () => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard 
-          title="Total Shipments" 
+          title="Embarques"
           value="1,248" 
           icon={Package}
-          description="Total shipments this month" 
+          description="Embarques este mes"
           trend={{ value: "12%", positive: true }}
         />
         <StatCard 
-          title="Delivered" 
+          title="Entregados"
           value="1,043" 
           icon={PackageCheck}
           description="Successfully delivered" 
           trend={{ value: "8%", positive: true }}
         />
         <StatCard 
-          title="In Transit" 
+          title="En transito"
           value="205" 
           icon={TruckIcon}
           description="Currently in transit" 
         />
         <StatCard 
-          title="New Users" 
+          title="Vacíos"
           value="24" 
           icon={UserPlus}
           description="New users this month" 
@@ -69,7 +69,7 @@ const Index = () => {
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Shipments Overview</CardTitle>
+            <CardTitle>Calificación de Transportistas</CardTitle>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">

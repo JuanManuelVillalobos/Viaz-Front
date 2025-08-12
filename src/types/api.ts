@@ -1,114 +1,81 @@
-
 // Authentication types
 export interface LoginRequest {
-  email: string;
-  password: string;
+    email: string;
+    password: string;
 }
 
 export interface Token {
-  accessToken: string;
-  refreshToken?: string;
+    accessToken: string;
+    refreshToken?: string;
 }
 
 // User types
 export interface ViazUserDTO {
-  userId: number;
-  username: string;
-  email: string;
-  roles: string[];
+    userId: number;
+    username: string;
+    email: string;
+    roles: string[];
 }
 
 export enum UserStatus {
-  ACTIVE = 'ACTIVE',
-  PENDING = 'PENDING', 
+    ACTIVE = 'ACTIVE',
+    PENDING = 'PENDING',
 }
 
 export interface ViazUser {
-  id?: number;
-  email: string;
-  password?: string;
+    id?: number;
+    email: string;
+    password?: string;
 }
 
 export interface ViazUserDTO {
-  userId: number;
-  username: string;
-  email: string;
-  lastLoginDate?: string;
-  status: UserStatus;
-  roles: string[];
+    userId: number;
+    username: string;
+    email: string;
+    lastLoginDate?: string;
+    status: UserStatus;
+    roles: string[];
 }
 
 // Shipment file type
 export interface ShipmentFile {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  uploadDate: string;
-  position?: number; // Added for drag and drop ordering
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    uploadDate: string;
+    position?: number; // Added for drag and drop ordering
 }
 
-// Shipment types from our backend
-export interface ApiShipment {
-  viazId: string;
-  typeOfService?: string;
-  customerServiceAgent?: string;
-  client?: string;
-  origin?: string;
-  customsAgent?: string;
-  destination?: string;
-  shipmentStatus?: string;
-  container?: string;
-  containerType?: string;
-  containerDate?: string;
-  transportProvider?: string;
-  shipmentOperator?: string;
-  shipmentTerminal?: string;
-  ci?: boolean;
-  ccp?: boolean;
-  taxFolio?: boolean;
-  loadManoeuvre?: boolean;
-  pisVinculation?: boolean;
-  portDepartureDate?: string;
-  portArrivalDate?: string;
-  portUnloadDate?: string;
-  vacuumManoeuvre?: string;
-  portOfDischarge?: string;
-  portOfDischargeDate?: string;
-  vacuumArrival?: string;
-  eir?: string;
-  observations?: string;
-  files?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
 
 export interface ShipmentUpdateRequest {
-  typeOfService?: string;
-  customerServiceAgent?: string;
-  client?: string;
-  origin?: string;
-  customsAgent?: string;
-  destination?: string;
-  shipmentStatus?: string;
-  container?: string;
-  containerType?: string;
-  containerDate?: string;
-  transportProvider?: string;
-  shipmentOperator?: string;
-  shipmentTerminal?: string;
-  ci?: boolean;
-  ccp?: boolean;
-  taxFolio?: boolean;
-  loadManoeuvre?: boolean;
-  pisVinculation?: boolean;
-  portDepartureDate?: string;
-  portArrivalDate?: string;
-  portUnloadDate?: string;
-  vacuumManoeuvre?: string;
-  portOfDischarge?: string;
-  portOfDischargeDate?: string;
-  vacuumArrival?: string;
-  eir?: string;
-  observations?: string;
+    transportMethod?: string;
+    customerServiceAgent?: string;
+    typeOfService?: string;
+    client?: string;
+    origin?: string;
+    customsAgent?: string;
+    destination?: string;
+    status?: string;
+    container?: string;
+    containerType?: string;
+    shipmentDate?: string;
+    transport?: string;
+    operator?: string;
+    terminal?: string;
+    ci?: boolean;
+    ccp?: boolean;
+    taxFolio?: boolean;
+    loadManoeuvre?: boolean;
+    pisVinculation?: boolean;
+    departureDate?: string;
+    arrivalDate?: string;
+    unloadDate?: string;
+    cleaningOrder?: string;
+    pod?: string;
+    cleaningPatio?: string;
+    cleaningDate?: string;
+    cleanArrivalDate?: string;
+    eir?: string;
+    observations?: string;
 }

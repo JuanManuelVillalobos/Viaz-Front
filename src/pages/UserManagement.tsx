@@ -35,7 +35,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
-import {userService, authService} from "@/services/api";
+import {authService, userService} from "@/services/api";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ViazUserDTO, UserStatus } from "@/types/api";
 import { format } from "date-fns";
@@ -103,44 +103,38 @@ const UserManagement = () => {
   };
 
   const handleInvite = async () => {
-    if (!inviteEmail || !inviteUsername || !inviteRole) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (inviteEmail && inviteRole) {
+      try {
+        const userData: ViazUserDTO = {
+          userId: 0, // This will be assigned by the server
+          username: inviteEmail.split('@')[0], // Default username from email
+          email: inviteEmail,
+          roles: [inviteRole],
+          status: UserStatus.PENDING
+        };
 
-    setIsInviting(true);
-    try {
-      await authService.inviteUser({
-        username: inviteUsername,
-        email: inviteEmail,
-        roles: [inviteRole]
-      });
-      
-      toast({
-        title: "Invitation Sent",
-        description: `User ${inviteUsername} has been invited successfully`,
-      });
-      
-      setInviteEmail("");
-      setInviteUsername("");
-      setInviteRole("");
-      setInviteDialogOpen(false);
-      
-      // Refresh the user list
-      fetchUsers();
-    } catch (error) {
-      console.error("Error inviting user:", error);
-      toast({
-        title: "Error",
-        description: "Failed to invite user. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsInviting(false);
+        await authService.register(userData);
+
+        toast({
+          title: "Invitation Sent",
+          description: `An invitation has been sent to ${inviteEmail}`,
+        });
+
+        // Refresh user list after inviting a new user
+        fetchUsers();
+
+        // Reset form and close dialog
+        setInviteEmail("");
+        setInviteRole("");
+        setInviteDialogOpen(false);
+      } catch (error) {
+        console.error("Error sending invitation:", error);
+        toast({
+          title: "Error",
+          description: "Failed to send invitation. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
