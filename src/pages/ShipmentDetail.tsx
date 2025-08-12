@@ -15,7 +15,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ApiShipment, ShipmentFile } from "@/types/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiShipmentService } from "@/services/api/shipmentService";
 import { getStatusColor } from "@/services/shipmentService";
@@ -23,13 +22,14 @@ import { getStatusColor } from "@/services/shipmentService";
 import { ShipmentDetailForm } from "@/components/shipment/ShipmentDetailForm";
 import { ShipmentFilesCard } from "@/components/shipment/ShipmentFilesCard";
 import { DocumentViewer } from "@/components/shipment/DocumentViewer";
+import { Shipment } from "@/types/shipment";
 
 const ShipmentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedShipment, setEditedShipment] = useState<ApiShipment | null>(null);
+  const [editedShipment, setEditedShipment] = useState<Shipment | null>(null);
   const [draggedFile, setDraggedFile] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [fileToDelete, setFileToDelete] = useState<string | null>(null);
@@ -49,7 +49,7 @@ const ShipmentDetail = () => {
 
   // Update shipment mutation
   const updateShipmentMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: string, updates: Partial<ApiShipment> }) => 
+    mutationFn: ({ id, updates }: { id: string, updates: Partial<Shipment> }) =>
       apiShipmentService.updateShipment(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipment', id] });
@@ -149,7 +149,7 @@ const ShipmentDetail = () => {
     }
   };
   
-  const handleInputChange = (field: keyof ApiShipment, value: any) => {
+  const handleInputChange = (field: keyof Shipment, value: string|boolean|number) => {
     if (editedShipment) {
       setEditedShipment({ ...editedShipment, [field]: value });
     }
