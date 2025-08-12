@@ -1,9 +1,8 @@
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Package, ArrowLeft, Edit, Save, X } from "lucide-react";
+import { ArrowLeft, Edit, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
