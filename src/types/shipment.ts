@@ -1,30 +1,32 @@
 export interface Shipment {
     viazId: string;
-    typeOfService?: string;
+    transportMethod?: string;
     customerServiceAgent?: string;
+    typeOfService?: string;
     client?: string;
     origin?: string;
     customsAgent?: string;
     destination?: string;
-    shipmentStatus?: string;
+    status?: string;
     container?: string;
     containerType?: string;
-    containerDate?: string;
-    transportProvider?: string;
-    shipmentOperator?: string;
-    shipmentTerminal?: string;
+    shipmentDate?: string;
+    transport?: string;
+    operator?: string;
+    terminal?: string;
     ci?: boolean;
     ccp?: boolean;
     taxFolio?: boolean;
     loadManoeuvre?: boolean;
     pisVinculation?: boolean;
-    portDepartureDate?: string;
-    portArrivalDate?: string;
-    portUnloadDate?: string;
-    vacuumManoeuvre?: string;
-    portOfDischarge?: string;
-    portOfDischargeDate?: string;
-    vacuumArrival?: string;
+    departureDate?: string;
+    arrivalDate?: string;
+    unloadDate?: string;
+    cleaningOrder?: string;
+    pod?: string;
+    cleaningPatio?: string;
+    cleaningDate?: string;
+    cleanArrivalDate?: string;
     eir?: string;
     observations?: string;
     files?: number;
@@ -42,7 +44,7 @@ export const defaultShipmentColumns: TableColumn[] = [
     {id: "origin", label: "Origin", visible: true},
     {id: "destination", label: "Destination", visible: true},
     {id: "client", label: "Client", visible: true},
-    {id: "transportProvider", label: "Transport Provider", visible: true},
-    {id: "shipmentStatus", label: "Status", visible: true},
+    {id: "transport", label: "Transport Provider", visible: true},
+    {id: "status", label: "Status", visible: true},
     {id: "files", label: "Files", visible: true},
 ];
