@@ -3,7 +3,7 @@ import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Package, PackageCheck, TruckIcon, UserPlus, 
-  AlertCircle, Anchor, Ship, Map 
+  AlertCircle, Anchor, Ship
 } from "lucide-react";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, 
