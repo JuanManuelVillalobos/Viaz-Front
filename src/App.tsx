@@ -1,10 +1,9 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import {Toaster} from "@/components/ui/toaster";
+import {Toaster as Sonner} from "@/components/ui/sonner";
+import {TooltipProvider} from "@/components/ui/tooltip";
+import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import {BrowserRouter, Routes, Route, Navigate} from "react-router-dom";
+import {useEffect, useState} from "react";
 import Index from "./pages/Index";
 import Shipments from "./pages/Shipments";
 import ShipmentDetail from "./pages/ShipmentDetail";
@@ -15,81 +14,78 @@ import NotFound from "./pages/NotFound";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import {authService} from "@/services/api";
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
+    defaultOptions: {
+        queries: {
+            retry: 1,
+            refetchOnWindowFocus: false,
+        },
     },
-  },
 });
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isLoggedIn = localStorage.getItem('isLoggedIn');
+const ProtectedRoute = ({children}: { children: React.ReactNode }) => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-  if (!isLoggedIn) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
+    useEffect(() => {
+        const checkAuthStatus = async () => {
+            try {
+                const response = await authService.ping();
+                setIsAuthenticated(response === "pong");
+            } catch (error) {
+                console.error("Authentication check failed:", error);
+                setIsAuthenticated(false);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        checkAuthStatus();
+    }, []); // Empty dependency array means this runs once on mount
+
+    if (loading) {
+        // You can return a loading spinner or null here
+        return null;
+    }
+
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace/>;
+    }
+
+    return <>{children}</>;
 };
 
-const App = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  
-  useEffect(() => {
-    // Check if token exists and is valid
-    const checkAuth = async () => {
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        try {
-          // You could add a token validation check here
-          // For now, we just trust localStorage
-          localStorage.setItem('isLoggedIn', 'true');
-        } catch (error) {
-          console.error('Token validation error:', error);
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('isLoggedIn');
-        }
-      }
-      setIsLoaded(true);
-    };
-    
-    checkAuth();
-  }, []);
 
-  if (!isLoaded) {
-    return null;
-  }
-  
-  return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<Index />} />
-              <Route path="shipments" element={<Shipments />} />
-              <Route path="shipments/:id" element={<ShipmentDetail />} />
-              <Route path="users" element={<UserManagement />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  );
+const App = () => {
+    return (
+        <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+                <TooltipProvider>
+                    <Toaster/>
+                    <Sonner/>
+                    <Routes>
+                        <Route path="/login" element={<Login/>}/>
+                        <Route path="/forgot-password" element={<ForgotPassword/>}/>
+                        <Route path="/" element={
+                            <ProtectedRoute>
+                                <DashboardLayout/>
+                            </ProtectedRoute>
+                        }>
+                            <Route index element={<Index/>}/>
+                            <Route path="shipments" element={<Shipments/>}/>
+                            <Route path="shipments/:id" element={<ShipmentDetail/>}/>
+                            <Route path="users" element={<UserManagement/>}/>
+                            <Route path="profile" element={<Profile/>}/>
+                            <Route path="settings" element={<Settings/>}/>
+                        </Route>
+                        <Route path="*" element={<NotFound/>}/>
+                    </Routes>
+                </TooltipProvider>
+            </BrowserRouter>
+        </QueryClientProvider>
+    );
 };
 
 export default App;
