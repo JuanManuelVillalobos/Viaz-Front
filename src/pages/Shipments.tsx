@@ -723,6 +723,19 @@ const Shipments = () => {
                                                 value={newShipment.transport}
                                                 onChange={e => handleInputChange("transport", e.target.value)}
                                             />
+                                            <Select
+                                                value={newShipment.pod}
+                                                onValueChange={value => handleInputChange("containerType", value)}
+                                            >
+                                                <SelectTrigger id="portOfDischarge">
+                                                    <SelectValue
+                                                        placeholder="Selecciona el estatus del POD"/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="pending">Pendiente</SelectItem>
+                                                    <SelectItem value="sent">Enviado</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
 
                                         <div className="space-y-2">
@@ -815,7 +828,6 @@ const Shipments = () => {
                                         </div>
                                     </div>
 
-
                                     <fieldset className="border rounded-md p-4">
                                         <legend className="text-sm font-medium px-2">Documentos</legend>
                                         <div className="grid grid-cols-2 gap-4">
@@ -901,7 +913,7 @@ const Shipments = () => {
                                             <Label htmlFor="cleaningDate">Fecha de Vacío</Label>
                                             <Input
                                                 id="cleaningDate"
-                                                type="date"
+                                                type="datetime-local"
                                                 value={newShipment.cleaningDate}
                                                 onChange={e => handleInputChange("cleaningDate", e.target.value)}
                                             />
