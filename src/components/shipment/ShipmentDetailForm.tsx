@@ -292,7 +292,7 @@ export const ShipmentDetailForm = ({
                   <Label htmlFor="cleaningDate">Fecha de Vacío</Label>
                   <Input
                     id="cleaningDate"
-                    type="date"
+                    type="datetime-local"
                     value={editedShipment.cleaningDate || ''}
                     onChange={e => handleInputChange("cleaningDate", e.target.value)}
                   />
@@ -577,7 +577,7 @@ export const ShipmentDetailForm = ({
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
                     <p className="text-base">
                       {shipment.shipmentDate ? 
-                        new Date(shipment.shipmentDate).toLocaleString() : 
+                        new Date(shipment.shipmentDate).toLocaleString() :
                         'N/A'}
                     </p>
                   </div>
@@ -602,7 +602,7 @@ export const ShipmentDetailForm = ({
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
                     <p className="text-base">
                       {shipment.cleaningDate ? 
-                        new Date(shipment.cleaningDate).toLocaleDateString() : 
+                        new Date(shipment.cleaningDate).toLocaleString() :
                         'N/A'}
                     </p>
                   </div>
