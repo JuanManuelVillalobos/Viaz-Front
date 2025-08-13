@@ -34,7 +34,7 @@ apiClient.interceptors.response.use(
         const originalRequest = error.config;
 
         // If error is 401 (Unauthorized) and we haven't tried to refresh the token yet
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/api/auth/login') {
             originalRequest._retry = true;
 
             try {
@@ -81,6 +81,13 @@ apiClient.interceptors.response.use(
                 case 400:
                     toast({
                         title: "Invalid request",
+                        description: errorMessage,
+                        variant: "destructive",
+                    });
+                    break;
+                    case 401:
+                    toast({
+                        title: "Bad Credentials",
                         description: errorMessage,
                         variant: "destructive",
                     });

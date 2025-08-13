@@ -137,35 +137,35 @@ const Shipments = () => {
     // Reset new shipment form
     const resetNewShipment = () => {
         setNewShipment({
-            transportMethod : "",
-            customerServiceAgent : "",
-            typeOfService : "",
-            client : "",
-            origin : "",
-            customsAgent : "",
-            destination : "",
-            status : "",
-            container : "",
-            containerType : "",
-            shipmentDate : "",
-            transport : "",
-            operator : "",
-            terminal : "",
-            ci : false,
-            ccp : false,
-            taxFolio : false,
-            loadManoeuvre : false,
-            pisVinculation : false,
-            departureDate : "",
-            arrivalDate : "",
-            unloadDate : "",
-            cleaningOrder : "",
-            pod : "",
-            cleaningPatio : "",
-            cleaningDate : "",
-            cleanArrivalDate : "",
-            eir : "",
-            observations : "",
+            transportMethod: "",
+            customerServiceAgent: "",
+            typeOfService: "",
+            client: "",
+            origin: "",
+            customsAgent: "",
+            destination: "",
+            status: "",
+            container: "",
+            containerType: "",
+            shipmentDate: "",
+            transport: "",
+            operator: "",
+            terminal: "",
+            ci: false,
+            ccp: false,
+            taxFolio: false,
+            loadManoeuvre: false,
+            pisVinculation: false,
+            departureDate: "",
+            arrivalDate: "",
+            unloadDate: "",
+            cleaningOrder: "",
+            pod: "",
+            cleaningPatio: "",
+            cleaningDate: "",
+            cleanArrivalDate: "",
+            eir: "",
+            observations: "",
         });
     };
 
@@ -745,25 +745,6 @@ const Shipments = () => {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="vacuumManoeuvre">Maniobra de Vacío</Label>
-                                            <Select
-                                                value={newShipment.cleaningOrder}
-                                                onValueChange={value => handleInputChange("status", value)}
-                                            >
-                                                <SelectTrigger id="vacuumManoeuvre">
-                                                    <SelectValue placeholder="Select status"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="solicited">Solicitada</SelectItem>
-                                                    <SelectItem value="sent">Enviada</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
                                             <Label htmlFor="portOfDischarge">POD</Label>
                                             <Select
                                                 value={newShipment.pod}
@@ -816,29 +797,6 @@ const Shipments = () => {
                                                 onChange={e => handleInputChange("unloadDate", e.target.value)}
                                             />
                                         </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="portOfDischargeDate">Fecha POD</Label>
-                                            <Input
-                                                id="pod"
-                                                type="date"
-                                                value={newShipment.pod}
-                                                onChange={e => handleInputChange("pod", e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="vacuumArrival">Entrega de vacío</Label>
-                                            <Input
-                                                id="vacuumArrival"
-                                                type="date"
-                                                value={newShipment.cleaningDate}
-                                                onChange={e => handleInputChange("cleaningDate", e.target.value)}
-                                            />
-                                        </div>
-
                                         <div className="space-y-2">
                                             <Label htmlFor="eir">EIR</Label>
                                             <Select
@@ -856,6 +814,7 @@ const Shipments = () => {
                                             </Select>
                                         </div>
                                     </div>
+
 
                                     <fieldset className="border rounded-md p-4">
                                         <legend className="text-sm font-medium px-2">Documentos</legend>
@@ -939,12 +898,44 @@ const Shipments = () => {
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="vacuumArrival">Entrega de Vacío</Label>
+                                            <Label htmlFor="cleaningDate">Fecha de Vacío</Label>
                                             <Input
-                                                id="vacuumArrival"
+                                                id="cleaningDate"
                                                 type="date"
                                                 value={newShipment.cleaningDate}
                                                 onChange={e => handleInputChange("cleaningDate", e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="containerType">Patio</Label>
+                                            <Select
+                                                value={newShipment.cleaningPatio}
+                                                onValueChange={value => handleInputChange("cleaningPatio", value)}
+                                            >
+                                                <SelectTrigger id="cleaningPatio">
+                                                    <SelectValue
+                                                        placeholder="Selecciona el patio"/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="ssa">SSA</SelectItem>
+                                                    <SelectItem value="timsa">TIMSA</SelectItem>
+                                                    <SelectItem value="cima">CIMA</SelectItem>
+                                                    <SelectItem value="ocupa">OCUPA</SelectItem>
+                                                    <SelectItem value="isl">ISL</SelectItem>
+                                                    <SelectItem value="cise">CISE</SelectItem>
+                                                    <SelectItem value="otro">Otro</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="cleanArrivalDate">Entrega de Vacío</Label>
+                                            <Input
+                                                id="cleanArrivalDate"
+                                                type="date"
+                                                value={newShipment.cleanArrivalDate}
+                                                onChange={e => handleInputChange("cleanArrivalDate", e.target.value)}
                                             />
                                         </div>
                                     </div>
