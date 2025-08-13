@@ -41,12 +41,12 @@ export const ShipmentDetailForm = ({
       <CardContent className="space-y-4">
         {isEditing ? (
           <Tabs defaultValue="basic">
-            <TabsList className="grid grid-cols-5 mb-4">
-              <TabsTrigger value="basic">Información Básica</TabsTrigger>
-              <TabsTrigger value="transport">Transporte</TabsTrigger>
-              <TabsTrigger value="contenedor">Contenedor</TabsTrigger>
-              <TabsTrigger value="vacio">Vacío</TabsTrigger>
-              <TabsTrigger value="documents">Documentos & Fechas</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-4">
+              <TabsTrigger value="basic" className="text-xs sm:text-sm">Básico</TabsTrigger>
+              <TabsTrigger value="transport" className="text-xs sm:text-sm">Transporte</TabsTrigger>
+              <TabsTrigger value="contenedor" className="text-xs sm:text-sm">Contenedor</TabsTrigger>
+              <TabsTrigger value="vacio" className="text-xs sm:text-sm">Vacío</TabsTrigger>
+              <TabsTrigger value="documents" className="text-xs sm:text-sm">Docs</TabsTrigger>
             </TabsList>
             
             {/* Basic Info Tab */}
@@ -445,12 +445,12 @@ export const ShipmentDetailForm = ({
           </Tabs>
         ) : (
           <Tabs defaultValue="basic">
-            <TabsList className="grid grid-cols-5 mb-4">
-              <TabsTrigger value="basic">Información Básica</TabsTrigger>
-              <TabsTrigger value="transport">Transporte</TabsTrigger>
-              <TabsTrigger value="contenedor">Contenedor</TabsTrigger>
-              <TabsTrigger value="vacio">Vacío</TabsTrigger>
-              <TabsTrigger value="documents">Documentos & Fechas</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-4">
+              <TabsTrigger value="basic" className="text-xs sm:text-sm">Básico</TabsTrigger>
+              <TabsTrigger value="transport" className="text-xs sm:text-sm">Transporte</TabsTrigger>
+              <TabsTrigger value="contenedor" className="text-xs sm:text-sm">Contenedor</TabsTrigger>
+              <TabsTrigger value="vacio" className="text-xs sm:text-sm">Vacío</TabsTrigger>
+              <TabsTrigger value="documents" className="text-xs sm:text-sm">Docs</TabsTrigger>
             </TabsList>
             
             {/* Basic Info Tab - View Mode */}
