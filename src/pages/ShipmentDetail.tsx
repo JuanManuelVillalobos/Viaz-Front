@@ -1,7 +1,9 @@
 import {useEffect, useState} from "react";
 import {useParams, useNavigate} from "react-router-dom";
-import {ArrowLeft, Edit, Save, X} from "lucide-react";
+import {ArrowLeft, Edit, Save, X, Lock} from "lucide-react";
 import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
 import {toast} from "@/hooks/use-toast";
 import {
     AlertDialog,
@@ -13,6 +15,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {apiShipmentService} from "@/services/api/apiShipmentService.ts";
 import {getStatusColor} from "@/services/shipmentService";
@@ -37,6 +47,8 @@ const ShipmentDetail = () => {
         url: string
     } | null>(null);
     const [isLoadingDocument, setIsLoadingDocument] = useState(false);
+    const [closeShipmentOpen, setCloseShipmentOpen] = useState(false);
+    const [shipmentGrade, setShipmentGrade] = useState("");
 
     // Fetch shipment data
     const {
@@ -287,6 +299,35 @@ const ShipmentDetail = () => {
         setViewingDocument(null);
     };
 
+    const handleCloseShipment = async () => {
+        if (!shipmentGrade.trim()) {
+            toast({
+                title: "Error",
+                description: "Please enter a grade for the shipment.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            // Here you would typically call an API to close the shipment with the grade
+            // For now, we'll just show a success message
+            toast({
+                title: "Embarque Cerrado",
+                description: `El embarque ha sido cerrado con calificación: ${shipmentGrade}`,
+            });
+            setCloseShipmentOpen(false);
+            setShipmentGrade("");
+        } catch (error) {
+            console.error("Error closing shipment:", error);
+            toast({
+                title: "Error",
+                description: "Failed to close shipment.",
+                variant: "destructive",
+            });
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-96">
@@ -311,34 +352,43 @@ const ShipmentDetail = () => {
                     Back to Shipments
                 </Button>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{shipment.viazId}</h1>
-                {!isEditing ? (
+                <div className="ml-auto flex gap-2">
                     <Button
-                        onClick={handleEdit}
-                        className="ml-auto"
-                        disabled={updateShipmentMutation.isPending}
+                        variant="outline"
+                        onClick={() => setCloseShipmentOpen(true)}
+                        className="flex items-center gap-2"
                     >
-                        <Edit className="h-4 w-4 mr-2"/>
-                        Edit Shipment
+                        <Lock className="h-4 w-4" />
+                        Cerrar Embarque
                     </Button>
-                ) : (
-                    <div className="ml-auto space-x-2">
+                    {!isEditing ? (
                         <Button
-                            variant="outline"
-                            onClick={handleCancel}
+                            onClick={handleEdit}
                             disabled={updateShipmentMutation.isPending}
                         >
-                            <X className="h-4 w-4 mr-2"/>
-                            Cancel
+                            <Edit className="h-4 w-4 mr-2"/>
+                            Edit Shipment
                         </Button>
-                        <Button
-                            onClick={handleSave}
-                            disabled={updateShipmentMutation.isPending}
-                        >
-                            <Save className="h-4 w-4 mr-2"/>
-                            {updateShipmentMutation.isPending ? "Saving..." : "Save Changes"}
-                        </Button>
-                    </div>
-                )}
+                    ) : (
+                        <div className="space-x-2">
+                            <Button
+                                variant="outline"
+                                onClick={handleCancel}
+                                disabled={updateShipmentMutation.isPending}
+                            >
+                                <X className="h-4 w-4 mr-2"/>
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleSave}
+                                disabled={updateShipmentMutation.isPending}
+                            >
+                                <Save className="h-4 w-4 mr-2"/>
+                                {updateShipmentMutation.isPending ? "Saving..." : "Save Changes"}
+                            </Button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -397,6 +447,37 @@ const ShipmentDetail = () => {
                 handleCloseDocumentModal={handleCloseDocumentModal}
                 guessFileTypeFromExtension={guessFileTypeFromExtension}
             />
+
+            {/* Close Shipment Dialog */}
+            <Dialog open={closeShipmentOpen} onOpenChange={setCloseShipmentOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Cerrar Embarque</DialogTitle>
+                        <DialogDescription>
+                            Ingrese una calificación para el embarque antes de cerrarlo.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="grade">Calificación del Embarque</Label>
+                            <Input
+                                id="grade"
+                                placeholder="Ingrese la calificación (ej: A, B, C, 1-10, etc.)"
+                                value={shipmentGrade}
+                                onChange={(e) => setShipmentGrade(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setCloseShipmentOpen(false)}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleCloseShipment}>
+                            Cerrar Embarque
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

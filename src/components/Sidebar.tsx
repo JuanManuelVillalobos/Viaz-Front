@@ -14,7 +14,7 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
   const menuItems = [
     { name: "Dashboard", path: "/", icon: HomeIcon },
     { name: "Shipments", path: "/shipments", icon: PackageIcon },
-    { name: "User Management", path: "/users", icon: UsersIcon },
+    
     { name: "Admin Panel", path: "/admin", icon: ShieldIcon },
   ];
 
