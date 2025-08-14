@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, useCallback} from "react";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {Button} from "@/components/ui/button";
@@ -87,13 +87,7 @@ const AdminDashboard = () => {
             user.roles.some(role => role.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    // Fetch data on component mount
-    useEffect(() => {
-        fetchUsers();
-        fetchCarriers();
-    }, []);
-
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         setIsLoading(true);
         try {
             const fetchedUsers = await userService.getAllUsers();
@@ -108,9 +102,10 @@ const AdminDashboard = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [setIsLoading, setUsers, toast]);
 
-    const fetchCarriers = async () => {
+
+    const fetchCarriers = useCallback(async () => {
         try {
             const fetchedCarriers = await carrierService.getAllCarriers();
             setCarriers(fetchedCarriers || []); // Ensure carriers is always an array
@@ -118,8 +113,13 @@ const AdminDashboard = () => {
             console.error("Error fetching carriers:", error);
             // Don't show error for carriers as they might not be implemented yet
         }
-    };
+    }, [setCarriers]);
 
+    // Fetch data on component mount
+    useEffect(() => {
+        fetchUsers();
+        fetchCarriers();
+    }, [fetchUsers, fetchCarriers]);
 
     const handleCreateCarrier = async () => {
         try {
