@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/select";
 import {Checkbox} from "@/components/ui/checkbox";
 import {useNavigate} from "react-router-dom";
-import {Shipment, TableColumn, defaultShipmentColumns} from "@/types/shipment";
+import {Shipment, TableColumn, defaultShipmentColumns, Transport, ShipmentRequest} from "@/types/shipment";
 import {getStatusColor} from "@/services/shipmentService";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
@@ -65,7 +65,14 @@ const Shipments = () => {
         return savedColumns ? JSON.parse(savedColumns) : defaultShipmentColumns;
     });
 
-    const [newShipment, setNewShipment] = useState<Partial<Shipment>>({
+    const {data: transports = [], isLoading: isLoadingTransports} = useQuery<Transport[]>({
+        queryKey: ['transports'],
+        queryFn: apiShipmentService.getTransports,
+        enabled: newShipmentOpen,
+    });
+
+
+    const [newShipment, setNewShipment] = useState<Partial<ShipmentRequest>>({
         origin: "",
         destination: "",
         client: "",
@@ -218,7 +225,7 @@ const Shipments = () => {
         }
 
         // Create a new shipment with the API
-        createShipmentMutation.mutate(newShipment as Shipment);
+        createShipmentMutation.mutate(newShipment as ShipmentRequest);
     };
 
     const filteredShipments = shipments.filter(
@@ -235,7 +242,7 @@ const Shipments = () => {
 
             const matchesCarrier =
                 filters.carrier.length === 0 ||
-                (shipment.transport && filters.carrier.includes(shipment.transport));
+                (shipment.transport && filters.carrier.includes(shipment.transport.name));
 
             return matchesSearch && matchesStatus && matchesCarrier;
         }
@@ -386,14 +393,14 @@ const Shipments = () => {
                                 <div className="grid gap-2">
                                     <Label>Carrier</Label>
                                     <div className="flex flex-wrap gap-2">
-                                        {carriers.map((carrier) => (
+                                        {transports.map((carrier) => (
                                             <Badge
-                                                key={carrier}
-                                                variant={filters.carrier.includes(carrier) ? "default" : "outline"}
+                                                key={carrier.id}
+                                                variant={filters.carrier.includes(carrier.name) ? "default" : "outline"}
                                                 className="cursor-pointer"
-                                                onClick={() => handleFilterChange("carrier", carrier)}
+                                                onClick={() => handleFilterChange("carrier", carrier.name)}
                                             >
-                                                {carrier}
+                                                {carrier.name}
                                             </Badge>
                                         ))}
                                     </div>
@@ -469,11 +476,11 @@ const Shipments = () => {
                                         <div className="space-y-2">
                                             <Label htmlFor="t_m">T/M</Label>
                                             <Select
-                                                value={newShipment.typeOfService}
-                                                onValueChange={value => handleInputChange("typeOfService", value)}
+                                                value={newShipment.transportMethod}
+                                                onValueChange={value => handleInputChange("transportMethod", value)}
                                             >
                                                 <SelectTrigger id="t_m">
-                                                    <SelectValue placeholder="Selecciona tipo de servicio"/>
+                                                    <SelectValue placeholder="Selecciona metodo de transporte"/>
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="terreste">Terrestre</SelectItem>
@@ -718,11 +725,22 @@ const Shipments = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="transport">Transporte*</Label>
-                                            <Input
-                                                id="transport"
+                                            <Select
                                                 value={newShipment.transport}
-                                                onChange={e => handleInputChange("transport", e.target.value)}
-                                            />
+                                                onValueChange={value => handleInputChange("transport", value)}
+                                            >
+                                                <SelectTrigger id="transport">
+                                                    <SelectValue
+                                                        placeholder="Selecciona el transporte"/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {transports.map((transportItem, index) => (
+                                                        <SelectItem key={transportItem.id || transportItem.name || index} value={transportItem.name}>
+                                                            {transportItem.name.charAt(0).toUpperCase() + transportItem.name.slice(1)}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
 
                                         <div className="space-y-2">
@@ -815,7 +833,6 @@ const Shipments = () => {
                                         </div>
                                     </div>
 
-
                                     <fieldset className="border rounded-md p-4">
                                         <legend className="text-sm font-medium px-2">Documentos</legend>
                                         <div className="grid grid-cols-2 gap-4">
@@ -901,7 +918,7 @@ const Shipments = () => {
                                             <Label htmlFor="cleaningDate">Fecha de Vacío</Label>
                                             <Input
                                                 id="cleaningDate"
-                                                type="date"
+                                                type="datetime-local"
                                                 value={newShipment.cleaningDate}
                                                 onChange={e => handleInputChange("cleaningDate", e.target.value)}
                                             />

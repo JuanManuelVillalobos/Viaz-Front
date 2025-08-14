@@ -1,7 +1,7 @@
 
 import apiClient from './apiClient';
 import {ShipmentUpdateRequest } from '@/types/api';
-import {Shipment} from "@/types/shipment.ts";
+import {Shipment, ShipmentRequest, Transport} from "@/types/shipment.ts";
 
 export const apiShipmentService = {
   // Get all shipments
@@ -23,7 +23,7 @@ export const apiShipmentService = {
   },
   
   // Create a new shipment
-  createShipment: async (shipment: Shipment): Promise<Shipment> => {
+  createShipment: async (shipment: ShipmentRequest): Promise<Shipment> => {
     const response = await apiClient.post('/api/shipment/create-shipment', shipment);
     return response.data;
   },
@@ -91,5 +91,10 @@ export const apiShipmentService = {
     // Use the objectKey directly without encoding since it already contains the full path
     const response = await apiClient.get(`/api/shipment/download-file/${objectKey}`);
     return response.data;
+  },
+
+  getTransports: async (): Promise<Transport[]> => {
+      const response = await apiClient.get('/api/carrier/get-carriers');
+      return response.data;
   }
 };
