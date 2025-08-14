@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { HomeIcon, PackageIcon, UsersIcon } from "lucide-react";
+import { HomeIcon, PackageIcon, UsersIcon, ShieldIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -15,6 +15,7 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
     { name: "Dashboard", path: "/", icon: HomeIcon },
     { name: "Shipments", path: "/shipments", icon: PackageIcon },
     { name: "User Management", path: "/users", icon: UsersIcon },
+    { name: "Admin Panel", path: "/admin", icon: ShieldIcon },
   ];
 
   return (
