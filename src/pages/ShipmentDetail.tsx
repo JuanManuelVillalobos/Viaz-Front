@@ -48,7 +48,8 @@ const ShipmentDetail = () => {
     } | null>(null);
     const [isLoadingDocument, setIsLoadingDocument] = useState(false);
     const [closeShipmentOpen, setCloseShipmentOpen] = useState(false);
-    const [shipmentGrade, setShipmentGrade] = useState("");
+    const [shipmentGrade, setShipmentGrade] = useState(10);
+    const [shipmentObservations, setShipmentObservations] = useState("");
 
     // Fetch shipment data
     const {
@@ -300,7 +301,7 @@ const ShipmentDetail = () => {
     };
 
     const handleCloseShipment = async () => {
-        if (!shipmentGrade.trim()) {
+        if (!shipmentGrade) {
             toast({
                 title: "Error",
                 description: "Please enter a grade for the shipment.",
@@ -317,7 +318,8 @@ const ShipmentDetail = () => {
                 description: `El embarque ha sido cerrado con calificación: ${shipmentGrade}`,
             });
             setCloseShipmentOpen(false);
-            setShipmentGrade("");
+            setShipmentGrade(10);
+            setShipmentObservations("");
         } catch (error) {
             console.error("Error closing shipment:", error);
             toast({
@@ -358,7 +360,7 @@ const ShipmentDetail = () => {
                         onClick={() => setCloseShipmentOpen(true)}
                         className="flex items-center gap-2"
                     >
-                        <Lock className="h-4 w-4" />
+                        <Lock className="h-4 w-4"/>
                         Cerrar Embarque
                     </Button>
                     {!isEditing ? (
@@ -462,9 +464,29 @@ const ShipmentDetail = () => {
                             <Label htmlFor="grade">Calificación del Embarque</Label>
                             <Input
                                 id="grade"
-                                placeholder="Ingrese la calificación (ej: A, B, C, 1-10, etc.)"
+                                type="number"
                                 value={shipmentGrade}
-                                onChange={(e) => setShipmentGrade(e.target.value)}
+                                onChange={(e) => {
+                                    const value = parseInt(e.target.value, 10);
+                                    if (value > 10) {
+                                        setShipmentGrade(10);
+                                    } else if (value < 0) {
+                                        setShipmentGrade(0);
+                                    } else {
+                                        setShipmentGrade(value);
+                                    }
+                                }}
+                                min={0}
+                                max={10}
+                                className="text-center"
+                            />
+
+
+                            <Input
+                                id="Observations"
+                                placeholder="Ingrese alguna observación si es necesario."
+                                value={shipmentObservations}
+                                onChange={(e) => setShipmentObservations(e.target.value)}
                             />
                         </div>
                     </div>
