@@ -22,7 +22,7 @@ export const carrierService = {
 
   // Get all carriers
   getAllCarriers: async (): Promise<Carrier[]> => {
-    const response = await apiClient.get('/api/carrier/get-all-carriers');
+    const response = await apiClient.get('/api/carrier/get-carriers');
     return response.data;
   },
 
