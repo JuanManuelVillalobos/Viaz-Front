@@ -50,6 +50,7 @@ import {
 import {Avatar, AvatarFallback} from "@/components/ui/avatar";
 import {useToast} from "@/hooks/use-toast";
 import {carrierService, Carrier, CreateCarrierRequest} from "@/services/api/carrierService";
+import {roleService, Role, RoleCreationRequest} from "@/services/api/roleService";
 import {authService, userService} from "@/services/api";
 import {ViazUserDTO, UserStatus} from "@/types/api";
 import {format} from "date-fns";
@@ -70,10 +71,18 @@ const AdminDashboard = () => {
     const [inviteRole, setInviteRole] = useState("");
     const [isInviting, setIsInviting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Role management state
+    const [newRoleOpen, setNewRoleOpen] = useState(false);
+    const [newRoleName, setNewRoleName] = useState("");
+    const [newRoleDescription, setNewRoleDescription] = useState("");
+    const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+    const [selectedUserForRole, setSelectedUserForRole] = useState<ViazUserDTO | null>(null);
 
     // State for data
     const [carriers, setCarriers] = useState<Carrier[]>([]);
     const [users, setUsers] = useState<ViazUserDTO[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
 
     const [newCarrier, setNewCarrier] = useState({
         name: ''
@@ -115,11 +124,21 @@ const AdminDashboard = () => {
         }
     }, [setCarriers]);
 
+    const fetchRoles = useCallback(async () => {
+        try {
+            const fetchedRoles = await roleService.getAllRoles();
+            setRoles(fetchedRoles || []);
+        } catch (error) {
+            console.error("Error fetching roles:", error);
+        }
+    }, [setRoles]);
+
     // Fetch data on component mount
     useEffect(() => {
         fetchUsers();
         fetchCarriers();
-    }, [fetchUsers, fetchCarriers]);
+        fetchRoles();
+    }, [fetchUsers, fetchCarriers, fetchRoles]);
 
     const handleCreateCarrier = async () => {
         try {
@@ -231,20 +250,77 @@ const AdminDashboard = () => {
         setEditUserOpen(true);
     };
 
-    const handleUpdateUserRoles = (newRoles: string[]) => {
+    const handleUpdateUserRoles = async (newRoles: string[]) => {
         if (selectedUser) {
-            setUsers(users.map(u =>
-                u.userId === selectedUser.userId
-                    ? {...u, roles: newRoles}
-                    : u
-            ));
-            setEditUserOpen(false);
-            setSelectedUser(null);
+            try {
+                // Get current roles and determine changes
+                const currentRoles = selectedUser.roles;
+                const rolesToAdd = newRoles.filter(role => !currentRoles.includes(role));
+                const rolesToRemove = currentRoles.filter(role => !newRoles.includes(role));
+
+                // Add new roles
+                for (const role of rolesToAdd) {
+                    await roleService.assignRole(selectedUser.userId, role);
+                }
+
+                // Remove old roles
+                for (const role of rolesToRemove) {
+                    await roleService.removeRole(selectedUser.userId, role);
+                }
+
+                // Update local state
+                setUsers(users.map(u =>
+                    u.userId === selectedUser.userId
+                        ? {...u, roles: newRoles}
+                        : u
+                ));
+                setEditUserOpen(false);
+                setSelectedUser(null);
+                toast({
+                    title: "Roles actualizados",
+                    description: "Los roles del usuario han sido actualizados exitosamente.",
+                });
+            } catch (error) {
+                console.error("Error updating user roles:", error);
+                toast({
+                    title: "Error",
+                    description: "Error al actualizar los roles del usuario.",
+                    variant: "destructive",
+                });
+            }
+        }
+    };
+
+    const handleCreateRole = async () => {
+        if (!newRoleName.trim()) return;
+
+        try {
+            const roleData: RoleCreationRequest = {
+                name: newRoleName,
+                description: newRoleDescription || undefined
+            };
+            await roleService.createRole(roleData);
+            setNewRoleName("");
+            setNewRoleDescription("");
+            setNewRoleOpen(false);
+            fetchRoles(); // Refresh roles list
             toast({
-                title: "Roles actualizados",
-                description: "Los roles del usuario han sido actualizados exitosamente.",
+                title: "Rol creado",
+                description: "El rol ha sido creado exitosamente.",
+            });
+        } catch (error) {
+            console.error("Error creating role:", error);
+            toast({
+                title: "Error",
+                description: "Error al crear el rol.",
+                variant: "destructive",
             });
         }
+    };
+
+    const handleChangeRole = (user: ViazUserDTO) => {
+        setSelectedUserForRole(user);
+        setRoleDialogOpen(true);
     };
 
     // Helper functions
@@ -466,10 +542,11 @@ const AdminDashboard = () => {
                                                             <SelectValue placeholder="Select a role"/>
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="ADMIN">Admin</SelectItem>
-                                                            <SelectItem value="MANAGER">Manager</SelectItem>
-                                                            <SelectItem value="OPERATOR">Operator</SelectItem>
-                                                            <SelectItem value="USER">User</SelectItem>
+                                                            {roles.map((role) => (
+                                                                <SelectItem key={role.id} value={role.name}>
+                                                                    {role.name}
+                                                                </SelectItem>
+                                                            ))}
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
@@ -540,9 +617,9 @@ const AdminDashboard = () => {
                                                             <DropdownMenuContent align="end">
                                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                                 <DropdownMenuSeparator/>
-                                                                <DropdownMenuItem onClick={() => handleEditUser(user)}>Edit
-                                                                    User</DropdownMenuItem>
-                                                                <DropdownMenuItem>Change Role</DropdownMenuItem>
+                                                                 <DropdownMenuItem onClick={() => handleEditUser(user)}>Edit
+                                                                     User</DropdownMenuItem>
+                                                                 <DropdownMenuItem onClick={() => handleChangeRole(user)}>Change Role</DropdownMenuItem>
                                                                 {user.status === UserStatus.PENDING ? (
                                                                     <>
                                                                         <DropdownMenuItem>
@@ -591,11 +668,81 @@ const AdminDashboard = () => {
                 <TabsContent value="settings" className="space-y-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Configuraciones del Sistema</CardTitle>
-                            <CardDescription>Configura parámetros generales del sistema</CardDescription>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Gestión de Roles</CardTitle>
+                                    <CardDescription>Administra los roles del sistema</CardDescription>
+                                </div>
+                                <Dialog open={newRoleOpen} onOpenChange={setNewRoleOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button>
+                                            <Plus className="h-4 w-4 mr-2"/>
+                                            Nuevo Rol
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Crear Nuevo Rol</DialogTitle>
+                                            <DialogDescription>
+                                                Agrega un nuevo rol al sistema
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="roleName">Nombre del Rol</Label>
+                                                <Input
+                                                    id="roleName"
+                                                    value={newRoleName}
+                                                    onChange={(e) => setNewRoleName(e.target.value)}
+                                                    placeholder="Ej: SUPERVISOR"
+                                                />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="roleDescription">Descripción (Opcional)</Label>
+                                                <Input
+                                                    id="roleDescription"
+                                                    value={newRoleDescription}
+                                                    onChange={(e) => setNewRoleDescription(e.target.value)}
+                                                    placeholder="Descripción del rol"
+                                                />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button variant="outline" onClick={() => setNewRoleOpen(false)}>
+                                                Cancelar
+                                            </Button>
+                                            <Button onClick={handleCreateRole}>Crear Rol</Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground">Configuraciones del sistema próximamente...</p>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Nombre</TableHead>
+                                        <TableHead>Descripción</TableHead>
+                                        <TableHead>ID</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {roles.map((role) => (
+                                        <TableRow key={role.id}>
+                                            <TableCell className="font-medium">{role.name}</TableCell>
+                                            <TableCell>{role.description || "Sin descripción"}</TableCell>
+                                            <TableCell className="text-muted-foreground">{role.id}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {roles.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="text-center py-8">
+                                                No se han encontrado roles
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -642,6 +789,86 @@ const AdminDashboard = () => {
                         </Button>
                         <Button onClick={() => handleUpdateUserRoles(selectedUser?.roles || [])}>
                             Guardar Cambios
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Change Role Dialog */}
+            <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Cambiar Roles</DialogTitle>
+                        <DialogDescription>
+                            Modifica los roles de {selectedUserForRole?.username}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label>Roles Disponibles</Label>
+                            <div className="space-y-2">
+                                {roles.map((role) => (
+                                    <div key={role.id} className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id={`role-${role.id}`}
+                                            checked={selectedUserForRole?.roles.includes(role.name) || false}
+                                            onChange={async (e) => {
+                                                if (selectedUserForRole) {
+                                                    try {
+                                                        if (e.target.checked) {
+                                                            await roleService.assignRole(selectedUserForRole.userId, role.name);
+                                                        } else {
+                                                            await roleService.removeRole(selectedUserForRole.userId, role.name);
+                                                        }
+                                                        
+                                                        // Update local state
+                                                        const newRoles = e.target.checked
+                                                            ? [...selectedUserForRole.roles, role.name]
+                                                            : selectedUserForRole.roles.filter(r => r !== role.name);
+                                                        
+                                                        setSelectedUserForRole({...selectedUserForRole, roles: newRoles});
+                                                        setUsers(users.map(u =>
+                                                            u.userId === selectedUserForRole.userId
+                                                                ? {...u, roles: newRoles}
+                                                                : u
+                                                        ));
+                                                        
+                                                        toast({
+                                                            title: "Rol actualizado",
+                                                            description: `Rol ${role.name} ${e.target.checked ? 'asignado' : 'removido'} exitosamente.`,
+                                                        });
+                                                    } catch (error) {
+                                                        console.error("Error updating role:", error);
+                                                        toast({
+                                                            title: "Error",
+                                                            description: "Error al actualizar el rol.",
+                                                            variant: "destructive",
+                                                        });
+                                                    }
+                                                }
+                                            }}
+                                            className="rounded border border-input"
+                                        />
+                                        <Label htmlFor={`role-${role.id}`} className="capitalize">
+                                            {role.name}
+                                            {role.description && (
+                                                <span className="text-muted-foreground text-sm ml-2">
+                                                    ({role.description})
+                                                </span>
+                                            )}
+                                        </Label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => {
+                            setRoleDialogOpen(false);
+                            setSelectedUserForRole(null);
+                        }}>
+                            Cerrar
                         </Button>
                     </DialogFooter>
                 </DialogContent>

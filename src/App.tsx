@@ -11,6 +11,7 @@ import ShipmentDetail from "./pages/ShipmentDetail";
 import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
+import SetPassword from "./pages/SetPassword";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Profile from "./pages/Profile";
@@ -69,6 +70,7 @@ const App = () => {
                     <Routes>
                         <Route path="/login" element={<Login/>}/>
                         <Route path="/forgot-password" element={<ForgotPassword/>}/>
+                        <Route path="/auth/set-password" element={<SetPassword/>}/>
                         <Route path="/" element={
                             <ProtectedRoute>
                                 <DashboardLayout/>

@@ -48,6 +48,18 @@ export interface ShipmentFile {
 }
 
 
+// Role types
+export interface Role {
+    id: number;
+    name: string;
+    description?: string;
+}
+
+export interface RoleCreationRequest {
+    name: string;
+    description?: string;
+}
+
 export interface ShipmentUpdateRequest {
     transportMethod?: string;
     customerServiceAgent?: string;
