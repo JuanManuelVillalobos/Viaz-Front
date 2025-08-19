@@ -13,13 +13,14 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {LogIn, Mail, LockKeyhole} from "lucide-react";
 import {toast} from "@/hooks/use-toast";
-import {authService} from "@/services/api/authService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,24 +37,10 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            // Call the login API
-            const response = await authService.login({email, password});
-
-            // Get user info and save to localStorage (you might want to adapt this)
-            localStorage.setItem("user", JSON.stringify({
-                name: email.split('@')[0], // This is just a placeholder, real apps would get the name from a /me endpoint
-                email
-            }));
-
-            toast({
-                title: "Éxito",
-                description: "Has ingresado correctamente",
-            });
-
+            await login({ email, password });
             navigate("/");
         } catch (error) {
-            console.error("Login error:", error);
-            // The toast for errors is handled by the API client
+            // Error handling is done in the AuthContext
         } finally {
             setIsLoading(false);
         }
