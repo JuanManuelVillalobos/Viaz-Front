@@ -543,8 +543,8 @@ const AdminDashboard = () => {
                                                         </SelectTrigger>
                                                         <SelectContent>
                                                             {roles.map((role) => (
-                                                                <SelectItem key={role.id} value={role.name}>
-                                                                    {role.name}
+                                                                <SelectItem key={role.roleId} value={role.name}>
+                                                                    {role.displayName}
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectContent>
@@ -728,10 +728,10 @@ const AdminDashboard = () => {
                                 </TableHeader>
                                 <TableBody>
                                     {roles.map((role) => (
-                                        <TableRow key={role.id}>
-                                            <TableCell className="font-medium">{role.name}</TableCell>
+                                        <TableRow key={role.roleId}>
+                                            <TableCell className="font-medium">{role.displayName}</TableCell>
                                             <TableCell>{role.description || "Sin descripción"}</TableCell>
-                                            <TableCell className="text-muted-foreground">{role.id}</TableCell>
+                                            <TableCell className="text-muted-foreground">{role.roleId}</TableCell>
                                         </TableRow>
                                     ))}
                                     {roles.length === 0 && (
@@ -808,10 +808,10 @@ const AdminDashboard = () => {
                             <Label>Roles Disponibles</Label>
                             <div className="space-y-2">
                                 {roles.map((role) => (
-                                    <div key={role.id} className="flex items-center space-x-2">
+                                    <div key={role.roleId} className="flex items-center space-x-2">
                                         <input
                                             type="checkbox"
-                                            id={`role-${role.id}`}
+                                            id={`role-${role.roleId}`}
                                             checked={selectedUserForRole?.roles.includes(role.name) || false}
                                             onChange={async (e) => {
                                                 if (selectedUserForRole) {
@@ -850,7 +850,7 @@ const AdminDashboard = () => {
                                             }}
                                             className="rounded border border-input"
                                         />
-                                        <Label htmlFor={`role-${role.id}`} className="capitalize">
+                                        <Label htmlFor={`role-${role.roleId}`} className="capitalize">
                                             {role.name}
                                             {role.description && (
                                                 <span className="text-muted-foreground text-sm ml-2">
