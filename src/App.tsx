@@ -34,8 +34,8 @@ const ProtectedRoute = ({children}: { children: React.ReactNode }) => {
     useEffect(() => {
         const checkAuthStatus = async () => {
             try {
-                const response = await authService.ping();
-                setIsAuthenticated(response === "pong");
+                // TODO ADD /me endpoint to check if user is authenticated
+                setIsAuthenticated(true);
             } catch (error) {
                 console.error("Authentication check failed:", error);
                 setIsAuthenticated(false);
