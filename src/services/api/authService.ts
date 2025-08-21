@@ -3,13 +3,6 @@ import {LoginRequest, Token, ViazUserDTO, ViazUser} from '@/types/api';
 
 export const authService = {
 
-    // Ping server to check if authenticated
-    ping: async (): Promise<string> => {
-        const response = await apiClient.get('/api/auth/ping');
-        return response.data;
-    },
-
-
     // Login user
     login: async (credentials: LoginRequest): Promise<Token> => {
         const response = await apiClient.post('/api/auth/login', {
