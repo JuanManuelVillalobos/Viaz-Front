@@ -1,7 +1,12 @@
 import apiClient from './apiClient';
-import {LoginRequest, Token, ViazUserDTO, ViazUser} from '@/types/api';
+import {LoginRequest, Token, ViazUserDTO, ViazUser, ViazCurrentUserAuthResponseDTO} from '@/types/api';
 
 export const authService = {
+
+    me : async () : Promise<ViazCurrentUserAuthResponseDTO> => {
+        const response = await apiClient.get('/api/auth/me');
+        return response.data;
+    },
 
     // Login user
     login: async (credentials: LoginRequest): Promise<Token> => {
@@ -49,4 +54,17 @@ export const authService = {
             localStorage.removeItem('user');
         }
     },
+
+    refreshToken: async (): Promise<string> => {
+    const response = await apiClient.post(
+      '/api/auth/refresh-token',
+      {},
+      { withCredentials: true }
+    );
+    if (response.data.accessToken) {
+      localStorage.setItem('accessToken', response.data.accessToken);
+      return response.data.accessToken;
+    }
+    throw new Error('Failed to refresh token');
+  },
 };
