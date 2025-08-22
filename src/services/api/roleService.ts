@@ -4,7 +4,6 @@ export interface Role {
   roleId: number;
   name: string;
   description?: string;
-  displayName?: string;
 }
 
 export interface RoleCreationRequest {

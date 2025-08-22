@@ -559,7 +559,7 @@ const AdminDashboard = () => {
                                                         <SelectContent>
                                                             {roles.map((role) => (
                                                                 <SelectItem key={role.roleId} value={role.name}>
-                                                                    {role.displayName}
+                                                                    {role.name}
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectContent>
@@ -778,7 +778,7 @@ const AdminDashboard = () => {
                                 <TableBody>
                                     {roles.map((role) => (
                                         <TableRow key={role.roleId}>
-                                            <TableCell className="font-medium">{role.displayName}</TableCell>
+                                            <TableCell className="font-medium">{role.name}</TableCell>
                                             <TableCell>{role.description || "Sin descripción"}</TableCell>
                                             <TableCell className="text-muted-foreground">{role.roleId}</TableCell>
                                         </TableRow>
