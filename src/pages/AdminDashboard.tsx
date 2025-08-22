@@ -52,9 +52,11 @@ import {Avatar, AvatarFallback} from "@/components/ui/avatar";
 import {useToast} from "@/hooks/use-toast";
 import {carrierService, Carrier, CreateCarrierRequest} from "@/services/api/carrierService";
 import {roleService, Role, RoleCreationRequest} from "@/services/api/roleService";
-import {authService, userService} from "@/services/api";
+import {apiShipmentService, authService, userService} from "@/services/api";
 import {ViazUserDTO, UserStatus} from "@/types/api";
 import {format} from "date-fns";
+import {useQuery} from "@tanstack/react-query";
+import {Transport} from "@/types/shipment.ts";
 
 // Component interfaces and state
 
@@ -72,7 +74,7 @@ const AdminDashboard = () => {
     const [inviteRole, setInviteRole] = useState("");
     const [isInviting, setIsInviting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    
+
     // Role management state
     const [newRoleOpen, setNewRoleOpen] = useState(false);
     const [newRoleName, setNewRoleName] = useState("");
@@ -136,9 +138,11 @@ const AdminDashboard = () => {
         }
     }, [setRoles]);
 
+
     const fetchPermissions = useCallback(async () => {
         try {
             const permissions = await roleService.getAllPermissions();
+            console.log("Permissions:", permissions);
             setAvailablePermissions(permissions || []);
         } catch (error) {
             console.error("Error fetching permissions:", error);
@@ -873,19 +877,19 @@ const AdminDashboard = () => {
                                                          } else {
                                                              await roleService.removeRole(selectedUserForRole.userId, role.name);
                                                          }
-                                                         
+
                                                          // Update local state
                                                          const newRoles = checked
                                                              ? [...selectedUserForRole.roles, role.name]
                                                              : selectedUserForRole.roles.filter(r => r !== role.name);
-                                                         
+
                                                          setSelectedUserForRole({...selectedUserForRole, roles: newRoles});
                                                          setUsers(users.map(u =>
                                                              u.userId === selectedUserForRole.userId
                                                                  ? {...u, roles: newRoles}
                                                                  : u
                                                          ));
-                                                         
+
                                                          toast({
                                                              title: "Rol actualizado",
                                                              description: `Rol ${role.name} ${checked ? 'asignado' : 'removido'} exitosamente.`,
