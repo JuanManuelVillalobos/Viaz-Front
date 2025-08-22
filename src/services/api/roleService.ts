@@ -18,13 +18,15 @@ export const roleService = {
   getAllPermissions: async (): Promise<string[]> => {
     const response = await apiClient.get('/api/permissions/get-permissions');
     // Backend returns a string representation, parse it to get the actual permissions
-    const permissionsString = response.data;
-    // Extract permissions from the string format, assuming it's something like "[PERMISSION1, PERMISSION2]"
-    const matches = permissionsString.match(/\[(.*?)\]/);
-    if (matches && matches[1]) {
-      return matches[1].split(',').map((permission: string) => permission.trim());
-    }
-    return [];
+      return response.data;
+
+    // return  permissionsString = response.data;
+    // // Extract permissions from the string format, assuming it's something like "[PERMISSION1, PERMISSION2]"
+    // const matches = permissionsString.match(/\[(.*?)\]/);
+    // if (matches && matches[1]) {
+    //   return matches[1].split(',').map((permission: string) => permission.trim());
+    // }
+    // return [];
   },
 
   // Create a new role
