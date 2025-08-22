@@ -17,6 +17,7 @@ import {
     CheckCircle,
     XCircle
 } from "lucide-react";
+import {Checkbox} from "@/components/ui/checkbox";
 import {
     Dialog,
     DialogContent,
@@ -724,32 +725,30 @@ const AdminDashboard = () => {
                                             <div className="grid gap-2">
                                                 <Label>Permisos</Label>
                                                 <div className="max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
-                                                    {availablePermissions.length > 0 ? (
-                                                        availablePermissions.map((permission) => (
-                                                            <div key={permission} className="flex items-center space-x-2">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    id={`permission-${permission}`}
-                                                                    checked={selectedPermissions.has(permission)}
-                                                                    onChange={(e) => {
-                                                                        const newPermissions = new Set(selectedPermissions);
-                                                                        if (e.target.checked) {
-                                                                            newPermissions.add(permission);
-                                                                        } else {
-                                                                            newPermissions.delete(permission);
-                                                                        }
-                                                                        setSelectedPermissions(newPermissions);
-                                                                    }}
-                                                                    className="rounded border border-input"
-                                                                />
-                                                                <Label htmlFor={`permission-${permission}`} className="text-sm">
-                                                                    {permission}
-                                                                </Label>
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <p className="text-sm text-muted-foreground">No hay permisos disponibles</p>
-                                                    )}
+                                                     {availablePermissions.length > 0 ? (
+                                                         availablePermissions.map((permission) => (
+                                                             <div key={permission} className="flex items-center space-x-2">
+                                                                 <Checkbox
+                                                                     id={`permission-${permission}`}
+                                                                     checked={selectedPermissions.has(permission)}
+                                                                     onCheckedChange={(checked) => {
+                                                                         const newPermissions = new Set(selectedPermissions);
+                                                                         if (checked) {
+                                                                             newPermissions.add(permission);
+                                                                         } else {
+                                                                             newPermissions.delete(permission);
+                                                                         }
+                                                                         setSelectedPermissions(newPermissions);
+                                                                     }}
+                                                                 />
+                                                                 <Label htmlFor={`permission-${permission}`} className="text-sm cursor-pointer">
+                                                                     {permission}
+                                                                 </Label>
+                                                             </div>
+                                                         ))
+                                                     ) : (
+                                                         <p className="text-sm text-muted-foreground">No hay permisos disponibles</p>
+                                                     )}
                                                 </div>
                                                 <p className="text-xs text-muted-foreground">
                                                     {selectedPermissions.size} permiso{selectedPermissions.size !== 1 ? 's' : ''} seleccionado{selectedPermissions.size !== 1 ? 's' : ''}
@@ -810,25 +809,30 @@ const AdminDashboard = () => {
                         <div className="grid gap-2">
                             <Label>Roles Disponibles</Label>
                             <div className="space-y-2">
-                                {availableRoles.map((role) => (
-                                    <div key={role} className="flex items-center space-x-2">
-                                        <input
-                                            type="checkbox"
-                                            id={role}
-                                            checked={selectedUser?.roles.includes(role) || false}
-                                            onChange={(e) => {
-                                                if (selectedUser) {
-                                                    const newRoles = e.target.checked
-                                                        ? [...selectedUser.roles, role]
-                                                        : selectedUser.roles.filter(r => r !== role);
-                                                    setSelectedUser({...selectedUser, roles: newRoles});
-                                                }
-                                            }}
-                                            className="rounded border border-input"
-                                        />
-                                        <Label htmlFor={role} className="capitalize">{role}</Label>
-                                    </div>
-                                ))}
+                                 {roles.map((role) => (
+                                     <div key={role.roleId} className="flex items-center space-x-2">
+                                         <Checkbox
+                                             id={`edit-role-${role.roleId}`}
+                                             checked={selectedUser?.roles.includes(role.name) || false}
+                                             onCheckedChange={(checked) => {
+                                                 if (selectedUser) {
+                                                     const newRoles = checked
+                                                         ? [...selectedUser.roles, role.name]
+                                                         : selectedUser.roles.filter(r => r !== role.name);
+                                                     setSelectedUser({...selectedUser, roles: newRoles});
+                                                 }
+                                             }}
+                                         />
+                                         <Label htmlFor={`edit-role-${role.roleId}`} className="capitalize cursor-pointer">
+                                             {role.name}
+                                             {role.description && (
+                                                 <span className="text-muted-foreground text-sm ml-2">
+                                                     ({role.description})
+                                                 </span>
+                                             )}
+                                         </Label>
+                                     </div>
+                                 ))}
                             </div>
                         </div>
                     </div>
@@ -856,59 +860,57 @@ const AdminDashboard = () => {
                         <div className="grid gap-2">
                             <Label>Roles Disponibles</Label>
                             <div className="space-y-2">
-                                {roles.map((role) => (
-                                    <div key={role.roleId} className="flex items-center space-x-2">
-                                        <input
-                                            type="checkbox"
-                                            id={`role-${role.roleId}`}
-                                            checked={selectedUserForRole?.roles.includes(role.name) || false}
-                                            onChange={async (e) => {
-                                                if (selectedUserForRole) {
-                                                    try {
-                                                        if (e.target.checked) {
-                                                            await roleService.assignRole(selectedUserForRole.userId, role.name);
-                                                        } else {
-                                                            await roleService.removeRole(selectedUserForRole.userId, role.name);
-                                                        }
-                                                        
-                                                        // Update local state
-                                                        const newRoles = e.target.checked
-                                                            ? [...selectedUserForRole.roles, role.name]
-                                                            : selectedUserForRole.roles.filter(r => r !== role.name);
-                                                        
-                                                        setSelectedUserForRole({...selectedUserForRole, roles: newRoles});
-                                                        setUsers(users.map(u =>
-                                                            u.userId === selectedUserForRole.userId
-                                                                ? {...u, roles: newRoles}
-                                                                : u
-                                                        ));
-                                                        
-                                                        toast({
-                                                            title: "Rol actualizado",
-                                                            description: `Rol ${role.name} ${e.target.checked ? 'asignado' : 'removido'} exitosamente.`,
-                                                        });
-                                                    } catch (error) {
-                                                        console.error("Error updating role:", error);
-                                                        toast({
-                                                            title: "Error",
-                                                            description: "Error al actualizar el rol.",
-                                                            variant: "destructive",
-                                                        });
-                                                    }
-                                                }
-                                            }}
-                                            className="rounded border border-input"
-                                        />
-                                        <Label htmlFor={`role-${role.roleId}`} className="capitalize">
-                                            {role.name}
-                                            {role.description && (
-                                                <span className="text-muted-foreground text-sm ml-2">
-                                                    ({role.description})
-                                                </span>
-                                            )}
-                                        </Label>
-                                    </div>
-                                ))}
+                                 {roles.map((role) => (
+                                     <div key={role.roleId} className="flex items-center space-x-2">
+                                         <Checkbox
+                                             id={`role-${role.roleId}`}
+                                             checked={selectedUserForRole?.roles.includes(role.name) || false}
+                                             onCheckedChange={async (checked) => {
+                                                 if (selectedUserForRole) {
+                                                     try {
+                                                         if (checked) {
+                                                             await roleService.assignRole(selectedUserForRole.userId, role.name);
+                                                         } else {
+                                                             await roleService.removeRole(selectedUserForRole.userId, role.name);
+                                                         }
+                                                         
+                                                         // Update local state
+                                                         const newRoles = checked
+                                                             ? [...selectedUserForRole.roles, role.name]
+                                                             : selectedUserForRole.roles.filter(r => r !== role.name);
+                                                         
+                                                         setSelectedUserForRole({...selectedUserForRole, roles: newRoles});
+                                                         setUsers(users.map(u =>
+                                                             u.userId === selectedUserForRole.userId
+                                                                 ? {...u, roles: newRoles}
+                                                                 : u
+                                                         ));
+                                                         
+                                                         toast({
+                                                             title: "Rol actualizado",
+                                                             description: `Rol ${role.name} ${checked ? 'asignado' : 'removido'} exitosamente.`,
+                                                         });
+                                                     } catch (error) {
+                                                         console.error("Error updating role:", error);
+                                                         toast({
+                                                             title: "Error",
+                                                             description: "Error al actualizar el rol.",
+                                                             variant: "destructive",
+                                                         });
+                                                     }
+                                                 }
+                                             }}
+                                         />
+                                         <Label htmlFor={`role-${role.roleId}`} className="capitalize cursor-pointer">
+                                             {role.name}
+                                             {role.description && (
+                                                 <span className="text-muted-foreground text-sm ml-2">
+                                                     ({role.description})
+                                                 </span>
+                                             )}
+                                         </Label>
+                                     </div>
+                                 ))}
                             </div>
                         </div>
                     </div>
