@@ -76,6 +76,8 @@ const AdminDashboard = () => {
     const [newRoleOpen, setNewRoleOpen] = useState(false);
     const [newRoleName, setNewRoleName] = useState("");
     const [newRoleDescription, setNewRoleDescription] = useState("");
+    const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
+    const [availablePermissions, setAvailablePermissions] = useState<string[]>([]);
     const [roleDialogOpen, setRoleDialogOpen] = useState(false);
     const [selectedUserForRole, setSelectedUserForRole] = useState<ViazUserDTO | null>(null);
 
@@ -133,12 +135,22 @@ const AdminDashboard = () => {
         }
     }, [setRoles]);
 
+    const fetchPermissions = useCallback(async () => {
+        try {
+            const permissions = await roleService.getAllPermissions();
+            setAvailablePermissions(permissions || []);
+        } catch (error) {
+            console.error("Error fetching permissions:", error);
+        }
+    }, [setAvailablePermissions]);
+
     // Fetch data on component mount
     useEffect(() => {
         fetchUsers();
         fetchCarriers();
         fetchRoles();
-    }, [fetchUsers, fetchCarriers, fetchRoles]);
+        fetchPermissions();
+    }, [fetchUsers, fetchCarriers, fetchRoles, fetchPermissions]);
 
     const handleCreateCarrier = async () => {
         try {
@@ -297,11 +309,14 @@ const AdminDashboard = () => {
         try {
             const roleData: RoleCreationRequest = {
                 name: newRoleName,
-                description: newRoleDescription || undefined
+                description: newRoleDescription || undefined,
+                permissions: selectedPermissions.size > 0 ? selectedPermissions : undefined,
+                cosmetic: false
             };
             await roleService.createRole(roleData);
             setNewRoleName("");
             setNewRoleDescription("");
+            setSelectedPermissions(new Set());
             setNewRoleOpen(false);
             fetchRoles(); // Refresh roles list
             toast({
@@ -705,6 +720,40 @@ const AdminDashboard = () => {
                                                     onChange={(e) => setNewRoleDescription(e.target.value)}
                                                     placeholder="Descripción del rol"
                                                 />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label>Permisos</Label>
+                                                <div className="max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
+                                                    {availablePermissions.length > 0 ? (
+                                                        availablePermissions.map((permission) => (
+                                                            <div key={permission} className="flex items-center space-x-2">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    id={`permission-${permission}`}
+                                                                    checked={selectedPermissions.has(permission)}
+                                                                    onChange={(e) => {
+                                                                        const newPermissions = new Set(selectedPermissions);
+                                                                        if (e.target.checked) {
+                                                                            newPermissions.add(permission);
+                                                                        } else {
+                                                                            newPermissions.delete(permission);
+                                                                        }
+                                                                        setSelectedPermissions(newPermissions);
+                                                                    }}
+                                                                    className="rounded border border-input"
+                                                                />
+                                                                <Label htmlFor={`permission-${permission}`} className="text-sm">
+                                                                    {permission}
+                                                                </Label>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <p className="text-sm text-muted-foreground">No hay permisos disponibles</p>
+                                                    )}
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {selectedPermissions.size} permiso{selectedPermissions.size !== 1 ? 's' : ''} seleccionado{selectedPermissions.size !== 1 ? 's' : ''}
+                                                </p>
                                             </div>
                                         </div>
                                         <DialogFooter>
