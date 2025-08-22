@@ -17,6 +17,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import {authService} from "@/services/api";
+import {UserStatus} from "@/types/api.ts";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -32,20 +33,30 @@ const ProtectedRoute = ({children}: { children: React.ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const checkAuthStatus = async () => {
+        (async () => {
             try {
-                // TODO ADD /me endpoint to check if user is authenticated
+                const response = await authService.me();
+
+                if (!response.user || !response.user.userId) {
+                    setIsAuthenticated(false);
+                    return;
+                }
+
+                if (response.user.status !== UserStatus.ACTIVE) {
+                    setIsAuthenticated(false);
+                    return;
+                }
+
                 setIsAuthenticated(true);
             } catch (error) {
-                console.error("Authentication check failed:", error);
+                console.error('Authentication check failed:', error);
                 setIsAuthenticated(false);
             } finally {
                 setLoading(false);
             }
-        };
+        })();
+    }, []);
 
-        checkAuthStatus();
-    }, []); // Empty dependency array means this runs once on mount
 
     if (loading) {
         // You can return a loading spinner or null here
@@ -79,7 +90,7 @@ const App = () => {
                             <Route index element={<Index/>}/>
                             <Route path="shipments" element={<Shipments/>}/>
                             <Route path="shipments/:id" element={<ShipmentDetail/>}/>
-                            
+
                             <Route path="admin" element={<AdminDashboard/>}/>
                             <Route path="profile" element={<Profile/>}/>
                             <Route path="settings" element={<Settings/>}/>
