@@ -52,11 +52,9 @@ import {Avatar, AvatarFallback} from "@/components/ui/avatar";
 import {useToast} from "@/hooks/use-toast";
 import {carrierService, Carrier, CreateCarrierRequest} from "@/services/api/carrierService";
 import {roleService, Role, RoleCreationRequest} from "@/services/api/roleService";
-import {apiShipmentService, authService, userService} from "@/services/api";
+import {authService, userService} from "@/services/api";
 import {ViazUserDTO, UserStatus} from "@/types/api";
 import {format} from "date-fns";
-import {useQuery} from "@tanstack/react-query";
-import {Transport} from "@/types/shipment.ts";
 
 // Component interfaces and state
 
@@ -379,8 +377,6 @@ const AdminDashboard = () => {
         if (roles.includes('USER')) return 'User';
         return roles[0] || 'N/A';
     };
-
-    const availableRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'USER'];
 
     return (
         <div className="space-y-6">
