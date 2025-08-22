@@ -9,6 +9,11 @@ export interface Token {
     refreshToken?: string;
 }
 
+export interface ViazCurrentUserAuthResponseDTO {
+  user: ViazUserDTO;
+  effectivePermissions: string[];
+}
+
 // User types
 export interface ViazUserDTO {
     userId: number;
