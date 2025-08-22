@@ -50,7 +50,7 @@ export interface ShipmentFile {
 
 // Role types
 export interface Role {
-    id: number;
+    roleId: number;
     name: string;
     description?: string;
 }
