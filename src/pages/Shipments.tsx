@@ -1,7 +1,6 @@
 import {useState, useEffect} from "react";
 import {
-    Search, ArrowUpDown,
-    MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter, UserRound, User, Truck
+    Search, MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck
 } from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
@@ -252,12 +251,6 @@ const Shipments = () => {
 
     const handleViewShipment = (id: string) => {
         navigate(`/shipments/${id}`);
-    };
-
-    const handleDeleteShipment = (id: string) => {
-        if (confirm("Are you sure you want to delete this shipment?")) {
-            deleteShipmentMutation.mutate(id);
-        }
     };
 
     // Export to Excel function
