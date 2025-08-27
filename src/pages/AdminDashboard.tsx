@@ -55,6 +55,7 @@ import {roleService, Role, RoleCreationRequest} from "@/services/api/roleService
 import {authService, userService} from "@/services/api";
 import {ViazUserDTO, UserStatus} from "@/types/api";
 import {format} from "date-fns";
+import {Switch} from "@/components/ui/switch.tsx";
 
 // Component interfaces and state
 
@@ -77,6 +78,7 @@ const AdminDashboard = () => {
     const [newRoleOpen, setNewRoleOpen] = useState(false);
     const [newRoleName, setNewRoleName] = useState("");
     const [newRoleDescription, setNewRoleDescription] = useState("");
+    const [isRoleCosmetic, setIsRoleCosmetic] = useState(false);
     const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
     const [availablePermissions, setAvailablePermissions] = useState<string[]>([]);
     const [roleDialogOpen, setRoleDialogOpen] = useState(false);
@@ -314,7 +316,7 @@ const AdminDashboard = () => {
                 name: newRoleName,
                 description: newRoleDescription || undefined,
                 permissions: selectedPermissions.size > 0 ? selectedPermissions : undefined,
-                cosmetic: false
+                cosmetic: isRoleCosmetic
             };
             await roleService.createRole(roleData);
             setNewRoleName("");
@@ -633,9 +635,11 @@ const AdminDashboard = () => {
                                                             <DropdownMenuContent align="end">
                                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                                 <DropdownMenuSeparator/>
-                                                                 <DropdownMenuItem onClick={() => handleEditUser(user)}>Edit
-                                                                     User</DropdownMenuItem>
-                                                                 <DropdownMenuItem onClick={() => handleChangeRole(user)}>Change Role</DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleEditUser(user)}>Edit
+                                                                    User</DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => handleChangeRole(user)}>Change
+                                                                    Role</DropdownMenuItem>
                                                                 {user.status === UserStatus.PENDING ? (
                                                                     <>
                                                                         <DropdownMenuItem>
@@ -723,36 +727,53 @@ const AdminDashboard = () => {
                                                 />
                                             </div>
                                             <div className="grid gap-2">
-                                                <Label>Permisos</Label>
-                                                <div className="max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
-                                                     {availablePermissions.length > 0 ? (
-                                                         availablePermissions.map((permission) => (
-                                                             <div key={permission} className="flex items-center space-x-2">
-                                                                 <Checkbox
-                                                                     id={`permission-${permission}`}
-                                                                     checked={selectedPermissions.has(permission)}
-                                                                     onCheckedChange={(checked) => {
-                                                                         const newPermissions = new Set(selectedPermissions);
-                                                                         if (checked) {
-                                                                             newPermissions.add(permission);
-                                                                         } else {
-                                                                             newPermissions.delete(permission);
-                                                                         }
-                                                                         setSelectedPermissions(newPermissions);
-                                                                     }}
-                                                                 />
-                                                                 <Label htmlFor={`permission-${permission}`} className="text-sm cursor-pointer">
-                                                                     {permission}
-                                                                 </Label>
-                                                             </div>
-                                                         ))
-                                                     ) : (
-                                                         <p className="text-sm text-muted-foreground">No hay permisos disponibles</p>
-                                                     )}
-                                                </div>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {selectedPermissions.size} permiso{selectedPermissions.size !== 1 ? 's' : ''} seleccionado{selectedPermissions.size !== 1 ? 's' : ''}
-                                                </p>
+                                                <Label htmlFor="isRoleCosmetic">El rol es cosmético?</Label>
+                                                <Switch
+                                                    id={"cosmetic"}
+                                                    checked={isRoleCosmetic}
+                                                    onCheckedChange={setIsRoleCosmetic}
+                                                />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                {!isRoleCosmetic && (
+                                                    <>
+                                                        <Label>Permisos</Label>
+                                                        <div
+                                                            className="max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
+                                                            {availablePermissions.length > 0 ? (
+                                                                availablePermissions.map((permission) => (
+                                                                    <div key={permission}
+                                                                         className="flex items-center space-x-2">
+                                                                        <Checkbox
+                                                                            id={`permission-${permission}`}
+                                                                            checked={selectedPermissions.has(permission)}
+                                                                            onCheckedChange={(checked) => {
+                                                                                const newPermissions = new Set(selectedPermissions);
+                                                                                if (checked) {
+                                                                                    newPermissions.add(permission);
+                                                                                } else {
+                                                                                    newPermissions.delete(permission);
+                                                                                }
+                                                                                setSelectedPermissions(newPermissions);
+                                                                            }}
+                                                                        />
+                                                                        <Label htmlFor={`permission-${permission}`}
+                                                                               className="text-sm cursor-pointer">
+                                                                            {permission}
+                                                                        </Label>
+                                                                    </div>
+                                                                ))
+                                                            ) : (
+                                                                <p className="text-sm text-muted-foreground">No hay
+                                                                    permisos disponibles</p>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {selectedPermissions.size} permiso{selectedPermissions.size !== 1 ? 's' : ''} seleccionado
+                                                            {selectedPermissions.size !== 1 ? 's' : ''}
+                                                        </p>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                         <DialogFooter>
@@ -809,30 +830,31 @@ const AdminDashboard = () => {
                         <div className="grid gap-2">
                             <Label>Roles Disponibles</Label>
                             <div className="space-y-2">
-                                 {roles.map((role) => (
-                                     <div key={role.roleId} className="flex items-center space-x-2">
-                                         <Checkbox
-                                             id={`edit-role-${role.roleId}`}
-                                             checked={selectedUser?.roles.includes(role.name) || false}
-                                             onCheckedChange={(checked) => {
-                                                 if (selectedUser) {
-                                                     const newRoles = checked
-                                                         ? [...selectedUser.roles, role.name]
-                                                         : selectedUser.roles.filter(r => r !== role.name);
-                                                     setSelectedUser({...selectedUser, roles: newRoles});
-                                                 }
-                                             }}
-                                         />
-                                         <Label htmlFor={`edit-role-${role.roleId}`} className="capitalize cursor-pointer">
-                                             {role.name}
-                                             {role.description && (
-                                                 <span className="text-muted-foreground text-sm ml-2">
+                                {roles.map((role) => (
+                                    <div key={role.roleId} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`edit-role-${role.roleId}`}
+                                            checked={selectedUser?.roles.includes(role.name) || false}
+                                            onCheckedChange={(checked) => {
+                                                if (selectedUser) {
+                                                    const newRoles = checked
+                                                        ? [...selectedUser.roles, role.name]
+                                                        : selectedUser.roles.filter(r => r !== role.name);
+                                                    setSelectedUser({...selectedUser, roles: newRoles});
+                                                }
+                                            }}
+                                        />
+                                        <Label htmlFor={`edit-role-${role.roleId}`}
+                                               className="capitalize cursor-pointer">
+                                            {role.name}
+                                            {role.description && (
+                                                <span className="text-muted-foreground text-sm ml-2">
                                                      ({role.description})
                                                  </span>
-                                             )}
-                                         </Label>
-                                     </div>
-                                 ))}
+                                            )}
+                                        </Label>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -860,57 +882,60 @@ const AdminDashboard = () => {
                         <div className="grid gap-2">
                             <Label>Roles Disponibles</Label>
                             <div className="space-y-2">
-                                 {roles.map((role) => (
-                                     <div key={role.roleId} className="flex items-center space-x-2">
-                                         <Checkbox
-                                             id={`role-${role.roleId}`}
-                                             checked={selectedUserForRole?.roles.includes(role.name) || false}
-                                             onCheckedChange={async (checked) => {
-                                                 if (selectedUserForRole) {
-                                                     try {
-                                                         if (checked) {
-                                                             await roleService.assignRole(selectedUserForRole.userId, role.name);
-                                                         } else {
-                                                             await roleService.removeRole(selectedUserForRole.userId, role.name);
-                                                         }
+                                {roles.map((role) => (
+                                    <div key={role.roleId} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`role-${role.roleId}`}
+                                            checked={selectedUserForRole?.roles.includes(role.name) || false}
+                                            onCheckedChange={async (checked) => {
+                                                if (selectedUserForRole) {
+                                                    try {
+                                                        if (checked) {
+                                                            await roleService.assignRole(selectedUserForRole.userId, role.name);
+                                                        } else {
+                                                            await roleService.removeRole(selectedUserForRole.userId, role.name);
+                                                        }
 
-                                                         // Update local state
-                                                         const newRoles = checked
-                                                             ? [...selectedUserForRole.roles, role.name]
-                                                             : selectedUserForRole.roles.filter(r => r !== role.name);
+                                                        // Update local state
+                                                        const newRoles = checked
+                                                            ? [...selectedUserForRole.roles, role.name]
+                                                            : selectedUserForRole.roles.filter(r => r !== role.name);
 
-                                                         setSelectedUserForRole({...selectedUserForRole, roles: newRoles});
-                                                         setUsers(users.map(u =>
-                                                             u.userId === selectedUserForRole.userId
-                                                                 ? {...u, roles: newRoles}
-                                                                 : u
-                                                         ));
+                                                        setSelectedUserForRole({
+                                                            ...selectedUserForRole,
+                                                            roles: newRoles
+                                                        });
+                                                        setUsers(users.map(u =>
+                                                            u.userId === selectedUserForRole.userId
+                                                                ? {...u, roles: newRoles}
+                                                                : u
+                                                        ));
 
-                                                         toast({
-                                                             title: "Rol actualizado",
-                                                             description: `Rol ${role.name} ${checked ? 'asignado' : 'removido'} exitosamente.`,
-                                                         });
-                                                     } catch (error) {
-                                                         console.error("Error updating role:", error);
-                                                         toast({
-                                                             title: "Error",
-                                                             description: "Error al actualizar el rol.",
-                                                             variant: "destructive",
-                                                         });
-                                                     }
-                                                 }
-                                             }}
-                                         />
-                                         <Label htmlFor={`role-${role.roleId}`} className="capitalize cursor-pointer">
-                                             {role.name}
-                                             {role.description && (
-                                                 <span className="text-muted-foreground text-sm ml-2">
+                                                        toast({
+                                                            title: "Rol actualizado",
+                                                            description: `Rol ${role.name} ${checked ? 'asignado' : 'removido'} exitosamente.`,
+                                                        });
+                                                    } catch (error) {
+                                                        console.error("Error updating role:", error);
+                                                        toast({
+                                                            title: "Error",
+                                                            description: "Error al actualizar el rol.",
+                                                            variant: "destructive",
+                                                        });
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                        <Label htmlFor={`role-${role.roleId}`} className="capitalize cursor-pointer">
+                                            {role.name}
+                                            {role.description && (
+                                                <span className="text-muted-foreground text-sm ml-2">
                                                      ({role.description})
                                                  </span>
-                                             )}
-                                         </Label>
-                                     </div>
-                                 ))}
+                                            )}
+                                        </Label>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
