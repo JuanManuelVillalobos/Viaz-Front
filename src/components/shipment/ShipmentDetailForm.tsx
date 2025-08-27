@@ -14,9 +14,7 @@ import {
 } from "@/components/ui/select";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {Shipment, Transport} from "@/types/shipment.ts";
-import {useQuery} from "@tanstack/react-query";
-import {apiShipmentService} from "@/services/api";
-import {ShipmentUpdateRequest, UserSummaryDTO} from "@/types/api.ts";
+import {UserSummaryDTO} from "@/types/api.ts";
 
 interface ShipmentDetailFormProps {
     shipment: Shipment;
