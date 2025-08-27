@@ -1,5 +1,4 @@
 // Get status colors
-import {SelectItem} from "@/components/ui/select.tsx";
 
 export const getStatusColor = (status: string): string => {
     switch (status) {
