@@ -73,7 +73,42 @@ export interface TableColumn {
     visible: boolean;
 }
 
-// Predefined shipment table columns
+// All available shipment table columns
+export const allShipmentColumns: TableColumn[] = [
+    {id: "viazId", label: "Referencia", visible: true},
+    {id: "transportMethod", label: "Método de Transporte", visible: false},
+    {id: "customerServiceAgent", label: "Agente de Servicio", visible: false},
+    {id: "typeOfService", label: "Tipo de Servicio", visible: false},
+    {id: "client", label: "Cliente", visible: true},
+    {id: "origin", label: "Origen", visible: true},
+    {id: "customsAgent", label: "Agente Aduanal", visible: false},
+    {id: "destination", label: "Destino", visible: true},
+    {id: "status", label: "Estatus", visible: true},
+    {id: "container", label: "Contenedor", visible: false},
+    {id: "containerType", label: "Tipo de Contenedor", visible: false},
+    {id: "shipmentDate", label: "Fecha de Carga", visible: true},
+    {id: "transport", label: "Transporte", visible: true},
+    {id: "operator", label: "Operador", visible: false},
+    {id: "terminal", label: "Terminal", visible: false},
+    {id: "ci", label: "CI", visible: false},
+    {id: "ccp", label: "CCP", visible: false},
+    {id: "taxFolio", label: "Folio Fiscal", visible: false},
+    {id: "loadManoeuvre", label: "Maniobra de Carga", visible: false},
+    {id: "pisVinculation", label: "Vinculación PIS", visible: false},
+    {id: "departureDate", label: "Fecha de Salida", visible: false},
+    {id: "arrivalDate", label: "Fecha de Llegada", visible: false},
+    {id: "unloadDate", label: "Fecha de Descarga", visible: false},
+    {id: "cleaningOrder", label: "Orden de Limpieza", visible: false},
+    {id: "pod", label: "POD", visible: false},
+    {id: "cleaningPatio", label: "Patio de Limpieza", visible: false},
+    {id: "cleaningDate", label: "Fecha de Limpieza", visible: false},
+    {id: "cleanArrivalDate", label: "Fecha de Llegada Limpia", visible: false},
+    {id: "eir", label: "EIR", visible: false},
+    {id: "observations", label: "Observaciones", visible: false},
+    {id: "files", label: "Docs", visible: true},
+];
+
+// Default visible columns (subset of allShipmentColumns)
 export const defaultShipmentColumns: TableColumn[] = [
     {id: "viazId", label: "Referencia", visible: true},
     {id: "origin", label: "Origen", visible: true},

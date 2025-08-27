@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/select";
 import {Checkbox} from "@/components/ui/checkbox";
 import {useNavigate} from "react-router-dom";
-import {Shipment, TableColumn, defaultShipmentColumns, Transport, ShipmentRequest} from "@/types/shipment";
+import {Shipment, TableColumn, defaultShipmentColumns, allShipmentColumns, Transport, ShipmentRequest} from "@/types/shipment";
 import {getStatusColor} from "@/services/shipmentService";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
@@ -70,7 +70,7 @@ const Shipments = () => {
     const [columns, setColumns] = useState<TableColumn[]>(() => {
         // Try to load column preferences from localStorage
         const savedColumns = localStorage.getItem("shipmentColumns");
-        return savedColumns ? JSON.parse(savedColumns) : defaultShipmentColumns;
+        return savedColumns ? JSON.parse(savedColumns) : allShipmentColumns;
     });
 
     const {data: transports = [], isLoading: isLoadingTransports} = useQuery<Transport[]>({
@@ -133,7 +133,10 @@ const Shipments = () => {
     // Reset column visibility to defaults
     // Reset column visibility to defaults
     const resetColumns = () => {
-        setColumns(defaultShipmentColumns);
+        setColumns(allShipmentColumns.map(col => ({
+            ...col,
+            visible: defaultShipmentColumns.some(defaultCol => defaultCol.id === col.id)
+        })));
     };
 
 
@@ -307,6 +310,79 @@ const Shipments = () => {
             </div>
         );
     }
+
+    // Function to get cell value for any column
+    const getCellValue = (shipment: Shipment, columnId: string) => {
+        const key = columnId as keyof Shipment;
+        const value = shipment[key];
+
+        switch (columnId) {
+            case "viazId":
+                return <span className="font-medium">{value as string}</span>;
+                
+            case "origin":
+            case "destination":
+                return (
+                    <div className="flex items-center">
+                        <MapPin className="mr-1 h-3 w-3 text-muted-foreground"/>
+                        {(value as string) || "N/A"}
+                    </div>
+                );
+                
+            case "client":
+            case "customsAgent":
+                return (
+                    <div className="flex items-center">
+                        <User className="mr-1 h-3 w-3 text-muted-foreground"/>
+                        {(value as string) || "N/A"}
+                    </div>
+                );
+                
+            case "transport":
+                return (
+                    <div className="flex items-center">
+                        <Truck className="mr-1 h-3 w-3 text-muted-foreground"/>
+                        {shipment.transport?.name || "N/A"}
+                    </div>
+                );
+                
+            case "customerServiceAgent":
+                return shipment.customerServiceAgent?.username || "N/A";
+                
+            case "status":
+                return (
+                    <Badge className={getStatusColor((value as string) || "")}>
+                        {((value as string) || "").charAt(0).toUpperCase() + 
+                         ((value as string) || "").slice(1) || "N/A"}
+                    </Badge>
+                );
+                
+            case "files":
+                return value ? value.toString() : "0";
+                
+            case "ci":
+            case "ccp":
+            case "taxFolio":
+            case "loadManoeuvre":
+            case "pisVinculation":
+                return (
+                    <Badge variant={value ? "default" : "secondary"}>
+                        {value ? "Sí" : "No"}
+                    </Badge>
+                );
+                
+            case "shipmentDate":
+            case "departureDate":
+            case "arrivalDate":
+            case "unloadDate":
+            case "cleaningDate":
+            case "cleanArrivalDate":
+                return value ? new Date(value as string).toLocaleDateString() : "N/A";
+                
+            default:
+                return (value as string) || "N/A";
+        }
+    };
 
     // Get visible columns
     const visibleColumns = columns.filter(col => col.visible);
@@ -915,45 +991,11 @@ const Shipments = () => {
                                             {/* Dynamic cells based on visible columns */}
                                             {columns
                                                 .filter(col => col.visible)
-                                                .map(col => {
-                                                    const key = col.id as keyof Shipment;
-                                                    return (
-                                                        <TableCell key={col.id}>
-                                                            {key === "viazId" ? (
-                                                                <span
-                                                                    className="font-medium">{shipment[key]}</span>
-                                                            ) : key === "origin" || key === "destination" ? (
-                                                                <div className="flex items-center">
-                                                                    <MapPin
-                                                                        className="mr-1 h-3 w-3 text-muted-foreground"/>
-                                                                    {shipment[key] || "N/A"}
-                                                                </div>
-                                                            ) : key === "client" ? (
-                                                                <div className="flex items-center">
-                                                                    <User
-                                                                        className="mr-1 h-3 w-3 text-muted-foreground"/>
-                                                                    {shipment[key] || "N/A"}
-                                                                </div>
-                                                            ) : key === "transport" ? (
-                                                                <div className="flex items-center">
-                                                                    <Truck
-                                                                        className="mr-1 h-3 w-3 text-muted-foreground"/>
-                                                                    {shipment.transport?.name || "N/A"}
-                                                                </div>
-                                                            ) : key === "status" ? (
-                                                                <Badge
-                                                                    className={getStatusColor(shipment[key] as string || "")}>
-                                                                    {(shipment[key] as string || "").charAt(0).toUpperCase() +
-                                                                        (shipment[key] as string || "").slice(1) || "N/A"}
-                                                                </Badge>
-                                                            ) : key === "files" ? (
-                                                                shipment.files ? shipment.files : "0"
-                                                            ) : (
-                                                                "N/A"
-                                                            )}
-                                                        </TableCell>
-                                                    );
-                                                })}
+                                                .map(col => (
+                                                    <TableCell key={col.id}>
+                                                        {getCellValue(shipment, col.id)}
+                                                    </TableCell>
+                                                ))}
 
                                             {/* Actions column - always visible */}
                                             <TableCell>
