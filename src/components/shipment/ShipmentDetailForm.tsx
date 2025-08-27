@@ -14,15 +14,18 @@ import {
 } from "@/components/ui/select";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {Shipment, Transport} from "@/types/shipment.ts";
-import {useQuery} from "@tanstack/react-query";
-import {apiShipmentService} from "@/services/api";
+import {UserSummaryDTO} from "@/types/api.ts";
 
 interface ShipmentDetailFormProps {
     shipment: Shipment;
     isEditing: boolean;
     editedShipment: Shipment;
-    handleInputChange: (field: keyof Shipment, value: string | boolean | number) => void;
+    handleInputChange: (field: keyof Shipment, value: string | boolean | number | Transport | UserSummaryDTO) => void;
     getStatusColor: (status: string) => string;
+    transports: Transport[];
+    customerServiceAgents: UserSummaryDTO[];
+    isLoadingTransports: boolean;
+    isLoadingCustomerServiceAgents: boolean;
 }
 
 export const ShipmentDetailForm = ({
@@ -30,14 +33,12 @@ export const ShipmentDetailForm = ({
                                        isEditing,
                                        editedShipment,
                                        handleInputChange,
-                                       getStatusColor
+                                       getStatusColor,
+                                       transports,
+                                       isLoadingTransports,
+                                       customerServiceAgents,
+                                       isLoadingCustomerServiceAgents
                                    }: ShipmentDetailFormProps) => {
-
-    const {data: transports = [], isLoading: isLoadingTransports} = useQuery<Transport[]>({
-        queryKey: ['transports'],
-        queryFn: apiShipmentService.getTransports,
-        enabled: isEditing,
-    });
 
 
     return (
@@ -63,7 +64,7 @@ export const ShipmentDetailForm = ({
                         <TabsContent value="basic" className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="origin">Origen*</Label>
+                                    <Label htmlFor="origin">Origen</Label>
                                     <Input
                                         id="origin"
                                         value={editedShipment.origin || ''}
@@ -72,7 +73,7 @@ export const ShipmentDetailForm = ({
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="destination">Destino*</Label>
+                                    <Label htmlFor="destination">Destino</Label>
                                     <Input
                                         id="destination"
                                         value={editedShipment.destination || ''}
@@ -84,7 +85,7 @@ export const ShipmentDetailForm = ({
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="client">Cliente*</Label>
+                                    <Label htmlFor="client">Cliente</Label>
                                     <Input
                                         id="client"
                                         value={editedShipment.client || ''}
@@ -99,7 +100,7 @@ export const ShipmentDetailForm = ({
                                         onValueChange={value => handleInputChange("transportMethod", value)}
                                     >
                                         <SelectTrigger id="transportMethod">
-                                            <SelectValue placeholder="Selecciona tipo de transporte"/>
+                                            <SelectValue placeholder="Tipo de transporte"/>
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="terreste">Terrestre</SelectItem>
@@ -112,11 +113,32 @@ export const ShipmentDetailForm = ({
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="customerServiceAgent">Customer Service</Label>
-                                    <Input
-                                        id="customerServiceAgent"
-                                        value={editedShipment.customerServiceAgent || ''}
-                                        onChange={e => handleInputChange("customerServiceAgent", e.target.value)}
-                                    />
+                                    <Select
+                                        onValueChange={(value) => {
+                                            const selectedAgent = customerServiceAgents.find(agent => agent.username === value);
+                                            if (selectedAgent) {
+                                                handleInputChange("customerServiceAgent", selectedAgent);
+                                            }
+                                        }}
+                                        value={editedShipment.customerServiceAgent?.username || ""}
+                                        disabled={!isEditing || isLoadingCustomerServiceAgents}
+
+                                    >
+                                        <SelectTrigger id="customerServiceAgent">
+                                            <SelectValue
+                                                placeholder={isLoadingCustomerServiceAgents ? "Cargando agentes" : "Ingresa el agente de servicio del cliente"}
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {customerServiceAgents.map((agent, index) => (
+                                                <SelectItem
+                                                    key={agent.userId || agent.username || index}
+                                                    value={agent.username}>
+                                                    {agent.username.charAt(0).toUpperCase() + agent.username.slice(1)}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="customsAgent">Agente Aduanal</Label>
@@ -136,7 +158,7 @@ export const ShipmentDetailForm = ({
                                         onValueChange={value => handleInputChange("typeOfService", value)}
                                     >
                                         <SelectTrigger id="typeOfService">
-                                            <SelectValue placeholder="Selecciona tipo de servicio"/>
+                                            <SelectValue placeholder="Tipo de servicio"/>
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="full">Full</SelectItem>
@@ -154,18 +176,21 @@ export const ShipmentDetailForm = ({
                                             <SelectValue placeholder="Select status"/>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="pending_information">Información Pendiente</SelectItem>
-                                            <SelectItem value="pending_folio">Folio Pendiente</SelectItem>
-                                            <SelectItem value="pending_manouvres">Maniobras Pendiente</SelectItem>
-                                            <SelectItem value="everything_Ok">Todo Ok</SelectItem>
-                                            <SelectItem value="in_port">En Puerto</SelectItem>
-                                            <SelectItem value="in_transit">En Transito</SelectItem>
-                                            <SelectItem value="in_destination">En Destino</SelectItem>
-                                            <SelectItem value="pending_POD">POD Pendiente</SelectItem>
-                                            <SelectItem value="pending_vacuum_manouvre">Maniobra de Vacío
+                                            <SelectItem value="Información Pendiente">Información
                                                 Pendiente</SelectItem>
-                                            <SelectItem value="recieved">Ingresado</SelectItem>
-                                            <SelectItem value="released">Egresado</SelectItem>
+                                            <SelectItem value="Folio Pendiente">Folio
+                                                Pendiente</SelectItem>
+                                            <SelectItem value="Maniobras Pendientes">Maniobras
+                                                Pendiente</SelectItem>
+                                            <SelectItem value="Todo Ok">Todo Ok</SelectItem>
+                                            <SelectItem value="En Puerto">En Puerto</SelectItem>
+                                            <SelectItem value="En Transito">En Transito</SelectItem>
+                                            <SelectItem value="En Destino">En Destino</SelectItem>
+                                            <SelectItem value="POD Pendiente">POD Pendiente</SelectItem>
+                                            <SelectItem value="Vacío Pendiente"> Vacío
+                                                Pendiente</SelectItem>
+                                            <SelectItem value="Ingresado">Ingresado</SelectItem>
+                                            <SelectItem value="Egresado">Egresado</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -176,19 +201,28 @@ export const ShipmentDetailForm = ({
                         <TabsContent value="transport" className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="transport">Transporte*</Label>
+                                    <Label htmlFor="transport">Transporte</Label>
                                     <Select
-                                        value={editedShipment.transport.name}
-                                        onValueChange={value => handleInputChange("transport", value)}
+                                        onValueChange={(value) => {
+                                            const selectedTransport = transports.find(t => t.name === value);
+                                            if (selectedTransport) {
+                                                handleInputChange("transport", selectedTransport);
+                                            }
+                                        }}
+                                        value={editedShipment.transport?.name || ""}
+                                        disabled={!isEditing || isLoadingTransports} // Disable if loading
+
                                     >
                                         <SelectTrigger id="transport">
                                             <SelectValue
-                                                placeholder="Selecciona el transporte"/>
+                                                placeholder={isLoadingTransports ? "Cargando transportes" : "Transporte"}
+                                            />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {transports.map((transportItem, index) => (
-                                                <SelectItem key={transportItem.id || transportItem.name || index}
-                                                            value={transportItem.name}>
+                                                <SelectItem
+                                                    key={transportItem.id || transportItem.name || index}
+                                                    value={transportItem.name}>
                                                     {transportItem.name.charAt(0).toUpperCase() + transportItem.name.slice(1)}
                                                 </SelectItem>
                                             ))}
@@ -221,7 +255,7 @@ export const ShipmentDetailForm = ({
                                         onValueChange={value => handleInputChange("pod", value)}
                                     >
                                         <SelectTrigger id="pod">
-                                            <SelectValue placeholder="Selecciona el estatus del POD"/>
+                                            <SelectValue placeholder="Estatus del POD"/>
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="pending">Pendiente</SelectItem>
@@ -241,7 +275,7 @@ export const ShipmentDetailForm = ({
                                         id="container"
                                         value={editedShipment.container || ''}
                                         onChange={e => handleInputChange("container", e.target.value)}
-                                        placeholder="Ingrese número de contenedor"
+                                        placeholder="Número de contenedor"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -251,7 +285,7 @@ export const ShipmentDetailForm = ({
                                         onValueChange={value => handleInputChange("containerType", value)}
                                     >
                                         <SelectTrigger id="containerType">
-                                            <SelectValue placeholder="Selecciona el tipo de contenedor"/>
+                                            <SelectValue placeholder="Tipo de contenedor"/>
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="40_HC">40 HC</SelectItem>
@@ -271,7 +305,7 @@ export const ShipmentDetailForm = ({
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="shipmentDate">Fecha de Contenedor</Label>
+                                    <Label htmlFor="shipmentDate">Fecha de Carga</Label>
                                     <Input
                                         id="shipmentDate"
                                         type="datetime-local"
@@ -285,7 +319,7 @@ export const ShipmentDetailForm = ({
                                         id="terminal"
                                         value={editedShipment.terminal || ''}
                                         onChange={e => handleInputChange("terminal", e.target.value)}
-                                        placeholder="Ingrese terminal"
+                                        placeholder="Terminal"
                                     />
                                 </div>
                             </div>
@@ -301,7 +335,7 @@ export const ShipmentDetailForm = ({
                                         onValueChange={value => handleInputChange("cleaningOrder", value)}
                                     >
                                         <SelectTrigger id="cleaningOrder">
-                                            <SelectValue placeholder="Selecciona estatus"/>
+                                            <SelectValue placeholder="Estatus del vacío"/>
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="solicited">Solicitada</SelectItem>
@@ -329,7 +363,7 @@ export const ShipmentDetailForm = ({
                                         onValueChange={value => handleInputChange("cleaningPatio", value)}
                                     >
                                         <SelectTrigger id="cleaningPatio">
-                                            <SelectValue placeholder="Selecciona el patio"/>
+                                            <SelectValue placeholder="Patio"/>
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="ssa">SSA</SelectItem>
@@ -394,7 +428,7 @@ export const ShipmentDetailForm = ({
                                         onValueChange={value => handleInputChange("eir", value)}
                                     >
                                         <SelectTrigger id="eir">
-                                            <SelectValue placeholder="Selecciona el EIR"/>
+                                            <SelectValue placeholder="EIR"/>
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="pending">No dieron</SelectItem>
@@ -516,7 +550,7 @@ export const ShipmentDetailForm = ({
                                     <p className="text-sm font-medium text-muted-foreground">Customer Service</p>
                                     <div className="flex items-center mt-1">
                                         <User className="h-4 w-4 mr-2 text-muted-foreground"/>
-                                        <p className="text-base">{shipment.customerServiceAgent || 'N/A'}</p>
+                                        <p className="text-base">{shipment.customerServiceAgent ? shipment.customerServiceAgent.username : 'N/A'}</p>
                                     </div>
                                 </div>
                                 <div>
@@ -556,7 +590,7 @@ export const ShipmentDetailForm = ({
                                     <p className="text-sm font-medium text-muted-foreground">Transporte</p>
                                     <div className="flex items-center mt-1">
                                         <Truck className="h-4 w-4 mr-2 text-muted-foreground"/>
-                                        <p className="text-base">{shipment.transport.name || 'N/A'}</p>
+                                        <p className="text-base">{shipment.transport ? shipment.transport.name : 'N/A'}</p>
                                     </div>
                                 </div>
                                 <div>

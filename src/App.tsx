@@ -7,7 +7,6 @@ import {useEffect, useState} from "react";
 import Index from "./pages/Index";
 import Shipments from "./pages/Shipments";
 import ShipmentDetail from "./pages/ShipmentDetail";
-
 import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";

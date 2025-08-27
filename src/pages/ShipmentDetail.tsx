@@ -30,7 +30,8 @@ import {getStatusColor} from "@/services/shipmentService";
 import {ShipmentDetailForm} from "@/components/shipment/ShipmentDetailForm";
 import {ShipmentFilesCard} from "@/components/shipment/ShipmentFilesCard";
 import {DocumentViewer} from "@/components/shipment/DocumentViewer";
-import {Shipment, ShipmentRequest} from "@/types/shipment";
+import {Shipment, ShipmentRequest, Transport} from "@/types/shipment";
+import {UserSummaryDTO} from "@/types/api.ts";
 
 const ShipmentDetail = () => {
     const {id} = useParams<{ id: string }>();
@@ -61,6 +62,21 @@ const ShipmentDetail = () => {
         queryFn: () => id ? apiShipmentService.getShipmentById(id) : Promise.reject('No ID provided'),
         enabled: !!id
     });
+
+    // Fetch available transports
+    const {data: transports = [], isLoading: isLoadingTransports} = useQuery<Transport[]>({
+        queryKey: ['transports'],
+        queryFn: apiShipmentService.getTransports,
+        enabled: isEditing, // Only fetch when in editing mode
+    });
+
+    // Fetch available customer service agents
+    const {data: customerServiceAgents = [], isLoading: isLoadingCustomerServiceAgents} = useQuery<UserSummaryDTO[]>({
+        queryKey: ['customerServiceAgents'],
+        queryFn: apiShipmentService.getCustomerServiceAgents,
+        enabled: isEditing, // Only fetch when in editing mode
+    });
+
 
     // Update shipment mutation
     const updateShipmentMutation = useMutation({
@@ -160,16 +176,18 @@ const ShipmentDetail = () => {
 
     const handleSave = async () => {
         if (editedShipment && id) {
+            const { files, ...rest } = editedShipment;
             const updates: Partial<ShipmentRequest> = {
-                ...editedShipment,
+                ...rest,
                 transport: editedShipment.transport ? editedShipment.transport.name : undefined,
+                customerServiceAgent: editedShipment.customerServiceAgent ? editedShipment.customerServiceAgent.username : undefined,
             };
             updateShipmentMutation.mutate({id, updates});
         }
     };
 
 
-    const handleInputChange = (field: keyof Shipment, value: string | boolean | number) => {
+    const handleInputChange = (field: keyof Shipment, value: string | boolean | number | Transport | UserSummaryDTO) => {
         if (editedShipment) {
             setEditedShipment({...editedShipment, [field]: value});
         }
@@ -400,6 +418,10 @@ const ShipmentDetail = () => {
                     editedShipment={editedShipment || shipment}
                     handleInputChange={handleInputChange}
                     getStatusColor={getStatusColor}
+                    transports={transports}
+                    customerServiceAgents={customerServiceAgents}
+                    isLoadingTransports={isLoadingTransports}
+                    isLoadingCustomerServiceAgents={isLoadingCustomerServiceAgents}
                 />
 
                 <ShipmentFilesCard

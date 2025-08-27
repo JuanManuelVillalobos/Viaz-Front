@@ -14,6 +14,11 @@ export interface ViazCurrentUserAuthResponseDTO {
   effectivePermissions: string[];
 }
 
+export interface UserSummaryDTO {
+    userId: number;
+    username: string;
+}
+
 // User types
 export interface ViazUserDTO {
     userId: number;
