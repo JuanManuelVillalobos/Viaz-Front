@@ -1,7 +1,9 @@
+import {UserSummaryDTO} from "@/types/api.ts";
+
 export interface Shipment {
     viazId: string;
     transportMethod?: string;
-    customerServiceAgent?: string;
+    customerServiceAgent?: UserSummaryDTO;
     typeOfService?: string;
     client?: string;
     origin?: string;
@@ -63,7 +65,6 @@ export interface ShipmentRequest {
     cleanArrivalDate?: string;
     eir?: string;
     observations?: string;
-    files?: number;
 }
 
 export interface TableColumn {
@@ -74,13 +75,14 @@ export interface TableColumn {
 
 // Predefined shipment table columns
 export const defaultShipmentColumns: TableColumn[] = [
-    {id: "viazId", label: "ID", visible: true},
-    {id: "origin", label: "Origin", visible: true},
-    {id: "destination", label: "Destination", visible: true},
-    {id: "client", label: "Client", visible: true},
-    {id: "transport", label: "Transport Provider", visible: true},
-    {id: "status", label: "Status", visible: true},
-    {id: "files", label: "Files", visible: true},
+    {id: "viazId", label: "Referencia", visible: true},
+    {id: "origin", label: "Origen", visible: true},
+    {id: "destination", label: "Destino", visible: true},
+    {id: "client", label: "Cliente", visible: true},
+    {id: "transport", label: "Transporte", visible: true},
+    {id: "status", label: "Estatus", visible: true},
+    {id: "shipmentDate", label: "Fecha de Carga", visible: true},
+    {id: "files", label: "Docs", visible: true},
 ];
 
 export interface Transport {
