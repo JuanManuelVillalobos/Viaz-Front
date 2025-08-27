@@ -1,7 +1,7 @@
 import {useState, useEffect} from "react";
 import {
     Search, ArrowUpDown,
-    MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter
+    MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter, UserRound, User, Truck
 } from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
@@ -46,6 +46,14 @@ import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {apiShipmentService} from "@/services/api";
 import {Textarea} from "@/components/ui/textarea";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {UserSummaryDTO} from "@/types/api.ts";
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle
+} from "@/components/ui/alert-dialog.tsx";
 
 type FilterOption = {
     status: string[];
@@ -59,6 +67,7 @@ const Shipments = () => {
     const [filterOpen, setFilterOpen] = useState(false);
     const [filters, setFilters] = useState<FilterOption>({status: [], carrier: []});
     const [newShipmentOpen, setNewShipmentOpen] = useState(false);
+    const [shipmentToDelete, setShipmentToDelete] = useState<string | null>(null);
     const [columns, setColumns] = useState<TableColumn[]>(() => {
         // Try to load column preferences from localStorage
         const savedColumns = localStorage.getItem("shipmentColumns");
@@ -71,6 +80,12 @@ const Shipments = () => {
         enabled: newShipmentOpen,
     });
 
+    const {data: customerServiceAgents = [], isLoading: isLoadingCustomerServiceAgents} = useQuery<UserSummaryDTO[]>({
+        queryKey: ['customerServiceAgents'],
+        queryFn: apiShipmentService.getCustomerServiceAgents,
+        enabled: newShipmentOpen,
+    });
+
 
     const [newShipment, setNewShipment] = useState<Partial<ShipmentRequest>>({
         origin: "",
@@ -80,7 +95,7 @@ const Shipments = () => {
         typeOfService: "",
         customerServiceAgent: "",
         customsAgent: "",
-        status: "processing",
+        status: "Información Pendiente",
         container: "",
         containerType: "",
         operator: "",
@@ -93,8 +108,7 @@ const Shipments = () => {
         cleaningOrder: "",
         pod: "",
         eir: "",
-        observations: "",
-        files: 0
+        observations: ""
     });
 
     // Save column visibility preferences when they change
@@ -212,18 +226,6 @@ const Shipments = () => {
     };
 
     const handleNewShipmentSubmit = () => {
-        const requiredFields = ['origin', 'destination', 'client', 'transport'];
-        const missingFields = requiredFields.filter(field => !newShipment[field as keyof Shipment]);
-
-        if (missingFields.length > 0) {
-            toast({
-                title: "Validation Error",
-                description: `Required fields missing: ${missingFields.join(', ')}`,
-                variant: "destructive",
-            });
-            return;
-        }
-
         // Create a new shipment with the API
         createShipmentMutation.mutate(newShipment as ShipmentRequest);
     };
@@ -444,7 +446,7 @@ const Shipments = () => {
                                 <TabsContent value="basic" className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="origin">Origen*</Label>
+                                            <Label htmlFor="origin">Origen</Label>
                                             <Input
                                                 id="origin"
                                                 value={newShipment.origin}
@@ -453,7 +455,7 @@ const Shipments = () => {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="destination">Destino*</Label>
+                                            <Label htmlFor="destination">Destino</Label>
                                             <Input
                                                 id="destination"
                                                 value={newShipment.destination}
@@ -465,7 +467,7 @@ const Shipments = () => {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="client">Cliente*</Label>
+                                            <Label htmlFor="client">Cliente</Label>
                                             <Input
                                                 id="client"
                                                 value={newShipment.client}
@@ -493,13 +495,25 @@ const Shipments = () => {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            {/*TODO Make the Cusotmer servide be based upon the cusotmer service table from backend*/}
                                             <Label htmlFor="customerServiceAgent">Customer Service</Label>
-                                            <Input
-                                                id="customerServiceAgent"
+                                            <Select
                                                 value={newShipment.customerServiceAgent}
-                                                onChange={e => handleInputChange("customerServiceAgent", e.target.value)}
-                                            />
+                                                onValueChange={value => handleInputChange("customerServiceAgent", value)}
+                                            >
+                                                <SelectTrigger id="customerServiceAgent">
+                                                    <SelectValue
+                                                        placeholder="Ingresa el agente de servicio del cliente"/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {customerServiceAgents.map((agent, index) => (
+                                                        <SelectItem
+                                                            key={agent.userId || agent.username || index}
+                                                            value={agent.username}>
+                                                            {agent.username.charAt(0).toUpperCase() + agent.username.slice(1)}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="customsAgent">Agente Aduanal</Label>
@@ -537,131 +551,29 @@ const Shipments = () => {
                                                     <SelectValue placeholder="Select status"/>
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="pending_information">Información
+                                                    <SelectItem value="Información Pendiente">Información
                                                         Pendiente</SelectItem>
-                                                    <SelectItem value="pending_folio">Folio
+                                                    <SelectItem value="Folio Pendiente">Folio
                                                         Pendiente</SelectItem>
-                                                    <SelectItem value="pending_manouvres">Maniobras
+                                                    <SelectItem value="Maniobras Pendientes">Maniobras
                                                         Pendiente</SelectItem>
-                                                    <SelectItem value="everything_Ok">Todo Ok</SelectItem>
-                                                    <SelectItem value="in_port">En Puerto</SelectItem>
-                                                    <SelectItem value="in_transit">En Transito</SelectItem>
-                                                    <SelectItem value="in_destination">En Destino</SelectItem>
-                                                    <SelectItem value="pending_POD">POD Pendiente</SelectItem>
-                                                    <SelectItem value="pending_vacuum_manouvre">Maniobra de
-                                                        Vacío
+                                                    <SelectItem value="Todo Ok">Todo Ok</SelectItem>
+                                                    <SelectItem value="En Puerto">En Puerto</SelectItem>
+                                                    <SelectItem value="En Transito">En Transito</SelectItem>
+                                                    <SelectItem value="En Destino">En Destino</SelectItem>
+                                                    <SelectItem value="POD Pendiente">POD Pendiente</SelectItem>
+                                                    <SelectItem value="Vacío Pendiente"> Vacío
                                                         Pendiente</SelectItem>
-                                                    <SelectItem value="recieved">Ingresado</SelectItem>
-                                                    <SelectItem value="released">Egresado</SelectItem>
+                                                    <SelectItem value="Ingresado">Ingresado</SelectItem>
+                                                    <SelectItem value="Egresado">Egresado</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                     </div>
                                 </TabsContent>
 
-                                {/*Container Tab*/}
 
-                                <TabsContent value="container" className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="origin">Origen*</Label>
-                                            <Input
-                                                id="origin"
-                                                value={newShipment.origin}
-                                                onChange={e => handleInputChange("origin", e.target.value)}
-                                                placeholder="Ciudad, País"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="destination">Destino*</Label>
-                                            <Input
-                                                id="destination"
-                                                value={newShipment.destination}
-                                                onChange={e => handleInputChange("destination", e.target.value)}
-                                                placeholder="Ciudad, País"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="client">Cliente*</Label>
-                                        <Input
-                                            id="client"
-                                            value={newShipment.client}
-                                            onChange={e => handleInputChange("client", e.target.value)}
-                                            placeholder="Nombre del cliente"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            {/*TODO Make the Cusotmer servide be based upon the cusotmer service table from backend*/}
-                                            <Label htmlFor="customerServiceAgent">Customer Service</Label>
-                                            <Input
-                                                id="customerServiceAgent"
-                                                value={newShipment.customerServiceAgent}
-                                                onChange={e => handleInputChange("customerServiceAgent", e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="customsAgent">Agente Aduanal</Label>
-                                            <Input
-                                                id="customsAgent"
-                                                value={newShipment.customsAgent}
-                                                onChange={e => handleInputChange("customsAgent", e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="typeOfService">Tipo de Servicio</Label>
-                                            <Select
-                                                value={newShipment.typeOfService}
-                                                onValueChange={value => handleInputChange("typeOfService", value)}
-                                            >
-                                                <SelectTrigger id="typeOfService">
-                                                    <SelectValue placeholder="Selecciona tipo de servicio"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="full">Full</SelectItem>
-                                                    <SelectItem value="sencillo">Sencillo</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="status">Estatus</Label>
-                                            <Select
-                                                value={newShipment.status}
-                                                onValueChange={value => handleInputChange("status", value)}
-                                            >
-                                                <SelectTrigger id="status">
-                                                    <SelectValue placeholder="Select status"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="pending_information">Información
-                                                        Pendiente</SelectItem>
-                                                    <SelectItem value="pending_folio">Folio
-                                                        Pendiente</SelectItem>
-                                                    <SelectItem value="pending_manouvres">Maniobras
-                                                        Pendiente</SelectItem>
-                                                    <SelectItem value="everything_Ok">Todo Ok</SelectItem>
-                                                    <SelectItem value="in_port">En Puerto</SelectItem>
-                                                    <SelectItem value="in_transit">En Transito</SelectItem>
-                                                    <SelectItem value="in_destination">En Destino</SelectItem>
-                                                    <SelectItem value="pending_POD">POD Pendiente</SelectItem>
-                                                    <SelectItem value="pending_vacuum_manouvre">Maniobra de
-                                                        Vacío
-                                                        Pendiente</SelectItem>
-                                                    <SelectItem value="recieved">Ingresado</SelectItem>
-                                                    <SelectItem value="released">Egresado</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                </TabsContent>
-
-                                {/* Transportation Tab */}
+                                {/* Container Tab */}
                                 <TabsContent value="contenedor" className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
@@ -701,9 +613,9 @@ const Shipments = () => {
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="containerDate">Fecha de Contenedor</Label>
+                                            <Label htmlFor="shipmentDate">Fecha de Carga</Label>
                                             <Input
-                                                id="containerDate"
+                                                id="shipmentDate"
                                                 type="datetime-local"
                                                 value={newShipment.shipmentDate}
                                                 onChange={e => handleInputChange("shipmentDate", e.target.value)}
@@ -724,7 +636,7 @@ const Shipments = () => {
                                 <TabsContent value="transport" className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="transport">Transporte*</Label>
+                                            <Label htmlFor="transport">Transporte</Label>
                                             <Select
                                                 value={newShipment.transport}
                                                 onValueChange={value => handleInputChange("transport", value)}
@@ -735,7 +647,9 @@ const Shipments = () => {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {transports.map((transportItem, index) => (
-                                                        <SelectItem key={transportItem.id || transportItem.name || index} value={transportItem.name}>
+                                                        <SelectItem
+                                                            key={transportItem.id || transportItem.name || index}
+                                                            value={transportItem.name}>
                                                             {transportItem.name.charAt(0).toUpperCase() + transportItem.name.slice(1)}
                                                         </SelectItem>
                                                     ))}
@@ -895,6 +809,7 @@ const Shipments = () => {
                                     </div>
                                 </TabsContent>
 
+                                {/*Cleaning Tab*/}
                                 <TabsContent value="vacio" className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
@@ -993,7 +908,7 @@ const Shipments = () => {
                                         .map(col => (
                                             <TableHead key={col.id}>
                                                 <Button variant="ghost" className="p-0 h-8">
-                                                    {col.label} <ArrowUpDown className="ml-1 h-3 w-3"/>
+                                                    {col.label}
                                                 </Button>
                                             </TableHead>
                                         ))}
@@ -1020,6 +935,18 @@ const Shipments = () => {
                                                                         className="mr-1 h-3 w-3 text-muted-foreground"/>
                                                                     {shipment[key] || "N/A"}
                                                                 </div>
+                                                            ) : key === "client" ? (
+                                                                <div className="flex items-center">
+                                                                    <User
+                                                                        className="mr-1 h-3 w-3 text-muted-foreground"/>
+                                                                    {shipment[key] || "N/A"}
+                                                                </div>
+                                                            ) : key === "transport" ? (
+                                                                <div className="flex items-center">
+                                                                    <Truck
+                                                                        className="mr-1 h-3 w-3 text-muted-foreground"/>
+                                                                    {shipment.transport?.name || "N/A"}
+                                                                </div>
                                                             ) : key === "status" ? (
                                                                 <Badge
                                                                     className={getStatusColor(shipment[key] as string || "")}>
@@ -1027,7 +954,7 @@ const Shipments = () => {
                                                                         (shipment[key] as string || "").slice(1) || "N/A"}
                                                                 </Badge>
                                                             ) : key === "files" ? (
-                                                                shipment.files ? shipment.files : 0
+                                                                shipment.files ? shipment.files : "0"
                                                             ) : (
                                                                 "N/A"
                                                             )}
@@ -1055,7 +982,7 @@ const Shipments = () => {
                                                         <DropdownMenuSeparator/>
                                                         <DropdownMenuItem
                                                             className="text-red-500"
-                                                            onClick={() => handleDeleteShipment(shipment.viazId)}
+                                                            onClick={() => setShipmentToDelete(shipment.viazId)}
                                                             disabled={deleteShipmentMutation.isPending}
                                                         >
                                                             {deleteShipmentMutation.isPending && deleteShipmentMutation.variables === shipment.viazId
@@ -1063,6 +990,7 @@ const Shipments = () => {
                                                                 : "Delete Shipment"
                                                             }
                                                         </DropdownMenuItem>
+
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </TableCell>
@@ -1081,6 +1009,33 @@ const Shipments = () => {
                     </div>
                 </ScrollArea>
             </div>
+            <AlertDialog open={!!shipmentToDelete} onOpenChange={(open) => !open && setShipmentToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Eliminar Embarque</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Estas seguro de eliminar este embarque?
+                            Esta acción no se puede deshacer y todos los datos relacionados con el embarque
+                            serán eliminados.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => {
+                                if (shipmentToDelete) {
+                                    deleteShipmentMutation.mutate(shipmentToDelete);
+                                    setShipmentToDelete(null);
+                                }
+                            }}
+                        >
+                            Borrar Embarque
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
         </div>
     );
 };
