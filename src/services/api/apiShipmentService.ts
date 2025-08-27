@@ -1,6 +1,6 @@
 
 import apiClient from './apiClient';
-import {ShipmentUpdateRequest } from '@/types/api';
+import {ShipmentUpdateRequest, UserSummaryDTO} from '@/types/api';
 import {Shipment, ShipmentRequest, Transport} from "@/types/shipment.ts";
 
 export const apiShipmentService = {
@@ -96,5 +96,11 @@ export const apiShipmentService = {
   getTransports: async (): Promise<Transport[]> => {
       const response = await apiClient.get('/api/carrier/get-carriers');
       return response.data;
+  },
+
+  getCustomerServiceAgents: async (): Promise<UserSummaryDTO[]> => {
+      const response = await apiClient.get('/api/user/get-customer-service-users');
+      return response.data;
   }
+
 };
