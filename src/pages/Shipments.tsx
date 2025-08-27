@@ -411,15 +411,17 @@ const Shipments = () => {
                         <DropdownMenuContent className="w-56">
                             <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
                             <DropdownMenuSeparator/>
-                            {columns.map(column => (
-                                <DropdownMenuCheckboxItem
-                                    key={column.id}
-                                    checked={column.visible}
-                                    onCheckedChange={() => toggleColumnVisibility(column.id)}
-                                >
-                                    {column.label}
-                                </DropdownMenuCheckboxItem>
-                            ))}
+                            <ScrollArea className="h-64">
+                                {columns.map(column => (
+                                    <DropdownMenuCheckboxItem
+                                        key={column.id}
+                                        checked={column.visible}
+                                        onCheckedChange={() => toggleColumnVisibility(column.id)}
+                                    >
+                                        {column.label}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </ScrollArea>
                             <DropdownMenuSeparator/>
                             <DropdownMenuItem onClick={resetColumns}>
                                 Reset to defaults
