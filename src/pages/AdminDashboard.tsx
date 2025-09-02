@@ -90,7 +90,10 @@ const AdminDashboard = () => {
     const [roles, setRoles] = useState<Role[]>([]);
 
     const [newCarrier, setNewCarrier] = useState({
-        name: ''
+        name: '',
+        rfc: '',
+        razonSocial: '',
+        caat: ''
     });
 
     // Filtered users for search
@@ -160,10 +163,13 @@ const AdminDashboard = () => {
     const handleCreateCarrier = async () => {
         try {
             const carrierData: CreateCarrierRequest = {
-                name: newCarrier.name
+                name: newCarrier.name,
+                rfc: newCarrier.rfc,
+                caat: newCarrier.caat,
+                razonSocial: newCarrier.razonSocial
             };
             await carrierService.createCarrier(carrierData);
-            setNewCarrier({name: ''});
+            setNewCarrier({caat: "", razonSocial: "", rfc: "", name: ''});
             setNewCarrierOpen(false);
             fetchCarriers(); // Refresh carriers list
             toast({
@@ -434,6 +440,20 @@ const AdminDashboard = () => {
                                                 <Label htmlFor="name">Nombre</Label>
                                                 <Input
                                                     id="name"
+                                                    value={newCarrier.name}
+                                                    onChange={(e) => setNewCarrier({
+                                                        ...newCarrier,
+                                                        name: e.target.value
+                                                    })}
+                                                    placeholder="Nombre del transportista"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="rfc">RFC</Label>
+                                                <Input
+                                                    id="rfc"
                                                     value={newCarrier.name}
                                                     onChange={(e) => setNewCarrier({
                                                         ...newCarrier,
