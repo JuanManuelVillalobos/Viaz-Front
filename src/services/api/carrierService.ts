@@ -11,6 +11,9 @@ export interface Carrier {
 
 export interface CreateCarrierRequest {
   name: string;
+  rfc: string;
+  razonSocial: string;
+  caat: string;
 }
 
 export const carrierService = {

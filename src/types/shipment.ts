@@ -76,18 +76,19 @@ export interface TableColumn {
 // All available shipment table columns
 export const allShipmentColumns: TableColumn[] = [
     {id: "viazId", label: "Referencia", visible: true},
-    {id: "transportMethod", label: "Método de Transporte", visible: false},
-    {id: "customerServiceAgent", label: "Agente de Servicio", visible: false},
-    {id: "typeOfService", label: "Tipo de Servicio", visible: false},
     {id: "client", label: "Cliente", visible: true},
     {id: "origin", label: "Origen", visible: true},
-    {id: "customsAgent", label: "Agente Aduanal", visible: false},
     {id: "destination", label: "Destino", visible: true},
     {id: "status", label: "Estatus", visible: true},
-    {id: "container", label: "Contenedor", visible: false},
-    {id: "containerType", label: "Tipo de Contenedor", visible: false},
     {id: "shipmentDate", label: "Fecha de Carga", visible: true},
     {id: "transport", label: "Transporte", visible: true},
+    {id: "files", label: "Docs", visible: true},
+    {id: "transportMethod", label: "Método de Transporte", visible: false},
+    {id: "customerServiceAgent", label: "Customer Service", visible: false},
+    {id: "typeOfService", label: "Tipo de Servicio", visible: false},
+    {id: "customsAgent", label: "Agente Aduanal", visible: false},
+    {id: "container", label: "Contenedor", visible: false},
+    {id: "containerType", label: "Tipo de Contenedor", visible: false},
     {id: "operator", label: "Operador", visible: false},
     {id: "terminal", label: "Terminal", visible: false},
     {id: "ci", label: "CI", visible: false},
@@ -105,7 +106,6 @@ export const allShipmentColumns: TableColumn[] = [
     {id: "cleanArrivalDate", label: "Fecha de Llegada Limpia", visible: false},
     {id: "eir", label: "EIR", visible: false},
     {id: "observations", label: "Observaciones", visible: false},
-    {id: "files", label: "Docs", visible: true},
 ];
 
 // Default visible columns (subset of allShipmentColumns)
