@@ -4,6 +4,7 @@ import {TooltipProvider} from "@/components/ui/tooltip";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {BrowserRouter, Routes, Route, Navigate} from "react-router-dom";
 import {useEffect, useState} from "react";
+import {AuthProvider} from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Shipments from "./pages/Shipments";
 import ShipmentDetail from "./pages/ShipmentDetail";
@@ -73,31 +74,32 @@ const ProtectedRoute = ({children}: { children: React.ReactNode }) => {
 const App = () => {
     return (
         <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
-                <TooltipProvider>
-                    <Toaster/>
-                    <Sonner/>
-                    <Routes>
-                        <Route path="/login" element={<Login/>}/>
-                        <Route path="/forgot-password" element={<ForgotPassword/>}/>
-                        <Route path="/auth/set-password" element={<SetPassword/>}/>
-                        <Route path="/" element={
-                            <ProtectedRoute>
-                                <DashboardLayout/>
-                            </ProtectedRoute>
-                        }>
-                            <Route index element={<Index/>}/>
-                            <Route path="shipments" element={<Shipments/>}/>
-                            <Route path="shipments/:id" element={<ShipmentDetail/>}/>
-
-                            <Route path="admin" element={<AdminDashboard/>}/>
-                            <Route path="profile" element={<Profile/>}/>
-                            <Route path="settings" element={<Settings/>}/>
-                        </Route>
-                        <Route path="*" element={<NotFound/>}/>
-                    </Routes>
-                </TooltipProvider>
-            </BrowserRouter>
+            <AuthProvider>
+                <BrowserRouter>
+                    <TooltipProvider>
+                        <Toaster/>
+                        <Sonner/>
+                        <Routes>
+                            <Route path="/login" element={<Login/>}/>
+                            <Route path="/forgot-password" element={<ForgotPassword/>}/>
+                            <Route path="/auth/set-password" element={<SetPassword/>}/>
+                            <Route path="/" element={
+                                <ProtectedRoute>
+                                    <DashboardLayout/>
+                                </ProtectedRoute>
+                            }>
+                                <Route index element={<Index/>}/>
+                                <Route path="shipments" element={<Shipments/>}/>
+                                <Route path="shipments/:id" element={<ShipmentDetail/>}/>
+                                <Route path="admin" element={<AdminDashboard/>}/>
+                                <Route path="profile" element={<Profile/>}/>
+                                <Route path="settings" element={<Settings/>}/>
+                            </Route>
+                            <Route path="*" element={<NotFound/>}/>
+                        </Routes>
+                    </TooltipProvider>
+                </BrowserRouter>
+            </AuthProvider>
         </QueryClientProvider>
     );
 };

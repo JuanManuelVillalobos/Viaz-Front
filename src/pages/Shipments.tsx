@@ -1,6 +1,6 @@
 import {useState, useEffect} from "react";
 import {
-    Search, MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck
+    Search, MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck, Plus
 } from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
@@ -53,6 +53,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle
 } from "@/components/ui/alert-dialog.tsx";
+import { Card, CardContent } from "@/components/ui/card";
+import { FileText } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type FilterOption = {
     status: string[];
@@ -72,6 +75,7 @@ const Shipments = () => {
         const savedColumns = localStorage.getItem("shipmentColumns");
         return savedColumns ? JSON.parse(savedColumns) : allShipmentColumns;
     });
+    const { canManageShipments, canCreateShipments } = usePermissions();
 
     const {data: transports = [], isLoading: isLoadingTransports} = useQuery<Transport[]>({
         queryKey: ['transports'],
@@ -119,6 +123,7 @@ const Shipments = () => {
     const {data: shipments = [], isLoading, error} = useQuery({
         queryKey: ['shipments'],
         queryFn: apiShipmentService.getAllShipments,
+        enabled: canManageShipments(),
     });
 
     // Toggle column visibility
@@ -286,6 +291,23 @@ const Shipments = () => {
             });
         }
     };
+
+    // If no permissions, show restricted access
+    if (!canManageShipments()) {
+        return (
+            <div className="p-6">
+                <Card>
+                    <CardContent className="p-6 text-center">
+                        <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <h2 className="text-xl font-semibold mb-2">Acceso Restringido</h2>
+                        <p className="text-muted-foreground">
+                            No tienes permisos para ver los envíos.
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     // If loading, show loading state
     if (isLoading) {
@@ -493,10 +515,11 @@ const Shipments = () => {
                     </Button>
 
                     {/* New Shipment Dialog */}
-                    <Dialog open={newShipmentOpen} onOpenChange={setNewShipmentOpen}>
-                        <DialogTrigger asChild>
-                            <Button size="sm">+ New Shipment</Button>
-                        </DialogTrigger>
+                    {canCreateShipments() && (
+                        <Dialog open={newShipmentOpen} onOpenChange={setNewShipmentOpen}>
+                            <DialogTrigger asChild>
+                                <Button size="sm">+ New Shipment</Button>
+                            </DialogTrigger>
                         <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-auto">
                             <DialogHeader>
                                 <DialogTitle>Crear nuevo embarque</DialogTitle>
@@ -964,6 +987,7 @@ const Shipments = () => {
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
+                    )}
                 </div>
             </div>
 

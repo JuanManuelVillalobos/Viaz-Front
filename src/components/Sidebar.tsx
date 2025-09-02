@@ -2,6 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { HomeIcon, PackageIcon, UsersIcon, ShieldIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -10,13 +11,17 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen }: SidebarProps) => {
   const location = useLocation();
+  const { canManageShipments, canManageUsers, canManageRoles } = usePermissions();
   
-  const menuItems = [
-    { name: "Dashboard", path: "/", icon: HomeIcon },
-    { name: "Shipments", path: "/shipments", icon: PackageIcon },
-    
-    { name: "Admin Panel", path: "/admin", icon: ShieldIcon },
+  const allMenuItems = [
+    { name: "Dashboard", path: "/", icon: HomeIcon, requiresPermission: false },
+    { name: "Shipments", path: "/shipments", icon: PackageIcon, permission: canManageShipments },
+    { name: "Admin Panel", path: "/admin", icon: ShieldIcon, permission: () => canManageUsers() || canManageRoles() },
   ];
+
+  const menuItems = allMenuItems.filter(item => 
+    !item.permission || item.permission()
+  );
 
   return (
     <aside
