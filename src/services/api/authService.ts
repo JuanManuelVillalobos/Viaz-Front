@@ -38,7 +38,7 @@ export const authService = {
     setPassword: async (email: string, password: string, token: string): Promise<ViazUserDTO> => {
         const response = await apiClient.post(
             `/api/auth/set-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`,
-            password
+            {password: password}
         );
         return response.data;
     },
