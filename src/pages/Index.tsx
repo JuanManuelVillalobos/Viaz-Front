@@ -22,12 +22,11 @@ const Index = () => {
   ];
 
   const pieData = [
-    { name: "Ocean", value: 60 },
-    { name: "Air", value: 30 },
-    { name: "Land", value: 10 },
+    { name: "Marítimo", value: 60 },
+    { name: "Terrestre", value: 40 },
   ];
 
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
+  const COLORS = ["#0088FE", "#776424"];
 
   return (
     <div className="space-y-6">
@@ -97,7 +96,7 @@ const Index = () => {
 
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Shipping Methods</CardTitle>
+            <CardTitle>Métodos de Transporte</CardTitle>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
