@@ -101,6 +101,14 @@ export const apiShipmentService = {
   getCustomerServiceAgents: async (): Promise<UserSummaryDTO[]> => {
       const response = await apiClient.get('/api/user/get-customer-service-users');
       return response.data;
-  }
+  },
+
+    closeShipment: async (viazId: string, customerServiceRating : number, observations : string): Promise<void> => {
+      const response = await apiClient.post(`/api/shipment/close-shipment/${viazId}/${customerServiceRating}/${observations}`, {
+        customerServiceRating: customerServiceRating
+      });
+      return response.data;
+
+    }
 
 };
