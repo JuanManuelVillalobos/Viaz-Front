@@ -108,7 +108,23 @@ export const apiShipmentService = {
         customerServiceRating: customerServiceRating
       });
       return response.data;
+    },
 
+    // Get ETA for a shipment
+    getShipmentEta: async (viazId: string): Promise<number> => {
+      const response = await apiClient.get(`/api/shipment/${viazId}/eta`);
+      return response.data;
+    },
+
+    // Get incident types
+    getIncidentTypes: async (): Promise<any[]> => {
+      const response = await apiClient.get('/api/incident/get-incident-types');
+      return response.data;
+    },
+
+    // Add incident to shipment
+    addIncidentToShipment: async (viazId: string, incidentId: string): Promise<void> => {
+      await apiClient.post(`/api/shipment/add-incident/${viazId}/${incidentId}`);
     }
 
 };

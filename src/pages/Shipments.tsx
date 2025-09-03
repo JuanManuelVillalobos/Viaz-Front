@@ -1,6 +1,6 @@
 import {useState, useEffect} from "react";
 import {
-    Search, MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck, Plus
+    Search, MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck, Plus, Eye
 } from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
@@ -56,6 +56,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { ProgressCircle } from "@/components/ui/progress-circle";
 
 type FilterOption = {
     status: string[];
@@ -404,6 +405,23 @@ const Shipments = () => {
             default:
                 return (value as string) || "N/A";
         }
+    };
+
+    // Calculate completion percentage for a shipment
+    const calculateCompletion = (shipment: Shipment) => {
+        const fields = [
+            shipment.origin,
+            shipment.destination,
+            shipment.transport?.name,
+            shipment.customerServiceAgent?.username,
+            shipment.arrivalDate,
+            shipment.status,
+            shipment.transportMethod,
+            shipment.client,
+        ];
+        
+        const filledFields = fields.filter(field => field && field !== 'N/A' && field.toString().trim() !== '').length;
+        return Math.round((filledFields / fields.length) * 100);
     };
 
     // Get visible columns
@@ -1007,7 +1025,7 @@ const Shipments = () => {
                                                 </Button>
                                             </TableHead>
                                         ))}
-                                    <TableHead className="w-[80px]"></TableHead>
+                                    <TableHead className="w-[150px]">Progress</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -1025,35 +1043,50 @@ const Shipments = () => {
 
                                             {/* Actions column - always visible */}
                                             <TableCell>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon">
-                                                            <MoreHorizontal className="h-4 w-4"/>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                        <DropdownMenuSeparator/>
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleViewShipment(shipment.viazId)}>
-                                                            View Details
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem>Track Shipment</DropdownMenuItem>
-                                                        <DropdownMenuItem>Update Status</DropdownMenuItem>
-                                                        <DropdownMenuSeparator/>
-                                                        <DropdownMenuItem
-                                                            className="text-red-500"
-                                                            onClick={() => setShipmentToDelete(shipment.viazId)}
-                                                            disabled={deleteShipmentMutation.isPending}
-                                                        >
-                                                            {deleteShipmentMutation.isPending && deleteShipmentMutation.variables === shipment.viazId
-                                                                ? "Deleting..."
-                                                                : "Delete Shipment"
-                                                            }
-                                                        </DropdownMenuItem>
+                                                <div className="flex items-center gap-2">
+                                                    <ProgressCircle 
+                                                        progress={calculateCompletion(shipment)}
+                                                        size={32}
+                                                        strokeWidth={3}
+                                                        showText={false}
+                                                    />
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => navigate(`/shipment/${shipment.viazId}`)}
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon">
+                                                                <MoreHorizontal className="h-4 w-4"/>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                            <DropdownMenuSeparator/>
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleViewShipment(shipment.viazId)}>
+                                                                View Details
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem>Track Shipment</DropdownMenuItem>
+                                                            <DropdownMenuItem>Update Status</DropdownMenuItem>
+                                                            <DropdownMenuSeparator/>
+                                                            <DropdownMenuItem
+                                                                className="text-red-500"
+                                                                onClick={() => setShipmentToDelete(shipment.viazId)}
+                                                                disabled={deleteShipmentMutation.isPending}
+                                                            >
+                                                                {deleteShipmentMutation.isPending && deleteShipmentMutation.variables === shipment.viazId
+                                                                    ? "Deleting..."
+                                                                    : "Delete Shipment"
+                                                                }
+                                                            </DropdownMenuItem>
 
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))

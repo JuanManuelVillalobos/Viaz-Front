@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {useParams, useNavigate} from "react-router-dom";
-import {ArrowLeft, Edit, Save, X, Lock} from "lucide-react";
+import {ArrowLeft, Edit, Save, X, Lock, Clock, AlertTriangle} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
@@ -23,6 +23,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {apiShipmentService} from "@/services/api/apiShipmentService.ts";
 import {getStatusColor} from "@/services/shipmentService";
@@ -51,6 +59,8 @@ const ShipmentDetail = () => {
     const [closeShipmentOpen, setCloseShipmentOpen] = useState(false);
     const [shipmentGrade, setShipmentGrade] = useState(10);
     const [shipmentObservations, setShipmentObservations] = useState("");
+    const [addIncidentOpen, setAddIncidentOpen] = useState(false);
+    const [selectedIncidentType, setSelectedIncidentType] = useState<string>("");
 
     // Fetch shipment data
     const {
@@ -75,6 +85,20 @@ const ShipmentDetail = () => {
         queryKey: ['customerServiceAgents'],
         queryFn: apiShipmentService.getCustomerServiceAgents,
         enabled: isEditing, // Only fetch when in editing mode
+    });
+
+    // Fetch ETA for shipment
+    const {data: eta, isLoading: isLoadingEta} = useQuery({
+        queryKey: ['shipmentEta', id],
+        queryFn: () => id ? apiShipmentService.getShipmentEta(id) : Promise.reject('No ID provided'),
+        enabled: !!id
+    });
+
+    // Fetch incident types
+    const {data: incidentTypes = [], isLoading: isLoadingIncidentTypes} = useQuery({
+        queryKey: ['incidentTypes'],
+        queryFn: apiShipmentService.getIncidentTypes,
+        enabled: addIncidentOpen
     });
 
 
@@ -148,6 +172,28 @@ const ShipmentDetail = () => {
             toast({
                 title: "Error",
                 description: "Failed to delete file.",
+                variant: "destructive",
+            });
+        }
+    });
+
+    // Add incident mutation
+    const addIncidentMutation = useMutation({
+        mutationFn: ({viazId, incidentId}: { viazId: string, incidentId: string }) =>
+            apiShipmentService.addIncidentToShipment(viazId, incidentId),
+        onSuccess: () => {
+            setAddIncidentOpen(false);
+            setSelectedIncidentType("");
+            toast({
+                title: "Success",
+                description: "Incident added to shipment successfully.",
+            });
+        },
+        onError: (error) => {
+            console.error("Error adding incident:", error);
+            toast({
+                title: "Error",
+                description: "Failed to add incident to shipment.",
                 variant: "destructive",
             });
         }
@@ -349,6 +395,36 @@ const ShipmentDetail = () => {
         }
     };
 
+    // Format ETA from seconds to readable format
+    const formatEta = (seconds: number): string => {
+        if (seconds < 60) {
+            return `${seconds} seconds`;
+        } else if (seconds < 3600) {
+            const minutes = Math.floor(seconds / 60);
+            return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        } else {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            if (minutes === 0) {
+                return `${hours} hour${hours !== 1 ? 's' : ''}`;
+            }
+            return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        }
+    };
+
+    const handleAddIncident = async () => {
+        if (!selectedIncidentType || !id) {
+            toast({
+                title: "Error",
+                description: "Please select an incident type.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        addIncidentMutation.mutate({viazId: id, incidentId: selectedIncidentType});
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-96">
@@ -374,6 +450,14 @@ const ShipmentDetail = () => {
                 </Button>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{shipment.viazId}</h1>
                 <div className="ml-auto flex gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={() => setAddIncidentOpen(true)}
+                        className="flex items-center gap-2"
+                    >
+                        <AlertTriangle className="h-4 w-4"/>
+                        Add Incident
+                    </Button>
                     <Button
                         variant="outline"
                         onClick={() => setCloseShipmentOpen(true)}
@@ -413,17 +497,38 @@ const ShipmentDetail = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ShipmentDetailForm
-                    shipment={shipment}
-                    isEditing={isEditing}
-                    editedShipment={editedShipment || shipment}
-                    handleInputChange={handleInputChange}
-                    getStatusColor={getStatusColor}
-                    transports={transports}
-                    customerServiceAgents={customerServiceAgents}
-                    isLoadingTransports={isLoadingTransports}
-                    isLoadingCustomerServiceAgents={isLoadingCustomerServiceAgents}
-                />
+                <div className="space-y-6">
+                    <ShipmentDetailForm
+                        shipment={shipment}
+                        isEditing={isEditing}
+                        editedShipment={editedShipment || shipment}
+                        handleInputChange={handleInputChange}
+                        getStatusColor={getStatusColor}
+                        transports={transports}
+                        customerServiceAgents={customerServiceAgents}
+                        isLoadingTransports={isLoadingTransports}
+                        isLoadingCustomerServiceAgents={isLoadingCustomerServiceAgents}
+                    />
+                    
+                    {/* ETA Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Clock className="h-5 w-5"/>
+                                Estimated Time of Arrival
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoadingEta ? (
+                                <p className="text-muted-foreground">Loading ETA...</p>
+                            ) : eta !== undefined ? (
+                                <p className="text-lg font-semibold">{formatEta(eta)}</p>
+                            ) : (
+                                <p className="text-muted-foreground">ETA not available</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
 
                 <ShipmentFilesCard
                     viazId={id || ''}
@@ -519,6 +624,50 @@ const ShipmentDetail = () => {
                         </Button>
                         <Button onClick={handleCloseShipment}>
                             Cerrar Embarque
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Incident Dialog */}
+            <Dialog open={addIncidentOpen} onOpenChange={setAddIncidentOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Add Incident</DialogTitle>
+                        <DialogDescription>
+                            Select an incident type to add to this shipment.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="incident-type">Incident Type</Label>
+                            <Select value={selectedIncidentType} onValueChange={setSelectedIncidentType}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select incident type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {isLoadingIncidentTypes ? (
+                                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                    ) : (
+                                        incidentTypes.map((incident) => (
+                                            <SelectItem key={incident.id} value={incident.id}>
+                                                {incident.name || incident.type || incident.description}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setAddIncidentOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleAddIncident}
+                            disabled={addIncidentMutation.isPending || !selectedIncidentType}
+                        >
+                            {addIncidentMutation.isPending ? "Adding..." : "Add Incident"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
