@@ -329,8 +329,9 @@ const ShipmentDetail = () => {
         }
 
         try {
-            // Here you would typically call an API to close the shipment with the grade
-            // For now, we'll just show a success message
+
+            await apiShipmentService.closeShipment(shipment.viazId, shipmentGrade, shipmentObservations)
+
             toast({
                 title: "Embarque Cerrado",
                 description: `El embarque ha sido cerrado con calificación: ${shipmentGrade}`,

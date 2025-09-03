@@ -124,7 +124,7 @@ const AdminDashboard = () => {
 
     const fetchCarriers = useCallback(async () => {
         try {
-            const fetchedCarriers = await carrierService.getAllCarriers();
+            const fetchedCarriers = await carrierService.getAllCarriersWithSensitiveFields();
             setCarriers(fetchedCarriers || []); // Ensure carriers is always an array
         } catch (error) {
             console.error("Error fetching carriers:", error);
@@ -448,18 +448,40 @@ const AdminDashboard = () => {
                                                     placeholder="Nombre del transportista"
                                                 />
                                             </div>
-                                        </div>
-                                        <div className="grid gap-4 py-4">
                                             <div className="grid gap-2">
                                                 <Label htmlFor="rfc">RFC</Label>
                                                 <Input
                                                     id="rfc"
-                                                    value={newCarrier.name}
+                                                    value={newCarrier.rfc}
                                                     onChange={(e) => setNewCarrier({
                                                         ...newCarrier,
-                                                        name: e.target.value
+                                                        rfc: e.target.value
                                                     })}
-                                                    placeholder="Nombre del transportista"
+                                                    placeholder="RFC del transportista"
+                                                />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="razonSocial">Razón Social</Label>
+                                                <Input
+                                                    id="razonSocial"
+                                                    value={newCarrier.razonSocial}
+                                                    onChange={(e) => setNewCarrier({
+                                                        ...newCarrier,
+                                                        razonSocial: e.target.value
+                                                    })}
+                                                    placeholder="Razón social del transportista"
+                                                />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="caat">CAAT</Label>
+                                                <Input
+                                                    id="caat"
+                                                    value={newCarrier.caat}
+                                                    onChange={(e) => setNewCarrier({
+                                                        ...newCarrier,
+                                                        caat: e.target.value
+                                                    })}
+                                                    placeholder="CAAT del transportista"
                                                 />
                                             </div>
                                         </div>
@@ -478,7 +500,9 @@ const AdminDashboard = () => {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Nombre</TableHead>
-                                        <TableHead>Estado</TableHead>
+                                        <TableHead>RFC</TableHead>
+                                        <TableHead>CAAT</TableHead>
+                                        <TableHead>Razón Social</TableHead>
                                         <TableHead className="w-[70px]">Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -486,11 +510,10 @@ const AdminDashboard = () => {
                                     {carriers.map((carrier) => (
                                         <TableRow key={carrier.id}>
                                             <TableCell className="font-medium">{carrier.name}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={carrier.status === 'active' ? 'default' : 'secondary'}>
-                                                    {carrier.status === 'active' ? 'Activo' : 'Inactivo'}
-                                                </Badge>
-                                            </TableCell>
+                                            <TableCell className="font-light">{carrier.rfc}</TableCell>
+                                            <TableCell className="font-light">{carrier.caat}</TableCell>
+                                            <TableCell className="font-light">{carrier.razonSocial}</TableCell>
+
                                             <TableCell>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
