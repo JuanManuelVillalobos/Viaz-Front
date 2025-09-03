@@ -32,6 +32,7 @@ export interface Shipment {
     eir?: string;
     observations?: string;
     files?: number;
+    open?: boolean;
 }
 
 export interface ShipmentRequest {

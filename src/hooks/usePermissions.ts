@@ -21,6 +21,7 @@ export const usePermissions = () => {
     canManageShipments: () => hasAnyPermission(['SHIPMENT_MANAGE', 'SHIPMENT_WRITE', 'SHIPMENT_READ']),
     canCreateShipments: () => hasAnyPermission(['SHIPMENT_MANAGE', 'SHIPMENT_WRITE']),
     canDeleteShipments: () => hasAnyPermission(['SHIPMENT_MANAGE', 'SHIPMENT_DELETE']),
+    canCloseShipments: () => hasAnyPermission(['SHIPMENT_MANAGE', 'SHIPMENT_CLOSE']),
     
     canManageCarriers: () => hasAnyPermission(['CARRIER_MANAGE', 'CARRIER_WRITE', 'CARRIER_READ']),
     canCreateCarriers: () => hasAnyPermission(['CARRIER_MANAGE', 'CARRIER_WRITE']),
