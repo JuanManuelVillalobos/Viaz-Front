@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {useParams, useNavigate} from "react-router-dom";
-import {ArrowLeft, Edit, Save, X, Lock, Clock, AlertTriangle} from "lucide-react";
+import {ArrowLeft, Edit, Save, X, Lock, Clock, AlertTriangle, Unlock} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
@@ -34,6 +34,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {apiShipmentService} from "@/services/api/apiShipmentService.ts";
 import {getStatusColor} from "@/services/shipmentService";
+import { usePermissions } from '@/hooks/usePermissions';
 
 import {ShipmentDetailForm} from "@/components/shipment/ShipmentDetailForm";
 import {ShipmentFilesCard} from "@/components/shipment/ShipmentFilesCard";
@@ -61,6 +62,7 @@ const ShipmentDetail = () => {
     const [shipmentObservations, setShipmentObservations] = useState("");
     const [addIncidentOpen, setAddIncidentOpen] = useState(false);
     const [selectedIncidentType, setSelectedIncidentType] = useState<string>("");
+    const { canCloseShipments } = usePermissions();
 
     // Fetch shipment data
     const {
@@ -425,6 +427,32 @@ const ShipmentDetail = () => {
         addIncidentMutation.mutate({viazId: id, incidentId: selectedIncidentType});
     };
 
+    // Reopen shipment mutation
+    const reopenShipmentMutation = useMutation({
+        mutationFn: (viazId: string) => apiShipmentService.reopenShipment(viazId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ['shipment', id]});
+            toast({
+                title: "Success", 
+                description: "Shipment has been reopened successfully.",
+            });
+        },
+        onError: (error) => {
+            console.error("Error reopening shipment:", error);
+            toast({
+                title: "Error",
+                description: "Failed to reopen shipment.", 
+                variant: "destructive",
+            });
+        }
+    });
+
+    const handleReopenShipment = () => {
+        if (id) {
+            reopenShipmentMutation.mutate(id);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-96">
@@ -443,6 +471,30 @@ const ShipmentDetail = () => {
 
     return (
         <div className="space-y-6">
+            {/* Show closed shipment warning */}
+            {!shipment.open && (
+                <div className="bg-muted/50 border border-muted rounded-lg p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Lock className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                            <p className="font-medium">This shipment is closed</p>
+                            <p className="text-sm text-muted-foreground">This shipment has been closed and is read-only</p>
+                        </div>
+                    </div>
+                    {canCloseShipments() && (
+                        <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={handleReopenShipment}
+                            disabled={reopenShipmentMutation.isPending}
+                        >
+                            <Unlock className="h-4 w-4 mr-2" />
+                            {reopenShipmentMutation.isPending ? "Reopening..." : "Reopen Shipment"}
+                        </Button>
+                    )}
+                </div>
+            )}
+
             <div className="flex items-center flex-wrap gap-2">
                 <Button variant="ghost" onClick={handleBack} className="mr-2">
                     <ArrowLeft className="h-4 w-4 mr-2"/>
@@ -450,23 +502,27 @@ const ShipmentDetail = () => {
                 </Button>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{shipment.viazId}</h1>
                 <div className="ml-auto flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={() => setAddIncidentOpen(true)}
-                        className="flex items-center gap-2"
-                    >
-                        <AlertTriangle className="h-4 w-4"/>
-                        Add Incident
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={() => setCloseShipmentOpen(true)}
-                        className="flex items-center gap-2"
-                    >
-                        <Lock className="h-4 w-4"/>
-                        Cerrar Embarque
-                    </Button>
-                    {!isEditing ? (
+                    {shipment.open && (
+                        <>
+                            <Button
+                                variant="outline"
+                                onClick={() => setAddIncidentOpen(true)}
+                                className="flex items-center gap-2"
+                            >
+                                <AlertTriangle className="h-4 w-4"/>
+                                Add Incident
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => setCloseShipmentOpen(true)}
+                                className="flex items-center gap-2"
+                            >
+                                <Lock className="h-4 w-4"/>
+                                Cerrar Embarque
+                            </Button>
+                        </>
+                    )}
+                    {!isEditing && shipment.open ? (
                         <Button
                             onClick={handleEdit}
                             disabled={updateShipmentMutation.isPending}
@@ -474,7 +530,7 @@ const ShipmentDetail = () => {
                             <Edit className="h-4 w-4 mr-2"/>
                             Edit Shipment
                         </Button>
-                    ) : (
+                    ) : shipment.open ? (
                         <div className="space-x-2">
                             <Button
                                 variant="outline"
@@ -492,7 +548,7 @@ const ShipmentDetail = () => {
                                 {updateShipmentMutation.isPending ? "Saving..." : "Save Changes"}
                             </Button>
                         </div>
-                    )}
+                    ) : null}
                 </div>
             </div>
 
@@ -500,7 +556,7 @@ const ShipmentDetail = () => {
                 <div className="space-y-6">
                     <ShipmentDetailForm
                         shipment={shipment}
-                        isEditing={isEditing}
+                        isEditing={isEditing && shipment.open}
                         editedShipment={editedShipment || shipment}
                         handleInputChange={handleInputChange}
                         getStatusColor={getStatusColor}
@@ -532,7 +588,7 @@ const ShipmentDetail = () => {
 
                 <ShipmentFilesCard
                     viazId={id || ''}
-                    isEditing={isEditing}
+                    isEditing={isEditing && shipment.open}
                     documents={documents}
                     isLoadingDocuments={isLoadingDocuments}
                     handleDeleteFile={handleDeleteFile}
