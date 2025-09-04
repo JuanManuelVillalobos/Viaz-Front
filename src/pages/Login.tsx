@@ -14,12 +14,14 @@ import {Label} from "@/components/ui/label";
 import {LogIn, Mail, LockKeyhole} from "lucide-react";
 import {toast} from "@/hooks/use-toast";
 import {authService} from "@/services/api/authService";
+import {useAuth} from "@/contexts/AuthContext.tsx";
 
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const {refreshAuth} = useAuth();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -38,6 +40,7 @@ const Login = () => {
         try {
             // Call the login API
             const response = await authService.login({email, password});
+            await refreshAuth();
 
             // Get user info and save to localStorage (you might want to adapt this)
             localStorage.setItem("user", JSON.stringify({
