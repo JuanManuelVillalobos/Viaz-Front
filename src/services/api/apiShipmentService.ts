@@ -125,6 +125,11 @@ export const apiShipmentService = {
     // Add incident to shipment
     addIncidentToShipment: async (viazId: string, incidentId: string): Promise<void> => {
       await apiClient.post(`/api/shipment/add-incident/${viazId}/${incidentId}`);
+    },
+
+    // Reopen shipment
+    reopenShipment: async (viazId: string): Promise<void> => {
+      await apiClient.post(`/api/shipment/reopen/${viazId}`);
     }
 
 };
