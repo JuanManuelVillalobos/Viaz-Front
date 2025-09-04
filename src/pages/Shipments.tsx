@@ -574,7 +574,10 @@ const Shipments = () => {
                     {canCreateShipments() && (
                         <Dialog open={newShipmentOpen} onOpenChange={setNewShipmentOpen}>
                             <DialogTrigger asChild>
-                                <Button size="sm">+ New Shipment</Button>
+                                <Button size="sm">
+                                    <Plus className="mr-2 h-4 w-4"/>
+                                    New Shipment
+                                </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-auto">
                                 <DialogHeader>
@@ -1053,6 +1056,7 @@ const Shipments = () => {
                             </TableHead>
                             <TableHead>
                                 Acciones
+
                             </TableHead>
                         </TableRow>
                     </TableHeader>
