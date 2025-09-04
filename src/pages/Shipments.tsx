@@ -1,6 +1,6 @@
 import {useState, useEffect} from "react";
 import {
-    Search, MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck, Plus, Eye
+    Search, MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck, Plus, Eye, Lock, Trash
 } from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
@@ -38,7 +38,14 @@ import {
 } from "@/components/ui/select";
 import {Checkbox} from "@/components/ui/checkbox";
 import {useNavigate} from "react-router-dom";
-import {Shipment, TableColumn, defaultShipmentColumns, allShipmentColumns, Transport, ShipmentRequest} from "@/types/shipment";
+import {
+    Shipment,
+    TableColumn,
+    defaultShipmentColumns,
+    allShipmentColumns,
+    Transport,
+    ShipmentRequest
+} from "@/types/shipment";
 import {getStatusColor} from "@/services/shipmentService";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
@@ -53,10 +60,10 @@ import {
     AlertDialogHeader,
     AlertDialogTitle
 } from "@/components/ui/alert-dialog.tsx";
-import { Card, CardContent } from "@/components/ui/card";
-import { FileText } from 'lucide-react';
-import { usePermissions } from '@/hooks/usePermissions';
-import { ProgressCircle } from "@/components/ui/progress-circle";
+import {Card, CardContent} from "@/components/ui/card";
+import {FileText} from 'lucide-react';
+import {usePermissions} from '@/hooks/usePermissions';
+import {ProgressCircle} from "@/components/ui/progress-circle.tsx";
 
 type FilterOption = {
     status: string[];
@@ -76,7 +83,7 @@ const Shipments = () => {
         const savedColumns = localStorage.getItem("shipmentColumns");
         return savedColumns ? JSON.parse(savedColumns) : allShipmentColumns;
     });
-    const { canManageShipments, canCreateShipments } = usePermissions();
+    const {canManageShipments, canCreateShipments} = usePermissions();
 
     const {data: transports = [], isLoading: isLoadingTransports} = useQuery<Transport[]>({
         queryKey: ['transports'],
@@ -136,7 +143,6 @@ const Shipments = () => {
         )
     };
 
-    // Reset column visibility to defaults
     // Reset column visibility to defaults
     const resetColumns = () => {
         setColumns(allShipmentColumns.map(col => ({
@@ -212,7 +218,7 @@ const Shipments = () => {
     });
 
     // Extract unique carriers and statuses for filters
-    const carriers = [...new Set(shipments.map(shipment => shipment.transport || '').filter(Boolean))];
+    const carriers = [...new Set(shipments.map(shipment => shipment.transport?.name || '').filter(Boolean))];
     const statuses = [...new Set(shipments.map(shipment => shipment.status || '').filter(Boolean))];
 
     const handleFilterChange = (type: "status" | "carrier", value: string) => {
@@ -299,7 +305,7 @@ const Shipments = () => {
             <div className="p-6">
                 <Card>
                     <CardContent className="p-6 text-center">
-                        <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground"/>
                         <h2 className="text-xl font-semibold mb-2">Acceso Restringido</h2>
                         <p className="text-muted-foreground">
                             No tienes permisos para ver los envíos.
@@ -342,7 +348,7 @@ const Shipments = () => {
         switch (columnId) {
             case "viazId":
                 return <span className="font-medium">{value as string}</span>;
-                
+
             case "origin":
             case "destination":
                 return (
@@ -351,7 +357,7 @@ const Shipments = () => {
                         {(value as string) || "N/A"}
                     </div>
                 );
-                
+
             case "client":
             case "customsAgent":
                 return (
@@ -360,7 +366,7 @@ const Shipments = () => {
                         {(value as string) || "N/A"}
                     </div>
                 );
-                
+
             case "transport":
                 return (
                     <div className="flex items-center">
@@ -368,21 +374,21 @@ const Shipments = () => {
                         {shipment.transport?.name || "N/A"}
                     </div>
                 );
-                
+
             case "customerServiceAgent":
                 return shipment.customerServiceAgent?.username || "N/A";
-                
+
             case "status":
                 return (
                     <Badge className={getStatusColor((value as string) || "")}>
-                        {((value as string) || "").charAt(0).toUpperCase() + 
-                         ((value as string) || "").slice(1) || "N/A"}
+                        {((value as string) || "").charAt(0).toUpperCase() +
+                            ((value as string) || "").slice(1) || "N/A"}
                     </Badge>
                 );
-                
+
             case "files":
                 return value ? value.toString() : "0";
-                
+
             case "ci":
             case "ccp":
             case "taxFolio":
@@ -393,7 +399,7 @@ const Shipments = () => {
                         {value ? "Sí" : "No"}
                     </Badge>
                 );
-                
+
             case "shipmentDate":
             case "departureDate":
             case "arrivalDate":
@@ -401,27 +407,50 @@ const Shipments = () => {
             case "cleaningDate":
             case "cleanArrivalDate":
                 return value ? new Date(value as string).toLocaleDateString() : "N/A";
-                
+
             default:
                 return (value as string) || "N/A";
         }
     };
 
-    // Calculate completion percentage for a shipment
-    const calculateCompletion = (shipment: Shipment) => {
+    // Calculate completion and missing fields for a shipment
+    const calculateCompletionData = (shipment: Shipment) => {
         const fields = [
+            shipment.client,
             shipment.origin,
             shipment.destination,
-            shipment.transport?.name,
-            shipment.customerServiceAgent?.username,
-            shipment.arrivalDate,
             shipment.status,
+            shipment.shipmentDate,
+            shipment.transport?.name,
             shipment.transportMethod,
-            shipment.client,
+            shipment.customerServiceAgent?.username,
+            shipment.typeOfService,
+            shipment.customsAgent,
+            shipment.container,
+            shipment.containerType,
+            shipment.operator,
+            shipment.terminal,
+            shipment.ci,
+            shipment.ccp,
+            shipment.taxFolio,
+            shipment.loadManoeuvre,
+            shipment.pisVinculation,
+            shipment.departureDate,
+            shipment.arrivalDate,
+            shipment.unloadDate,
+            shipment.cleaningOrder,
+            shipment.pod,
+            shipment.cleaningPatio,
+            shipment.cleaningDate,
+            shipment.cleanArrivalDate,
+            shipment.eir
         ];
-        
+
         const filledFields = fields.filter(field => field && field !== 'N/A' && field.toString().trim() !== '').length;
-        return Math.round((filledFields / fields.length) * 100);
+        const percentage = Math.round((filledFields / fields.length) * 100);
+        const missing = fields.length - filledFields;
+
+        return {percentage, missing};
     };
 
     // Get visible columns
@@ -439,13 +468,14 @@ const Shipments = () => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className="flex gap-2 ml-auto">
+                <div className="flex flex-wrap gap-2 ml-auto">
+
                     {/* Column Selection Dropdown */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm">
                                 <Columns className="mr-2 h-4 w-4"/>
-                                Columns
+                                Columnas
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-56">
@@ -464,7 +494,7 @@ const Shipments = () => {
                             </ScrollArea>
                             <DropdownMenuSeparator/>
                             <DropdownMenuItem onClick={resetColumns}>
-                                Reset to defaults
+                                Seleccionar predeterminados
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -474,665 +504,643 @@ const Shipments = () => {
                         <DialogTrigger asChild>
                             <Button variant="outline" size="sm">
                                 <ListFilter className="mr-2 h-4 w-4"/>
-                                Filter {(filters.status.length > 0 || filters.carrier.length > 0) &&
+                                Filtrar {(filters.status.length > 0 || filters.carrier.length > 0) &&
                                 <Badge className="ml-1 bg-primary px-1 text-[10px]">
                                     {filters.status.length + filters.carrier.length}
                                 </Badge>}
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
+                        <DialogContent className="sm:max-w-md">
                             <DialogHeader>
-                                <DialogTitle>Filter Shipments</DialogTitle>
+                                <DialogTitle>Filtrar Embarques</DialogTitle>
                                 <DialogDescription>
-                                    Select filters to narrow down your search
+                                    Filtrar embarques por estatus, customer service y transporte.
                                 </DialogDescription>
                             </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                    <Label>Status</Label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {statuses.map((status) => (
-                                            <Badge
-                                                key={status}
-                                                variant={filters.status.includes(status) ? "default" : "outline"}
-                                                className="cursor-pointer"
-                                                onClick={() => handleFilterChange("status", status)}
-                                            >
-                                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                                            </Badge>
+                            <div className="space-y-4">
+                                <div>
+                                    <Label className="text-sm font-medium">Status</Label>
+                                    <div className="mt-2 space-y-2">
+                                        {statuses.map(status => (
+                                            <div key={status} className="flex items-center space-x-2">
+                                                <Checkbox
+                                                    id={`status-${status}`}
+                                                    checked={filters.status.includes(status)}
+                                                    onCheckedChange={() => handleFilterChange("status", status)}
+                                                />
+                                                <Label htmlFor={`status-${status}`} className="text-sm">
+                                                    {status}
+                                                </Label>
+                                            </div>
                                         ))}
                                     </div>
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label>Carrier</Label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {transports.map((carrier) => (
-                                            <Badge
-                                                key={carrier.id}
-                                                variant={filters.carrier.includes(carrier.name) ? "default" : "outline"}
-                                                className="cursor-pointer"
-                                                onClick={() => handleFilterChange("carrier", carrier.name)}
-                                            >
-                                                {carrier.name}
-                                            </Badge>
+                                <div>
+                                    <Label className="text-sm font-medium">Carrier</Label>
+                                    <div className="mt-2 space-y-2">
+                                        {carriers.map(carrier => (
+                                            <div key={carrier} className="flex items-center space-x-2">
+                                                <Checkbox
+                                                    id={`carrier-${carrier}`}
+                                                    checked={filters.carrier.includes(carrier)}
+                                                    onCheckedChange={() => handleFilterChange("carrier", carrier)}
+                                                />
+                                                <Label htmlFor={`carrier-${carrier}`} className="text-sm">
+                                                    {carrier}
+                                                </Label>
+                                            </div>
                                         ))}
                                     </div>
                                 </div>
                             </div>
-                            <DialogFooter className="flex justify-between">
-                                <Button variant="outline" onClick={resetFilters}>Reset</Button>
-                                <Button onClick={() => setFilterOpen(false)}>Apply Filters</Button>
+                            <DialogFooter className="flex gap-2">
+                                <Button variant="outline" onClick={resetFilters}>
+                                    Reiniciar filtros
+                                </Button>
+                                <Button onClick={() => setFilterOpen(false)}>
+                                    Aplicar filtros
+                                </Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
 
-                    {/* Excel Export Button */}
+                    {/* Export Excel Button */}
                     <Button variant="outline" size="sm" onClick={handleExportExcel}>
                         <FileSpreadsheet className="mr-2 h-4 w-4"/>
-                        Export Excel
+                        Export
                     </Button>
 
-                    {/* New Shipment Dialog */}
+                    {/* New Shipment Button - only show if user can create shipments */}
                     {canCreateShipments() && (
                         <Dialog open={newShipmentOpen} onOpenChange={setNewShipmentOpen}>
                             <DialogTrigger asChild>
                                 <Button size="sm">+ New Shipment</Button>
                             </DialogTrigger>
-                        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-auto">
-                            <DialogHeader>
-                                <DialogTitle>Crear nuevo embarque</DialogTitle>
-                                <DialogDescription>
-                                    Llena la información para crear un nuevo embarque.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <Tabs defaultValue="basic">
-                                <TabsList className="grid grid-cols-5 mb-4">
-                                    <TabsTrigger value="basic">Información Básica</TabsTrigger>
-                                    <TabsTrigger value="transport">Transporte</TabsTrigger>
-                                    <TabsTrigger value="contenedor">Contenedor</TabsTrigger>
-                                    <TabsTrigger value="vacio">Vacío</TabsTrigger>
-                                    <TabsTrigger value="documents">Documentos & Fechas</TabsTrigger>
-                                </TabsList>
+                            <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-auto">
+                                <DialogHeader>
+                                    <DialogTitle>Crear nuevo embarque</DialogTitle>
+                                    <DialogDescription>
+                                        Llena la información para crear un nuevo embarque.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <Tabs defaultValue="basic">
+                                    <TabsList className="grid grid-cols-5 mb-4">
+                                        <TabsTrigger value="basic">Información Básica</TabsTrigger>
+                                        <TabsTrigger value="transport">Transporte</TabsTrigger>
+                                        <TabsTrigger value="contenedor">Contenedor</TabsTrigger>
+                                        <TabsTrigger value="vacio">Vacío</TabsTrigger>
+                                        <TabsTrigger value="documents">Documentos & Fechas</TabsTrigger>
+                                    </TabsList>
 
-                                {/* Basic Info Tab */}
-                                <TabsContent value="basic" className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="origin">Origen</Label>
-                                            <Input
-                                                id="origin"
-                                                value={newShipment.origin}
-                                                onChange={e => handleInputChange("origin", e.target.value)}
-                                                placeholder="Ciudad, País"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="destination">Destino</Label>
-                                            <Input
-                                                id="destination"
-                                                value={newShipment.destination}
-                                                onChange={e => handleInputChange("destination", e.target.value)}
-                                                placeholder="Ciudad, País"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="client">Cliente</Label>
-                                            <Input
-                                                id="client"
-                                                value={newShipment.client}
-                                                onChange={e => handleInputChange("client", e.target.value)}
-                                                placeholder="Nombre del cliente"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="t_m">T/M</Label>
-                                            <Select
-                                                value={newShipment.transportMethod}
-                                                onValueChange={value => handleInputChange("transportMethod", value)}
-                                            >
-                                                <SelectTrigger id="t_m">
-                                                    <SelectValue placeholder="Selecciona metodo de transporte"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="terreste">Terrestre</SelectItem>
-                                                    <SelectItem value="maritimo">Marítimo</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="customerServiceAgent">Customer Service</Label>
-                                            <Select
-                                                value={newShipment.customerServiceAgent}
-                                                onValueChange={value => handleInputChange("customerServiceAgent", value)}
-                                            >
-                                                <SelectTrigger id="customerServiceAgent">
-                                                    <SelectValue
-                                                        placeholder="Ingresa el agente de servicio del cliente"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {customerServiceAgents.map((agent, index) => (
-                                                        <SelectItem
-                                                            key={agent.userId || agent.username || index}
-                                                            value={agent.username}>
-                                                            {agent.username.charAt(0).toUpperCase() + agent.username.slice(1)}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="customsAgent">Agente Aduanal</Label>
-                                            <Input
-                                                id="customsAgent"
-                                                value={newShipment.customsAgent}
-                                                onChange={e => handleInputChange("customsAgent", e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="typeOfService">Tipo de Servicio</Label>
-                                            <Select
-                                                value={newShipment.typeOfService}
-                                                onValueChange={value => handleInputChange("typeOfService", value)}
-                                            >
-                                                <SelectTrigger id="typeOfService">
-                                                    <SelectValue placeholder="Selecciona tipo de servicio"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="full">Full</SelectItem>
-                                                    <SelectItem value="sencillo">Sencillo</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="status">Estatus</Label>
-                                            <Select
-                                                value={newShipment.status}
-                                                onValueChange={value => handleInputChange("status", value)}
-                                            >
-                                                <SelectTrigger id="status">
-                                                    <SelectValue placeholder="Select status"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Información Pendiente">Información
-                                                        Pendiente</SelectItem>
-                                                    <SelectItem value="Folio Pendiente">Folio
-                                                        Pendiente</SelectItem>
-                                                    <SelectItem value="Maniobras Pendientes">Maniobras
-                                                        Pendiente</SelectItem>
-                                                    <SelectItem value="Todo Ok">Todo Ok</SelectItem>
-                                                    <SelectItem value="En Puerto">En Puerto</SelectItem>
-                                                    <SelectItem value="En Transito">En Transito</SelectItem>
-                                                    <SelectItem value="En Destino">En Destino</SelectItem>
-                                                    <SelectItem value="POD Pendiente">POD Pendiente</SelectItem>
-                                                    <SelectItem value="Vacío Pendiente"> Vacío
-                                                        Pendiente</SelectItem>
-                                                    <SelectItem value="Ingresado">Ingresado</SelectItem>
-                                                    <SelectItem value="Egresado">Egresado</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                </TabsContent>
-
-
-                                {/* Container Tab */}
-                                <TabsContent value="contenedor" className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="container">Número de Contenedor</Label>
-                                            <Input
-                                                id="container"
-                                                value={newShipment.container}
-                                                onChange={e => handleInputChange("container", e.target.value)}
-                                                placeholder="Ingrese número de contenedor"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="containerType">Tipo de Contenedor</Label>
-                                            <Select
-                                                value={newShipment.containerType}
-                                                onValueChange={value => handleInputChange("containerType", value)}
-                                            >
-                                                <SelectTrigger id="containerType">
-                                                    <SelectValue
-                                                        placeholder="Selecciona el tipo de contenedor"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="40_HC">40 HC</SelectItem>
-                                                    <SelectItem value="20_HC">20 HC</SelectItem>
-                                                    <SelectItem value="40_IMO">40 IMO</SelectItem>
-                                                    <SelectItem value="20_IMO">20 IMO</SelectItem>
-                                                    <SelectItem value="40_DC">40 DC</SelectItem>
-                                                    <SelectItem value="20_DC">20 DC</SelectItem>
-                                                    <SelectItem value="CAJA_53">Caja 53</SelectItem>
-                                                    <SelectItem value="NISSAN">NISSAN</SelectItem>
-                                                    <SelectItem value="PLATAFORMA">PLATAFORMA</SelectItem>
-                                                    <SelectItem value="CAMA_BAJA">CAMA BAJA</SelectItem>
-                                                    <SelectItem value="RABON">RABON</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="shipmentDate">Fecha de Carga</Label>
-                                            <Input
-                                                id="shipmentDate"
-                                                type="datetime-local"
-                                                value={newShipment.shipmentDate}
-                                                onChange={e => handleInputChange("shipmentDate", e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="shipmentTerminal">Terminal</Label>
-                                            <Input
-                                                id="shipmentTerminal"
-                                                value={newShipment.terminal}
-                                                onChange={e => handleInputChange("terminal", e.target.value)}
-                                                placeholder="Ingrese terminal"
-                                            />
-                                        </div>
-                                    </div>
-                                </TabsContent>
-
-                                <TabsContent value="transport" className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="transport">Transporte</Label>
-                                            <Select
-                                                value={newShipment.transport}
-                                                onValueChange={value => handleInputChange("transport", value)}
-                                            >
-                                                <SelectTrigger id="transport">
-                                                    <SelectValue
-                                                        placeholder="Selecciona el transporte"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {transports.map((transportItem, index) => (
-                                                        <SelectItem
-                                                            key={transportItem.id || transportItem.name || index}
-                                                            value={transportItem.name}>
-                                                            {transportItem.name.charAt(0).toUpperCase() + transportItem.name.slice(1)}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="shipmentOperator">Operador o Referencia</Label>
-                                            <Input
-                                                id="shipmentOperator"
-                                                value={newShipment.operator}
-                                                onChange={e => handleInputChange("operator", e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="shipmentTerminal">Terminal</Label>
-                                            <Input
-                                                id="shipmentTerminal"
-                                                value={newShipment.terminal}
-                                                onChange={e => handleInputChange("terminal", e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="portOfDischarge">POD</Label>
-                                            <Select
-                                                value={newShipment.pod}
-                                                onValueChange={value => handleInputChange("containerType", value)}
-                                            >
-                                                <SelectTrigger id="portOfDischarge">
-                                                    <SelectValue
-                                                        placeholder="Selecciona el estatus del POD"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="pending">Pendiente</SelectItem>
-                                                    <SelectItem value="sent">Enviado</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                </TabsContent>
-
-                                {/* Documents & Dates Tab */}
-                                <TabsContent value="documents" className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="portDepartureDate">Fecha Salida de Puerto</Label>
-                                            <Input
-                                                id="portDepartureDate"
-                                                type="date"
-                                                value={newShipment.departureDate}
-                                                onChange={e => handleInputChange("departureDate", e.target.value)}
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="portArrivalDate">Fecha Llegada a Puerto</Label>
-                                            <Input
-                                                id="portArrivalDate"
-                                                type="datetime-local"
-                                                value={newShipment.arrivalDate}
-                                                onChange={e => handleInputChange("arrivalDate", e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="portUnloadDate">Fecha Descarga</Label>
-                                            <Input
-                                                id="portUnloadDate"
-                                                type="datetime-local"
-                                                value={newShipment.unloadDate}
-                                                onChange={e => handleInputChange("unloadDate", e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="eir">EIR</Label>
-                                            <Select
-                                                value={newShipment.eir}
-                                                onValueChange={value => handleInputChange("eir", value)}
-                                            >
-                                                <SelectTrigger id="eir">
-                                                    <SelectValue
-                                                        placeholder="Selecciona el EIR"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="pending">No dieron</SelectItem>
-                                                    <SelectItem value="sent">Enviado</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-
-                                    <fieldset className="border rounded-md p-4">
-                                        <legend className="text-sm font-medium px-2">Documentos</legend>
+                                    {/* Basic Info Tab */}
+                                    <TabsContent value="basic" className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="ci"
-                                                    checked={newShipment.ci}
-                                                    onCheckedChange={checked => handleInputChange("ci", checked)}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="origin">Origen</Label>
+                                                <Input
+                                                    id="origin"
+                                                    value={newShipment.origin}
+                                                    onChange={e => handleInputChange("origin", e.target.value)}
+                                                    placeholder="Ciudad, País"
                                                 />
-                                                <Label htmlFor="ci">CI</Label>
                                             </div>
-
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="ccp"
-                                                    checked={newShipment.ccp}
-                                                    onCheckedChange={checked => handleInputChange("ccp", checked)}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="destination">Destino</Label>
+                                                <Input
+                                                    id="destination"
+                                                    value={newShipment.destination}
+                                                    onChange={e => handleInputChange("destination", e.target.value)}
+                                                    placeholder="Ciudad, País"
                                                 />
-                                                <Label htmlFor="ccp">CCP</Label>
-                                            </div>
-
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="taxFolio"
-                                                    checked={newShipment.taxFolio}
-                                                    onCheckedChange={checked => handleInputChange("taxFolio", checked)}
-                                                />
-                                                <Label htmlFor="taxFolio">Folio Fiscal</Label>
-                                            </div>
-
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="loadManoeuvre"
-                                                    checked={newShipment.loadManoeuvre}
-                                                    onCheckedChange={checked => handleInputChange("loadManoeuvre", checked)}
-                                                />
-                                                <Label htmlFor="loadManoeuvre">Maniobra de Carga</Label>
-                                            </div>
-
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="pisVinculation"
-                                                    checked={newShipment.pisVinculation}
-                                                    onCheckedChange={checked => handleInputChange("pisVinculation", checked)}
-                                                />
-                                                <Label htmlFor="pisVinculation">Vinculacion PIS</Label>
                                             </div>
                                         </div>
-                                    </fieldset>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="observations">Observations</Label>
-                                        <Textarea
-                                            id="observations"
-                                            value={newShipment.observations}
-                                            onChange={e => handleInputChange("observations", e.target.value)}
-                                            placeholder="Add any additional notes here..."
-                                            rows={3}
-                                        />
-                                    </div>
-                                </TabsContent>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="client">Cliente</Label>
+                                                <Input
+                                                    id="client"
+                                                    value={newShipment.client}
+                                                    onChange={e => handleInputChange("client", e.target.value)}
+                                                    placeholder="Nombre del cliente"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="t_m">T/M</Label>
+                                                <Select
+                                                    value={newShipment.transportMethod}
+                                                    onValueChange={value => handleInputChange("transportMethod", value)}
+                                                >
+                                                    <SelectTrigger id="t_m">
+                                                        <SelectValue placeholder="Selecciona metodo de transporte"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="terreste">Terrestre</SelectItem>
+                                                        <SelectItem value="maritimo">Marítimo</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
 
-                                {/*Cleaning Tab*/}
-                                <TabsContent value="vacio" className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="vacuumManoeuvre">Maniobra de Vacío</Label>
-                                            <Select
-                                                value={newShipment.cleaningOrder}
-                                                onValueChange={value => handleInputChange("cleaningOrder", value)}
-                                            >
-                                                <SelectTrigger id="vacuumManoeuvre">
-                                                    <SelectValue placeholder="Selecciona estatus"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="solicited">Solicitada</SelectItem>
-                                                    <SelectItem value="sent">Enviada</SelectItem>
-                                                    <SelectItem value="pending">Pendiente</SelectItem>
-                                                    <SelectItem value="completed">Completada</SelectItem>
-                                                </SelectContent>
-                                            </Select>
                                         </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="customerServiceAgent">Customer Service</Label>
+                                                <Select
+                                                    value={newShipment.customerServiceAgent}
+                                                    onValueChange={value => handleInputChange("customerServiceAgent", value)}
+                                                >
+                                                    <SelectTrigger id="customerServiceAgent">
+                                                        <SelectValue
+                                                            placeholder="Ingresa el agente de servicio del cliente"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {customerServiceAgents.map((agent, index) => (
+                                                            <SelectItem
+                                                                key={agent.userId || agent.username || index}
+                                                                value={agent.username}>
+                                                                {agent.username.charAt(0).toUpperCase() + agent.username.slice(1)}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="customsAgent">Agente Aduanal</Label>
+                                                <Input
+                                                    id="customsAgent"
+                                                    value={newShipment.customsAgent}
+                                                    onChange={e => handleInputChange("customsAgent", e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="typeOfService">Tipo de Servicio</Label>
+                                                <Select
+                                                    value={newShipment.typeOfService}
+                                                    onValueChange={value => handleInputChange("typeOfService", value)}
+                                                >
+                                                    <SelectTrigger id="typeOfService">
+                                                        <SelectValue placeholder="Selecciona tipo de servicio"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="full">Full</SelectItem>
+                                                        <SelectItem value="sencillo">Sencillo</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="status">Estatus</Label>
+                                                <Select
+                                                    value={newShipment.status}
+                                                    onValueChange={value => handleInputChange("status", value)}
+                                                >
+                                                    <SelectTrigger id="status">
+                                                        <SelectValue placeholder="Select status"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Información Pendiente">Información
+                                                            Pendiente</SelectItem>
+                                                        <SelectItem value="Folio Pendiente">Folio
+                                                            Pendiente</SelectItem>
+                                                        <SelectItem value="Maniobras Pendientes">Maniobras
+                                                            Pendiente</SelectItem>
+                                                        <SelectItem value="Todo Ok">Todo Ok</SelectItem>
+                                                        <SelectItem value="En Puerto">En Puerto</SelectItem>
+                                                        <SelectItem value="En Transito">En Transito</SelectItem>
+                                                        <SelectItem value="En Destino">En Destino</SelectItem>
+                                                        <SelectItem value="POD Pendiente">POD Pendiente</SelectItem>
+                                                        <SelectItem value="Vacío Pendiente"> Vacío
+                                                            Pendiente</SelectItem>
+                                                        <SelectItem value="Ingresado">Ingresado</SelectItem>
+                                                        <SelectItem value="Egresado">Egresado</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+
+
+                                    {/* Container Tab */}
+                                    <TabsContent value="contenedor" className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="container">Número de Contenedor</Label>
+                                                <Input
+                                                    id="container"
+                                                    value={newShipment.container}
+                                                    onChange={e => handleInputChange("container", e.target.value)}
+                                                    placeholder="Ingrese número de contenedor"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="containerType">Tipo de Contenedor</Label>
+                                                <Select
+                                                    value={newShipment.containerType}
+                                                    onValueChange={value => handleInputChange("containerType", value)}
+                                                >
+                                                    <SelectTrigger id="containerType">
+                                                        <SelectValue
+                                                            placeholder="Selecciona el tipo de contenedor"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="40_HC">40 HC</SelectItem>
+                                                        <SelectItem value="20_HC">20 HC</SelectItem>
+                                                        <SelectItem value="40_IMO">40 IMO</SelectItem>
+                                                        <SelectItem value="20_IMO">20 IMO</SelectItem>
+                                                        <SelectItem value="40_DC">40 DC</SelectItem>
+                                                        <SelectItem value="20_DC">20 DC</SelectItem>
+                                                        <SelectItem value="CAJA_53">Caja 53</SelectItem>
+                                                        <SelectItem value="NISSAN">NISSAN</SelectItem>
+                                                        <SelectItem value="PLATAFORMA">PLATAFORMA</SelectItem>
+                                                        <SelectItem value="CAMA_BAJA">CAMA BAJA</SelectItem>
+                                                        <SelectItem value="RABON">RABON</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="shipmentDate">Fecha de Carga</Label>
+                                                <Input
+                                                    id="shipmentDate"
+                                                    type="datetime-local"
+                                                    value={newShipment.shipmentDate}
+                                                    onChange={e => handleInputChange("shipmentDate", e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+
+                                    <TabsContent value="transport" className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="transport">Transporte</Label>
+                                                <Select
+                                                    value={newShipment.transport}
+                                                    onValueChange={value => handleInputChange("transport", value)}
+                                                >
+                                                    <SelectTrigger id="transport">
+                                                        <SelectValue
+                                                            placeholder="Selecciona el transporte"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {transports.map((transportItem, index) => (
+                                                            <SelectItem
+                                                                key={transportItem.id || transportItem.name || index}
+                                                                value={transportItem.name}>
+                                                                {transportItem.name.charAt(0).toUpperCase() + transportItem.name.slice(1)}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="shipmentOperator">Operador o Referencia</Label>
+                                                <Input
+                                                    id="shipmentOperator"
+                                                    value={newShipment.operator}
+                                                    onChange={e => handleInputChange("operator", e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="shipmentTerminal">Terminal</Label>
+                                                <Input
+                                                    id="shipmentTerminal"
+                                                    value={newShipment.terminal}
+                                                    onChange={e => handleInputChange("terminal", e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="portOfDischarge">POD</Label>
+                                                <Select
+                                                    value={newShipment.pod}
+                                                    onValueChange={value => handleInputChange("containerType", value)}
+                                                >
+                                                    <SelectTrigger id="portOfDischarge">
+                                                        <SelectValue
+                                                            placeholder="Selecciona el estatus del POD"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="pending">Pendiente</SelectItem>
+                                                        <SelectItem value="sent">Enviado</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+
+                                    {/* Documents & Dates Tab */}
+                                    <TabsContent value="documents" className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="portDepartureDate">Fecha Salida de Puerto</Label>
+                                                <Input
+                                                    id="portDepartureDate"
+                                                    type="date"
+                                                    value={newShipment.departureDate}
+                                                    onChange={e => handleInputChange("departureDate", e.target.value)}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="portArrivalDate">Fecha Llegada a Puerto</Label>
+                                                <Input
+                                                    id="portArrivalDate"
+                                                    type="datetime-local"
+                                                    value={newShipment.arrivalDate}
+                                                    onChange={e => handleInputChange("arrivalDate", e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="portUnloadDate">Fecha Descarga</Label>
+                                                <Input
+                                                    id="portUnloadDate"
+                                                    type="datetime-local"
+                                                    value={newShipment.unloadDate}
+                                                    onChange={e => handleInputChange("unloadDate", e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="eir">EIR</Label>
+                                                <Select
+                                                    value={newShipment.eir}
+                                                    onValueChange={value => handleInputChange("eir", value)}
+                                                >
+                                                    <SelectTrigger id="eir">
+                                                        <SelectValue
+                                                            placeholder="Selecciona el EIR"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="pending">No dieron</SelectItem>
+                                                        <SelectItem value="sent">Enviado</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        <fieldset className="border rounded-md p-4">
+                                            <legend className="text-sm font-medium px-2">Documentos</legend>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id="ci"
+                                                        checked={newShipment.ci}
+                                                        onCheckedChange={checked => handleInputChange("ci", checked)}
+                                                    />
+                                                    <Label htmlFor="ci">CI</Label>
+                                                </div>
+
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id="ccp"
+                                                        checked={newShipment.ccp}
+                                                        onCheckedChange={checked => handleInputChange("ccp", checked)}
+                                                    />
+                                                    <Label htmlFor="ccp">CCP</Label>
+                                                </div>
+
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id="taxFolio"
+                                                        checked={newShipment.taxFolio}
+                                                        onCheckedChange={checked => handleInputChange("taxFolio", checked)}
+                                                    />
+                                                    <Label htmlFor="taxFolio">Folio Fiscal</Label>
+                                                </div>
+
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id="loadManoeuvre"
+                                                        checked={newShipment.loadManoeuvre}
+                                                        onCheckedChange={checked => handleInputChange("loadManoeuvre", checked)}
+                                                    />
+                                                    <Label htmlFor="loadManoeuvre">Maniobra de Carga</Label>
+                                                </div>
+
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id="pisVinculation"
+                                                        checked={newShipment.pisVinculation}
+                                                        onCheckedChange={checked => handleInputChange("pisVinculation", checked)}
+                                                    />
+                                                    <Label htmlFor="pisVinculation">Vinculacion PIS</Label>
+                                                </div>
+                                            </div>
+                                        </fieldset>
+
                                         <div className="space-y-2">
-                                            <Label htmlFor="cleaningDate">Fecha de Vacío</Label>
-                                            <Input
-                                                id="cleaningDate"
-                                                type="datetime-local"
-                                                value={newShipment.cleaningDate}
-                                                onChange={e => handleInputChange("cleaningDate", e.target.value)}
+                                            <Label htmlFor="observations">Observations</Label>
+                                            <Textarea
+                                                id="observations"
+                                                value={newShipment.observations}
+                                                onChange={e => handleInputChange("observations", e.target.value)}
+                                                placeholder="Add any additional notes here..."
+                                                rows={3}
                                             />
                                         </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="containerType">Patio</Label>
-                                            <Select
-                                                value={newShipment.cleaningPatio}
-                                                onValueChange={value => handleInputChange("cleaningPatio", value)}
-                                            >
-                                                <SelectTrigger id="cleaningPatio">
-                                                    <SelectValue
-                                                        placeholder="Selecciona el patio"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="ssa">SSA</SelectItem>
-                                                    <SelectItem value="timsa">TIMSA</SelectItem>
-                                                    <SelectItem value="cima">CIMA</SelectItem>
-                                                    <SelectItem value="ocupa">OCUPA</SelectItem>
-                                                    <SelectItem value="isl">ISL</SelectItem>
-                                                    <SelectItem value="cise">CISE</SelectItem>
-                                                    <SelectItem value="otro">Otro</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="cleanArrivalDate">Entrega de Vacío</Label>
-                                            <Input
-                                                id="cleanArrivalDate"
-                                                type="date"
-                                                value={newShipment.cleanArrivalDate}
-                                                onChange={e => handleInputChange("cleanArrivalDate", e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
+                                    </TabsContent>
 
-                            <DialogFooter>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        resetNewShipment();
-                                        setNewShipmentOpen(false);
-                                    }}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    onClick={handleNewShipmentSubmit}
-                                    disabled={createShipmentMutation.isPending}
-                                >
-                                    {createShipmentMutation.isPending ? "Creating..." : "Create Shipment"}
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                                    {/*Cleaning Tab*/}
+                                    <TabsContent value="vacio" className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="vacuumManoeuvre">Maniobra de Vacío</Label>
+                                                <Select
+                                                    value={newShipment.cleaningOrder}
+                                                    onValueChange={value => handleInputChange("cleaningOrder", value)}
+                                                >
+                                                    <SelectTrigger id="vacuumManoeuvre">
+                                                        <SelectValue placeholder="Selecciona estatus"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="solicited">Solicitada</SelectItem>
+                                                        <SelectItem value="sent">Enviada</SelectItem>
+                                                        <SelectItem value="pending">Pendiente</SelectItem>
+                                                        <SelectItem value="completed">Completada</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="cleaningDate">Fecha de Vacío</Label>
+                                                <Input
+                                                    id="cleaningDate"
+                                                    type="datetime-local"
+                                                    value={newShipment.cleaningDate}
+                                                    onChange={e => handleInputChange("cleaningDate", e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="containerType">Patio</Label>
+                                                <Select
+                                                    value={newShipment.cleaningPatio}
+                                                    onValueChange={value => handleInputChange("cleaningPatio", value)}
+                                                >
+                                                    <SelectTrigger id="cleaningPatio">
+                                                        <SelectValue
+                                                            placeholder="Selecciona el patio"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="ssa">SSA</SelectItem>
+                                                        <SelectItem value="timsa">TIMSA</SelectItem>
+                                                        <SelectItem value="cima">CIMA</SelectItem>
+                                                        <SelectItem value="ocupa">OCUPA</SelectItem>
+                                                        <SelectItem value="isl">ISL</SelectItem>
+                                                        <SelectItem value="cise">CISE</SelectItem>
+                                                        <SelectItem value="otro">Otro</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="cleanArrivalDate">Entrega de Vacío</Label>
+                                                <Input
+                                                    id="cleanArrivalDate"
+                                                    type="date"
+                                                    value={newShipment.cleanArrivalDate}
+                                                    onChange={e => handleInputChange("cleanArrivalDate", e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                </Tabs>
+
+                                <DialogFooter>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            resetNewShipment();
+                                            setNewShipmentOpen(false);
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        onClick={handleNewShipmentSubmit}
+                                        disabled={createShipmentMutation.isPending}
+                                    >
+                                        {createShipmentMutation.isPending ? "Creating..." : "Create Shipment"}
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     )}
                 </div>
             </div>
 
-            <div className="rounded-md border">
-                <ScrollArea className="h-[calc(110vh-300px)] min-h-[300px]">
-                    <div className="w-full min-w-[900px]">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    {/* Dynamic column headers based on visibility preferences */}
-                                    {columns
-                                        .filter(col => col.visible)
-                                        .map(col => (
-                                            <TableHead key={col.id}>
-                                                <Button variant="ghost" className="p-0 h-8">
-                                                    {col.label}
-                                                </Button>
-                                            </TableHead>
-                                        ))}
-                                    <TableHead className="w-[150px]">Progress</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredShipments.length > 0 ? (
-                                    filteredShipments.map((shipment) => (
-                                        <TableRow key={shipment.viazId}>
-                                            {/* Dynamic cells based on visible columns */}
-                                            {columns
-                                                .filter(col => col.visible)
-                                                .map(col => (
-                                                    <TableCell key={col.id}>
-                                                        {getCellValue(shipment, col.id)}
-                                                    </TableCell>
-                                                ))}
+            {/* Shipments Table */}
+            <div className="border rounded-lg">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            {visibleColumns.map((column) => (
+                                <TableHead key={column.id}>
+                                    {column.label}
+                                </TableHead>
+                            ))}
+                            <TableHead>
+                                Progreso
+                            </TableHead>
+                            <TableHead>
+                                Acciones
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredShipments.map((shipment) => {
+                            const completionData = calculateCompletionData(shipment);
 
-                                            {/* Actions column - always visible */}
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <ProgressCircle 
-                                                        progress={calculateCompletion(shipment)}
-                                                        size={32}
-                                                        strokeWidth={3}
-                                                        showText={false}
-                                                    />
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => navigate(`/shipment/${shipment.viazId}`)}
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon">
-                                                                <MoreHorizontal className="h-4 w-4"/>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                            <DropdownMenuSeparator/>
-                                                            <DropdownMenuItem
-                                                                onClick={() => handleViewShipment(shipment.viazId)}>
-                                                                View Details
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem>Track Shipment</DropdownMenuItem>
-                                                            <DropdownMenuItem>Update Status</DropdownMenuItem>
-                                                            <DropdownMenuSeparator/>
-                                                            <DropdownMenuItem
-                                                                className="text-red-500"
-                                                                onClick={() => setShipmentToDelete(shipment.viazId)}
-                                                                disabled={deleteShipmentMutation.isPending}
-                                                            >
-                                                                {deleteShipmentMutation.isPending && deleteShipmentMutation.variables === shipment.viazId
-                                                                    ? "Deleting..."
-                                                                    : "Delete Shipment"
-                                                                }
-                                                            </DropdownMenuItem>
-
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={visibleColumns.length + 1}
-                                                   className="h-24 text-center">
-                                            No shipments found.
+                            return (
+                                <TableRow key={shipment.viazId} className={!shipment.open ? "opacity-60" : ""}>
+                                    {visibleColumns.map((column) => (
+                                        <TableCell key={column.id}>
+                                            {getCellValue(shipment, column.id)}
                                         </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </ScrollArea>
+                                    ))}
+                                    <TableCell>
+                                        <ProgressCircle
+                                            progress={completionData.percentage}
+                                            missing={completionData.missing}
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center">
+                                            {!shipment.open && (
+                                                <Badge variant="secondary" className="flex items-center gap-1">
+                                                    <Lock className="h-3 w-3"/>
+                                                    Closed
+                                                </Badge>
+                                            )}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleViewShipment(shipment.viazId)}>
+                                                <Eye/>
+                                            </Button>
+                                            <Button
+                                                className="text-destructive focus:text-destructive"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setShipmentToDelete(shipment.viazId)}>
+                                                <Trash/>
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+
+                        {filteredShipments.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={visibleColumns.length + 2} className="text-center py-6">
+                                    {searchTerm || filters.status.length > 0 || filters.carrier.length > 0
+                                        ? "No hay embarques que coincidan con los criterios de busqueda."
+                                        : "No hay embarques disponibles."
+                                    }
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </div>
+
+            {/* Delete Confirmation Dialog */}
             <AlertDialog open={!!shipmentToDelete} onOpenChange={(open) => !open && setShipmentToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Eliminar Embarque</AlertDialogTitle>
+                        <AlertDialogTitle>Delete Shipment</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Estas seguro de eliminar este embarque?
-                            Esta acción no se puede deshacer y todos los datos relacionados con el embarque
-                            serán eliminados.
+                            Are you sure you want to delete this shipment? This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             onClick={() => {
                                 if (shipmentToDelete) {
                                     deleteShipmentMutation.mutate(shipmentToDelete);
                                     setShipmentToDelete(null);
                                 }
                             }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            Borrar Embarque
+                            Delete
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
         </div>
     );
 };
 
 export default Shipments;
-
