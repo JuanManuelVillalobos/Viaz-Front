@@ -4,7 +4,7 @@ import {TooltipProvider} from "@/components/ui/tooltip";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {BrowserRouter, Routes, Route, Navigate} from "react-router-dom";
 import {useEffect, useState} from "react";
-import {AuthProvider} from "@/contexts/AuthContext";
+import {AuthProvider, useAuth} from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Shipments from "./pages/Shipments";
 import ShipmentDetail from "./pages/ShipmentDetail";
@@ -18,6 +18,7 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import {authService} from "@/services/api";
 import {UserStatus} from "@/types/api.ts";
+import {LoaderCircle} from "lucide-react";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -29,41 +30,13 @@ const queryClient = new QueryClient({
 });
 
 const ProtectedRoute = ({children}: { children: React.ReactNode }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        (async () => {
-            try {
-                const response = await authService.me();
-
-                if (!response.user || !response.user.userId) {
-                    setIsAuthenticated(false);
-                    return;
-                }
-
-                if (response.user.status !== UserStatus.ACTIVE) {
-                    setIsAuthenticated(false);
-                    return;
-                }
-
-                setIsAuthenticated(true);
-            } catch (error) {
-                console.error('Authentication check failed:', error);
-                setIsAuthenticated(false);
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, []);
-
+    const {user, loading} = useAuth();
 
     if (loading) {
-        // You can return a loading spinner or null here
-        return null;
+        return <LoaderCircle/>
     }
 
-    if (!isAuthenticated) {
+    if (!user || user.user.status !== "ACTIVE") {
         return <Navigate to="/login" replace/>;
     }
 
