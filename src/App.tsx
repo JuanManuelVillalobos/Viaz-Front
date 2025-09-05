@@ -3,7 +3,6 @@ import {Toaster as Sonner} from "@/components/ui/sonner";
 import {TooltipProvider} from "@/components/ui/tooltip";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {BrowserRouter, Routes, Route, Navigate} from "react-router-dom";
-import {useEffect, useState} from "react";
 import {AuthProvider, useAuth} from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Shipments from "./pages/Shipments";
@@ -16,9 +15,7 @@ import NotFound from "./pages/NotFound";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
-import {authService} from "@/services/api";
-import {UserStatus} from "@/types/api.ts";
-import {LoaderCircle, LoaderIcon} from "lucide-react";
+import {LoaderCircle} from "lucide-react";
 
 const queryClient = new QueryClient({
     defaultOptions: {
