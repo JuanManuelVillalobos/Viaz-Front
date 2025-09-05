@@ -52,6 +52,8 @@ import {Avatar, AvatarFallback} from "@/components/ui/avatar";
 import {useToast} from "@/hooks/use-toast";
 import {carrierService, Carrier, CreateCarrierRequest} from "@/services/api/carrierService";
 import {roleService, Role, RoleCreationRequest} from "@/services/api/roleService";
+import {incidentService} from "@/services/api/incidentService";
+import {chargeService} from "@/services/api/chargeService";
 import {authService, userService} from "@/services/api";
 import {ViazUserDTO, UserStatus} from "@/types/api";
 import {format} from "date-fns";
@@ -81,6 +83,29 @@ const AdminDashboard = () => {
     const [isRoleCosmetic, setIsRoleCosmetic] = useState(false);
     const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
     const [availablePermissions, setAvailablePermissions] = useState<string[]>([]);
+    
+    // Incident Types state
+    const [incidentTypes, setIncidentTypes] = useState<any[]>([]);
+    const [newIncidentTypeOpen, setNewIncidentTypeOpen] = useState(false);
+    const [newIncidentTypeName, setNewIncidentTypeName] = useState('');
+    const [newIncidentTypeDescription, setNewIncidentTypeDescription] = useState('');
+    
+    // Charge Types state
+    const [chargeTypes, setChargeTypes] = useState<any[]>([]);
+    const [newChargeTypeOpen, setNewChargeTypeOpen] = useState(false);
+    const [newChargeTypeName, setNewChargeTypeName] = useState('');
+    const [newChargeTypeDescription, setNewChargeTypeDescription] = useState('');
+    
+    // Carrier editing state
+    const [editCarrierOpen, setEditCarrierOpen] = useState(false);
+    const [editingCarrier, setEditingCarrier] = useState<Carrier | null>(null);
+    const [editCarrierData, setEditCarrierData] = useState({
+        name: '',
+        rfc: '',
+        razonSocial: '',
+        caat: ''
+    });
+    
     const [roleDialogOpen, setRoleDialogOpen] = useState(false);
     const [selectedUserForRole, setSelectedUserForRole] = useState<ViazUserDTO | null>(null);
 
@@ -152,13 +177,33 @@ const AdminDashboard = () => {
         }
     }, [setAvailablePermissions]);
 
+    const fetchIncidentTypes = useCallback(async () => {
+        try {
+            const fetchedIncidentTypes = await incidentService.getAllIncidentTypes();
+            setIncidentTypes(fetchedIncidentTypes || []);
+        } catch (error) {
+            console.error("Error fetching incident types:", error);
+        }
+    }, [setIncidentTypes]);
+
+    const fetchChargeTypes = useCallback(async () => {
+        try {
+            const fetchedChargeTypes = await chargeService.getAllChargeTypes();
+            setChargeTypes(fetchedChargeTypes || []);
+        } catch (error) {
+            console.error("Error fetching charge types:", error);
+        }
+    }, [setChargeTypes]);
+
     // Fetch data on component mount
     useEffect(() => {
         fetchUsers();
         fetchCarriers();
         fetchRoles();
         fetchPermissions();
-    }, [fetchUsers, fetchCarriers, fetchRoles, fetchPermissions]);
+        fetchIncidentTypes();
+        fetchChargeTypes();
+    }, [fetchUsers, fetchCarriers, fetchRoles, fetchPermissions, fetchIncidentTypes, fetchChargeTypes]);
 
     const handleCreateCarrier = async () => {
         if (newCarrier.rfc.length !== 10) {
@@ -363,6 +408,137 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleCreateIncidentType = async () => {
+        if (!newIncidentTypeName.trim()) {
+            toast({
+                title: "Error",
+                description: "El nombre del tipo de incidente es requerido.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            const newIncidentType = await incidentService.createIncidentType({
+                name: newIncidentTypeName,
+                description: newIncidentTypeDescription || undefined,
+            });
+
+            setIncidentTypes([...incidentTypes, newIncidentType]);
+            setNewIncidentTypeOpen(false);
+            setNewIncidentTypeName('');
+            setNewIncidentTypeDescription('');
+
+            toast({
+                title: "Tipo de incidente creado",
+                description: `Tipo de incidente "${newIncidentTypeName}" creado exitosamente.`,
+            });
+        } catch (error) {
+            console.error('Error creating incident type:', error);
+            toast({
+                title: "Error",
+                description: "Error al crear el tipo de incidente.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleCreateChargeType = async () => {
+        if (!newChargeTypeName.trim()) {
+            toast({
+                title: "Error",
+                description: "El nombre del tipo de cargo es requerido.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            const newChargeType = await chargeService.createChargeType({
+                name: newChargeTypeName,
+                description: newChargeTypeDescription || undefined,
+            });
+
+            setChargeTypes([...chargeTypes, newChargeType]);
+            setNewChargeTypeOpen(false);
+            setNewChargeTypeName('');
+            setNewChargeTypeDescription('');
+
+            toast({
+                title: "Tipo de cargo creado",
+                description: `Tipo de cargo "${newChargeTypeName}" creado exitosamente.`,
+            });
+        } catch (error) {
+            console.error('Error creating charge type:', error);
+            toast({
+                title: "Error",
+                description: "Error al crear el tipo de cargo.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleEditCarrier = (carrier: Carrier) => {
+        setEditingCarrier(carrier);
+        setEditCarrierData({
+            name: carrier.name,
+            rfc: carrier.rfc,
+            razonSocial: carrier.razonSocial,
+            caat: carrier.caat
+        });
+        setEditCarrierOpen(true);
+    };
+
+    const handleUpdateCarrier = async () => {
+        if (!editingCarrier) return;
+
+        if (editCarrierData.rfc.length !== 10) {
+            toast({
+                title: "RFC inválido",
+                description: "El RFC debe tener exactamente 10 caracteres.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (editCarrierData.caat.length !== 4) {
+            toast({
+                title: "CAAT inválido",
+                description: "El CAAT debe tener exactamente 4 caracteres.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            const updatedCarrier = await carrierService.updateCarrier(editingCarrier.id, editCarrierData);
+            
+            // Update the carriers list
+            setCarriers(carriers.map(c => c.id === editingCarrier.id ? updatedCarrier : c));
+            
+            setEditCarrierOpen(false);
+            setEditingCarrier(null);
+            setEditCarrierData({
+                name: '',
+                rfc: '',
+                razonSocial: '',
+                caat: ''
+            });
+
+            toast({
+                title: "Transportista actualizado",
+                description: `Transportista "${updatedCarrier.name}" actualizado exitosamente.`,
+            });
+        } catch (error) {
+            console.error('Error updating carrier:', error);
+            toast({
+                title: "Error",
+                description: "Error al actualizar el transportista.",
+                variant: "destructive",
+            });
+        }
+    };
+
     const handleChangeRole = (user: ViazUserDTO) => {
         setSelectedUserForRole(user);
         setRoleDialogOpen(true);
@@ -545,10 +721,10 @@ const AdminDashboard = () => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem>
-                                                            <Edit className="mr-2 h-4 w-4"/>
-                                                            Editar
-                                                        </DropdownMenuItem>
+                                                         <DropdownMenuItem onClick={() => handleEditCarrier(carrier)}>
+                                                             <Edit className="mr-2 h-4 w-4"/>
+                                                             Editar
+                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             className="text-destructive"
                                                             onClick={() => handleDeleteCarrier(carrier.id)}
@@ -752,6 +928,7 @@ const AdminDashboard = () => {
                 </TabsContent>
 
                 <TabsContent value="settings" className="space-y-4">
+                    {/* Roles Management */}
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">
@@ -880,8 +1057,228 @@ const AdminDashboard = () => {
                             </Table>
                         </CardContent>
                     </Card>
+
+                    {/* Incident Types Management */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Gestión de Tipos de Incidentes</CardTitle>
+                                    <CardDescription>Administra los tipos de incidentes del sistema</CardDescription>
+                                </div>
+                                <Dialog open={newIncidentTypeOpen} onOpenChange={setNewIncidentTypeOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button>
+                                            <Plus className="h-4 w-4 mr-2"/>
+                                            Nuevo Tipo de Incidente
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Crear Nuevo Tipo de Incidente</DialogTitle>
+                                            <DialogDescription>
+                                                Agrega un nuevo tipo de incidente al sistema
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="incidentTypeName">Nombre del Tipo de Incidente</Label>
+                                                <Input
+                                                    id="incidentTypeName"
+                                                    value={newIncidentTypeName}
+                                                    onChange={(e) => setNewIncidentTypeName(e.target.value)}
+                                                    placeholder="Ej: Retraso en aduana"
+                                                />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="incidentTypeDescription">Descripción (Opcional)</Label>
+                                                <Input
+                                                    id="incidentTypeDescription"
+                                                    value={newIncidentTypeDescription}
+                                                    onChange={(e) => setNewIncidentTypeDescription(e.target.value)}
+                                                    placeholder="Descripción del tipo de incidente"
+                                                />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button variant="outline" onClick={() => setNewIncidentTypeOpen(false)}>
+                                                Cancelar
+                                            </Button>
+                                            <Button onClick={handleCreateIncidentType}>Crear Tipo de Incidente</Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Nombre</TableHead>
+                                        <TableHead>Descripción</TableHead>
+                                        <TableHead>ID</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {incidentTypes.map((incidentType) => (
+                                        <TableRow key={incidentType.id}>
+                                            <TableCell className="font-medium">{incidentType.name}</TableCell>
+                                            <TableCell>{incidentType.description || "Sin descripción"}</TableCell>
+                                            <TableCell className="text-muted-foreground">{incidentType.id}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {incidentTypes.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="text-center py-8">
+                                                No se han encontrado tipos de incidentes
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+
+                    {/* Charge Types Management */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Gestión de Tipos de Cargos</CardTitle>
+                                    <CardDescription>Administra los tipos de cargos del sistema</CardDescription>
+                                </div>
+                                <Dialog open={newChargeTypeOpen} onOpenChange={setNewChargeTypeOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button>
+                                            <Plus className="h-4 w-4 mr-2"/>
+                                            Nuevo Tipo de Cargo
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Crear Nuevo Tipo de Cargo</DialogTitle>
+                                            <DialogDescription>
+                                                Agrega un nuevo tipo de cargo al sistema
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="chargeTypeName">Nombre del Tipo de Cargo</Label>
+                                                <Input
+                                                    id="chargeTypeName"
+                                                    value={newChargeTypeName}
+                                                    onChange={(e) => setNewChargeTypeName(e.target.value)}
+                                                    placeholder="Ej: Costo de almacenaje"
+                                                />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="chargeTypeDescription">Descripción (Opcional)</Label>
+                                                <Input
+                                                    id="chargeTypeDescription"
+                                                    value={newChargeTypeDescription}
+                                                    onChange={(e) => setNewChargeTypeDescription(e.target.value)}
+                                                    placeholder="Descripción del tipo de cargo"
+                                                />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button variant="outline" onClick={() => setNewChargeTypeOpen(false)}>
+                                                Cancelar
+                                            </Button>
+                                            <Button onClick={handleCreateChargeType}>Crear Tipo de Cargo</Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Nombre</TableHead>
+                                        <TableHead>Descripción</TableHead>
+                                        <TableHead>ID</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {chargeTypes.map((chargeType) => (
+                                        <TableRow key={chargeType.id}>
+                                            <TableCell className="font-medium">{chargeType.name}</TableCell>
+                                            <TableCell>{chargeType.description || "Sin descripción"}</TableCell>
+                                            <TableCell className="text-muted-foreground">{chargeType.id}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {chargeTypes.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="text-center py-8">
+                                                No se han encontrado tipos de cargos
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* Edit Carrier Dialog */}
+            <Dialog open={editCarrierOpen} onOpenChange={setEditCarrierOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Editar Transportista</DialogTitle>
+                        <DialogDescription>
+                            Modifica la información del transportista {editingCarrier?.name}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-carrier-name">Nombre</Label>
+                            <Input
+                                id="edit-carrier-name"
+                                value={editCarrierData.name}
+                                onChange={(e) => setEditCarrierData({...editCarrierData, name: e.target.value})}
+                                placeholder="Nombre del transportista"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-carrier-rfc">RFC</Label>
+                            <Input
+                                id="edit-carrier-rfc"
+                                value={editCarrierData.rfc}
+                                onChange={(e) => setEditCarrierData({...editCarrierData, rfc: e.target.value})}
+                                placeholder="RFC (10 caracteres)"
+                                maxLength={10}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-carrier-razonSocial">Razón Social</Label>
+                            <Input
+                                id="edit-carrier-razonSocial"
+                                value={editCarrierData.razonSocial}
+                                onChange={(e) => setEditCarrierData({...editCarrierData, razonSocial: e.target.value})}
+                                placeholder="Razón social"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="edit-carrier-caat">CAAT</Label>
+                            <Input
+                                id="edit-carrier-caat"
+                                value={editCarrierData.caat}
+                                onChange={(e) => setEditCarrierData({...editCarrierData, caat: e.target.value})}
+                                placeholder="CAAT (4 caracteres)"
+                                maxLength={4}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setEditCarrierOpen(false)}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleUpdateCarrier}>Actualizar Transportista</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Edit User Roles Dialog */}
             <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>

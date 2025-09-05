@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {useParams, useNavigate} from "react-router-dom";
-import {ArrowLeft, Edit, Save, X, Lock, Clock, AlertTriangle, Unlock} from "lucide-react";
+import {ArrowLeft, Edit, Save, X, Lock, Clock, AlertTriangle, Unlock, DollarSign} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
-import {apiShipmentService} from "@/services/api/apiShipmentService.ts";
+import {apiShipmentService, incidentService, chargeService} from '@/services/api';
 import {getStatusColor} from "@/services/shipmentService";
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -62,6 +62,8 @@ const ShipmentDetail = () => {
     const [shipmentObservations, setShipmentObservations] = useState("");
     const [addIncidentOpen, setAddIncidentOpen] = useState(false);
     const [selectedIncidentType, setSelectedIncidentType] = useState<string>("");
+    const [selectedChargeType, setSelectedChargeType] = useState<string>("");
+    const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
     const { canCloseShipments } = usePermissions();
 
     // Fetch shipment data
@@ -99,8 +101,15 @@ const ShipmentDetail = () => {
     // Fetch incident types
     const {data: incidentTypes = [], isLoading: isLoadingIncidentTypes} = useQuery({
         queryKey: ['incidentTypes'],
-        queryFn: apiShipmentService.getIncidentTypes,
+        queryFn: incidentService.getAllIncidentTypes,
         enabled: addIncidentOpen
+    });
+
+    // Fetch charge types
+    const {data: chargeTypes = [], isLoading: isLoadingChargeTypes} = useQuery({
+        queryKey: ['chargeTypes'],
+        queryFn: chargeService.getAllChargeTypes,
+        enabled: chargeDialogOpen
     });
 
 
@@ -182,7 +191,7 @@ const ShipmentDetail = () => {
     // Add incident mutation
     const addIncidentMutation = useMutation({
         mutationFn: ({viazId, incidentId}: { viazId: string, incidentId: string }) =>
-            apiShipmentService.addIncidentToShipment(viazId, incidentId),
+            incidentService.addIncidentToShipment(viazId, incidentId),
         onSuccess: () => {
             setAddIncidentOpen(false);
             setSelectedIncidentType("");
@@ -196,6 +205,28 @@ const ShipmentDetail = () => {
             toast({
                 title: "Error",
                 description: "Failed to add incident to shipment.",
+                variant: "destructive",
+            });
+        }
+    });
+
+    // Add charge mutation
+    const addChargeMutation = useMutation({
+        mutationFn: ({viazId, chargeId}: { viazId: string, chargeId: string }) =>
+            chargeService.addChargeToShipment(viazId, chargeId),
+        onSuccess: () => {
+            setChargeDialogOpen(false);
+            setSelectedChargeType("");
+            toast({
+                title: "Success",
+                description: "Charge added to shipment successfully.",
+            });
+        },
+        onError: (error) => {
+            console.error("Error adding charge:", error);
+            toast({
+                title: "Error",
+                description: "Failed to add charge to shipment.",
                 variant: "destructive",
             });
         }
@@ -427,6 +458,19 @@ const ShipmentDetail = () => {
         addIncidentMutation.mutate({viazId: id, incidentId: selectedIncidentType});
     };
 
+    const handleAddCharge = async () => {
+        if (!selectedChargeType || !id) {
+            toast({
+                title: "Error",
+                description: "Please select a charge type.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        addChargeMutation.mutate({viazId: id, chargeId: selectedChargeType});
+    };
+
     // Reopen shipment mutation
     const reopenShipmentMutation = useMutation({
         mutationFn: (viazId: string) => apiShipmentService.reopenShipment(viazId),
@@ -511,6 +555,14 @@ const ShipmentDetail = () => {
                             >
                                 <AlertTriangle className="h-4 w-4"/>
                                 Add Incident
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => setChargeDialogOpen(true)}
+                                className="flex items-center gap-2"
+                            >
+                                <DollarSign className="h-4 w-4"/>
+                                Add Charge
                             </Button>
                             <Button
                                 variant="outline"
@@ -705,9 +757,9 @@ const ShipmentDetail = () => {
                                     {isLoadingIncidentTypes ? (
                                         <SelectItem value="loading" disabled>Loading...</SelectItem>
                                     ) : (
-                                        incidentTypes.map((incident) => (
+                                         incidentTypes.map((incident) => (
                                             <SelectItem key={incident.id} value={incident.id}>
-                                                {incident.name || incident.type || incident.description}
+                                                {incident.name}
                                             </SelectItem>
                                         ))
                                     )}
@@ -724,6 +776,50 @@ const ShipmentDetail = () => {
                             disabled={addIncidentMutation.isPending || !selectedIncidentType}
                         >
                             {addIncidentMutation.isPending ? "Adding..." : "Add Incident"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Charge Dialog */}
+            <Dialog open={chargeDialogOpen} onOpenChange={setChargeDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Add Charge</DialogTitle>
+                        <DialogDescription>
+                            Select a charge type to add to this shipment.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="charge-type">Charge Type</Label>
+                            <Select value={selectedChargeType} onValueChange={setSelectedChargeType}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select charge type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {isLoadingChargeTypes ? (
+                                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                    ) : (
+                                        chargeTypes.map((charge) => (
+                                            <SelectItem key={charge.id} value={charge.id}>
+                                                {charge.name}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setChargeDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleAddCharge}
+                            disabled={addChargeMutation.isPending || !selectedChargeType}
+                        >
+                            {addChargeMutation.isPending ? "Adding..." : "Add Charge"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
