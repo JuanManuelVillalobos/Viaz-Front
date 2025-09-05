@@ -1,6 +1,6 @@
 import {useState, useEffect} from "react";
 import {
-    Search, MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck, Plus, Eye, Lock, Trash
+    Search, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck, Plus, Eye, Lock, Trash
 } from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
@@ -85,13 +85,13 @@ const Shipments = () => {
     });
     const {canManageShipments, canCreateShipments} = usePermissions();
 
-    const {data: transports = [], isLoading: isLoadingTransports} = useQuery<Transport[]>({
+    const {data: transports = []} = useQuery<Transport[]>({
         queryKey: ['transports'],
         queryFn: apiShipmentService.getTransports,
         enabled: newShipmentOpen,
     });
 
-    const {data: customerServiceAgents = [], isLoading: isLoadingCustomerServiceAgents} = useQuery<UserSummaryDTO[]>({
+    const {data: customerServiceAgents = []} = useQuery<UserSummaryDTO[]>({
         queryKey: ['customerServiceAgents'],
         queryFn: apiShipmentService.getCustomerServiceAgents,
         enabled: newShipmentOpen,
