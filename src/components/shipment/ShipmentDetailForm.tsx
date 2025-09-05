@@ -161,8 +161,8 @@ export const ShipmentDetailForm = ({
                                             <SelectValue placeholder="Tipo de servicio"/>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="full">Full</SelectItem>
-                                            <SelectItem value="sencillo">Sencillo</SelectItem>
+                                            <SelectItem value="Full">Full</SelectItem>
+                                            <SelectItem value="Sencillo">Sencillo</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -258,8 +258,8 @@ export const ShipmentDetailForm = ({
                                             <SelectValue placeholder="Estatus del POD"/>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="pending">Pendiente</SelectItem>
-                                            <SelectItem value="sent">Enviado</SelectItem>
+                                            <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                            <SelectItem value="Enviado">Enviado</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -338,10 +338,10 @@ export const ShipmentDetailForm = ({
                                             <SelectValue placeholder="Estatus del vacío"/>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="solicited">Solicitada</SelectItem>
-                                            <SelectItem value="sent">Enviada</SelectItem>
-                                            <SelectItem value="pending">Pendiente</SelectItem>
-                                            <SelectItem value="completed">Completada</SelectItem>
+                                            <SelectItem value="Solicitada">Solicitada</SelectItem>
+                                            <SelectItem value="Enviada">Enviada</SelectItem>
+                                            <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                            <SelectItem value="Completada">Completada</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -366,13 +366,13 @@ export const ShipmentDetailForm = ({
                                             <SelectValue placeholder="Patio"/>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="ssa">SSA</SelectItem>
-                                            <SelectItem value="timsa">TIMSA</SelectItem>
-                                            <SelectItem value="cima">CIMA</SelectItem>
-                                            <SelectItem value="ocupa">OCUPA</SelectItem>
-                                            <SelectItem value="isl">ISL</SelectItem>
-                                            <SelectItem value="cise">CISE</SelectItem>
-                                            <SelectItem value="otro">Otro</SelectItem>
+                                            <SelectItem value="SSA">SSA</SelectItem>
+                                            <SelectItem value="TIMSA">TIMSA</SelectItem>
+                                            <SelectItem value="CIMA">CIMA</SelectItem>
+                                            <SelectItem value="OCUPA">OCUPA</SelectItem>
+                                            <SelectItem value="ISL">ISL</SelectItem>
+                                            <SelectItem value="CISE">CISE</SelectItem>
+                                            <SelectItem value="Otro">Otro</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -431,8 +431,8 @@ export const ShipmentDetailForm = ({
                                             <SelectValue placeholder="EIR"/>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="pending">No dieron</SelectItem>
-                                            <SelectItem value="sent">Enviado</SelectItem>
+                                            <SelectItem value="No dieron">No dieron</SelectItem>
+                                            <SelectItem value="Enviado">Enviado</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

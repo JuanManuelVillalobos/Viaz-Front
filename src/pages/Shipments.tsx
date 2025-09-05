@@ -1,6 +1,6 @@
 import {useState, useEffect} from "react";
 import {
-    Search, MoreHorizontal, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck, Plus, Eye, Lock, Trash
+    Search, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck, Plus, Eye, Lock, Trash
 } from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
@@ -85,13 +85,13 @@ const Shipments = () => {
     });
     const {canManageShipments, canCreateShipments} = usePermissions();
 
-    const {data: transports = [], isLoading: isLoadingTransports} = useQuery<Transport[]>({
+    const {data: transports = []} = useQuery<Transport[]>({
         queryKey: ['transports'],
         queryFn: apiShipmentService.getTransports,
         enabled: newShipmentOpen,
     });
 
-    const {data: customerServiceAgents = [], isLoading: isLoadingCustomerServiceAgents} = useQuery<UserSummaryDTO[]>({
+    const {data: customerServiceAgents = []} = useQuery<UserSummaryDTO[]>({
         queryKey: ['customerServiceAgents'],
         queryFn: apiShipmentService.getCustomerServiceAgents,
         enabled: newShipmentOpen,
@@ -100,6 +100,7 @@ const Shipments = () => {
 
     const [newShipment, setNewShipment] = useState<Partial<ShipmentRequest>>({
         origin: "",
+        transportMethod: "",
         destination: "",
         client: "",
         transport: "",
@@ -109,6 +110,7 @@ const Shipments = () => {
         status: "Información Pendiente",
         container: "",
         containerType: "",
+        shipmentDate: "",
         operator: "",
         terminal: "",
         ci: false,
@@ -116,8 +118,14 @@ const Shipments = () => {
         taxFolio: false,
         loadManoeuvre: false,
         pisVinculation: false,
+        departureDate:"",
+        arrivalDate: "",
+        unloadDate: "",
         cleaningOrder: "",
         pod: "",
+        cleaningPatio: "",
+        cleaningDate: "",
+        cleanArrivalDate: "",
         eir: "",
         observations: ""
     });
@@ -638,8 +646,8 @@ const Shipments = () => {
                                                         <SelectValue placeholder="Selecciona metodo de transporte"/>
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="terreste">Terrestre</SelectItem>
-                                                        <SelectItem value="maritimo">Marítimo</SelectItem>
+                                                        <SelectItem value="Terrestre">Terrestre</SelectItem>
+                                                        <SelectItem value="Marítimo">Marítimo</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -655,7 +663,7 @@ const Shipments = () => {
                                                 >
                                                     <SelectTrigger id="customerServiceAgent">
                                                         <SelectValue
-                                                            placeholder="Ingresa el agente de servicio del cliente"/>
+                                                            placeholder="Ingresa el servicio al cliente"/>
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {customerServiceAgents.map((agent, index) => (
@@ -689,8 +697,8 @@ const Shipments = () => {
                                                         <SelectValue placeholder="Selecciona tipo de servicio"/>
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="full">Full</SelectItem>
-                                                        <SelectItem value="sencillo">Sencillo</SelectItem>
+                                                        <SelectItem value="Full">Full</SelectItem>
+                                                        <SelectItem value="Sencillo">Sencillo</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -701,7 +709,7 @@ const Shipments = () => {
                                                     onValueChange={value => handleInputChange("status", value)}
                                                 >
                                                     <SelectTrigger id="status">
-                                                        <SelectValue placeholder="Select status"/>
+                                                        <SelectValue placeholder="Estatus"/>
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="Información Pendiente">Información
@@ -824,15 +832,15 @@ const Shipments = () => {
                                                 <Label htmlFor="portOfDischarge">POD</Label>
                                                 <Select
                                                     value={newShipment.pod}
-                                                    onValueChange={value => handleInputChange("containerType", value)}
+                                                    onValueChange={value => handleInputChange("pod", value)}
                                                 >
                                                     <SelectTrigger id="portOfDischarge">
                                                         <SelectValue
                                                             placeholder="Selecciona el estatus del POD"/>
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="pending">Pendiente</SelectItem>
-                                                        <SelectItem value="sent">Enviado</SelectItem>
+                                                        <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                                        <SelectItem value="Enviado">Enviado</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -884,8 +892,8 @@ const Shipments = () => {
                                                             placeholder="Selecciona el EIR"/>
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="pending">No dieron</SelectItem>
-                                                        <SelectItem value="sent">Enviado</SelectItem>
+                                                        <SelectItem value="No dieron">No dieron</SelectItem>
+                                                        <SelectItem value="Enviado">Enviado</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -966,10 +974,10 @@ const Shipments = () => {
                                                         <SelectValue placeholder="Selecciona estatus"/>
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="solicited">Solicitada</SelectItem>
-                                                        <SelectItem value="sent">Enviada</SelectItem>
-                                                        <SelectItem value="pending">Pendiente</SelectItem>
-                                                        <SelectItem value="completed">Completada</SelectItem>
+                                                        <SelectItem value="Solicitada">Solicitada</SelectItem>
+                                                        <SelectItem value="Enviada">Enviada</SelectItem>
+                                                        <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                                        <SelectItem value="Completada">Completada</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -995,13 +1003,13 @@ const Shipments = () => {
                                                             placeholder="Selecciona el patio"/>
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="ssa">SSA</SelectItem>
-                                                        <SelectItem value="timsa">TIMSA</SelectItem>
-                                                        <SelectItem value="cima">CIMA</SelectItem>
-                                                        <SelectItem value="ocupa">OCUPA</SelectItem>
-                                                        <SelectItem value="isl">ISL</SelectItem>
-                                                        <SelectItem value="cise">CISE</SelectItem>
-                                                        <SelectItem value="otro">Otro</SelectItem>
+                                                        <SelectItem value="SSA">SSA</SelectItem>
+                                                        <SelectItem value="TIMSA">TIMSA</SelectItem>
+                                                        <SelectItem value="CIMA">CIMA</SelectItem>
+                                                        <SelectItem value="OCUPA">OCUPA</SelectItem>
+                                                        <SelectItem value="ISL">ISL</SelectItem>
+                                                        <SelectItem value="CISE">CISE</SelectItem>
+                                                        <SelectItem value="Otro">Otro</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>

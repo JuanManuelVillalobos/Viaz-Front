@@ -3,7 +3,6 @@ import {Toaster as Sonner} from "@/components/ui/sonner";
 import {TooltipProvider} from "@/components/ui/tooltip";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {BrowserRouter, Routes, Route, Navigate} from "react-router-dom";
-import {useEffect, useState} from "react";
 import {AuthProvider, useAuth} from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Shipments from "./pages/Shipments";
@@ -16,8 +15,6 @@ import NotFound from "./pages/NotFound";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
-import {authService} from "@/services/api";
-import {UserStatus} from "@/types/api.ts";
 import {LoaderCircle} from "lucide-react";
 
 const queryClient = new QueryClient({
@@ -32,11 +29,17 @@ const queryClient = new QueryClient({
 const ProtectedRoute = ({children}: { children: React.ReactNode }) => {
     const {user, loading} = useAuth();
 
+
     if (loading) {
-        return <LoaderCircle/>
+        return (
+            <div className="flex items-center justify-center h-screen w-full">
+                <LoaderCircle className="w-20 h-20 animate-spin"/>
+            </div>
+        );
     }
 
-    if (!user || user.user.status !== "ACTIVE") {
+
+    if (user.user.status !== "ACTIVE") {
         return <Navigate to="/login" replace/>;
     }
 

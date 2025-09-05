@@ -161,15 +161,33 @@ const AdminDashboard = () => {
     }, [fetchUsers, fetchCarriers, fetchRoles, fetchPermissions]);
 
     const handleCreateCarrier = async () => {
+        if (newCarrier.rfc.length !== 10) {
+            toast({
+                title: "RFC inválido",
+                description: "El RFC debe tener exactamente 10 caracteres.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (newCarrier.caat.length !== 4) {
+            toast({
+                title: "CAAT inválido",
+                description: "El CAAT debe tener exactamente 4 caracteres.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         try {
             const carrierData: CreateCarrierRequest = {
                 name: newCarrier.name,
                 rfc: newCarrier.rfc,
                 caat: newCarrier.caat,
-                razonSocial: newCarrier.razonSocial
+                razonSocial: newCarrier.razonSocial,
             };
             await carrierService.createCarrier(carrierData);
-            setNewCarrier({caat: "", razonSocial: "", rfc: "", name: ''});
+            setNewCarrier({caat: "", razonSocial: "", rfc: "", name: ""});
             setNewCarrierOpen(false);
             fetchCarriers(); // Refresh carriers list
             toast({
@@ -185,6 +203,7 @@ const AdminDashboard = () => {
             });
         }
     };
+
 
     const handleDeleteCarrier = async (id: string) => {
         try {
@@ -453,6 +472,8 @@ const AdminDashboard = () => {
                                                 <Input
                                                     id="rfc"
                                                     value={newCarrier.rfc}
+                                                    maxLength={10}
+                                                    minLength={10}
                                                     onChange={(e) => setNewCarrier({
                                                         ...newCarrier,
                                                         rfc: e.target.value
@@ -477,6 +498,8 @@ const AdminDashboard = () => {
                                                 <Input
                                                     id="caat"
                                                     value={newCarrier.caat}
+                                                    maxLength={4}
+                                                    minLength={4}
                                                     onChange={(e) => setNewCarrier({
                                                         ...newCarrier,
                                                         caat: e.target.value
