@@ -18,7 +18,7 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import {authService} from "@/services/api";
 import {UserStatus} from "@/types/api.ts";
-import {LoaderCircle} from "lucide-react";
+import {LoaderCircle, LoaderIcon} from "lucide-react";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -32,11 +32,17 @@ const queryClient = new QueryClient({
 const ProtectedRoute = ({children}: { children: React.ReactNode }) => {
     const {user, loading} = useAuth();
 
+
     if (loading) {
-        return <LoaderCircle/>
+        return (
+            <div className="flex items-center justify-center h-screen w-full">
+                <LoaderCircle className="w-20 h-20 animate-spin"/>
+            </div>
+        );
     }
 
-    if (!user || user.user.status !== "ACTIVE") {
+
+    if (user.user.status !== "ACTIVE") {
         return <Navigate to="/login" replace/>;
     }
 
