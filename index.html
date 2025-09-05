@@ -1,17 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Viaz-Dashboard</title>
-    <meta name="description" content="Viaz Dashbaord" />
-    <meta name="author" content="Viaz" />
-  </head>
+    <meta name="description" content="Viaz Dashbaord"/>
+    <meta name="author" content="Viaz"/>
+</head>
+<style>
+    #preloader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        width: 100%;
+        background: white;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 9999;
+    }
 
-  <body>
-    <div id="root"></div>
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #ccc;
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<body>
+<!--Preloader-->
+<div id="preloader">
+    <div class="spinner"></div>
+</div>
+
+<!--React root-->
+<div id="root"></div>
+
+
+<!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
+<script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+<script type="module" src="/src/main.tsx"></script>
+</body>
 </html>
