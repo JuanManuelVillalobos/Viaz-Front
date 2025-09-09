@@ -39,7 +39,7 @@ const ProtectedRoute = ({children}: { children: React.ReactNode }) => {
     }
 
 
-    if (user.user.status !== "ACTIVE") {
+    if (!user || user.user.status !== "ACTIVE") {
         return <Navigate to="/login" replace/>;
     }
 
