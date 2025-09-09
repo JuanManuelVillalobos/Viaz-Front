@@ -30,17 +30,18 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {apiShipmentService, incidentService, chargeService} from '@/services/api';
 import {getStatusColor} from "@/services/shipmentService";
-import { usePermissions } from '@/hooks/usePermissions';
+import {usePermissions} from '@/hooks/usePermissions';
 
 import {ShipmentDetailForm} from "@/components/shipment/ShipmentDetailForm";
 import {ShipmentFilesCard} from "@/components/shipment/ShipmentFilesCard";
 import {DocumentViewer} from "@/components/shipment/DocumentViewer";
 import {Shipment, ShipmentRequest, Transport} from "@/types/shipment";
 import {UserSummaryDTO} from "@/types/api.ts";
+import {ShipmentIncidentsChargesCard} from "@/components/shipment/ShipmentIncidentsChargesCard.tsx";
 
 const ShipmentDetail = () => {
     const {id} = useParams<{ id: string }>();
@@ -60,11 +61,13 @@ const ShipmentDetail = () => {
     const [closeShipmentOpen, setCloseShipmentOpen] = useState(false);
     const [shipmentGrade, setShipmentGrade] = useState(10);
     const [shipmentObservations, setShipmentObservations] = useState("");
+    const [chargeComment, setChargeComment] = useState("");
+    const [incidentComment, setIncidentComment] = useState("");
     const [addIncidentOpen, setAddIncidentOpen] = useState(false);
     const [selectedIncidentType, setSelectedIncidentType] = useState<string>("");
     const [selectedChargeType, setSelectedChargeType] = useState<string>("");
     const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
-    const { canCloseShipments } = usePermissions();
+    const {canCloseShipments} = usePermissions();
 
     // Fetch shipment data
     const {
@@ -110,6 +113,26 @@ const ShipmentDetail = () => {
         queryKey: ['chargeTypes'],
         queryFn: chargeService.getAllChargeTypes,
         enabled: chargeDialogOpen
+    });
+
+    const {
+        data: shipmentCharges = [],
+        isLoading: isLoadingCharges,
+        error: chargesError,
+    } = useQuery({
+        queryKey: ['shipmentCharges', id],
+        queryFn: () => apiShipmentService.getShipmentCharges(id),
+        enabled: !!id,
+    });
+
+    const {
+        data: shipmentIncidents = [],
+        isLoading: isLoadingIncidents,
+        error: incidentsError,
+    } = useQuery({
+        queryKey: ['shipmentIncidents', id],
+        queryFn: () => apiShipmentService.getShipmentIncidents(id),
+        enabled: !!id,
     });
 
 
@@ -190,9 +213,10 @@ const ShipmentDetail = () => {
 
     // Add incident mutation
     const addIncidentMutation = useMutation({
-        mutationFn: ({viazId, incidentId}: { viazId: string, incidentId: string }) =>
-            incidentService.addIncidentToShipment(viazId, incidentId),
+        mutationFn: ({viazId, incidentId, comment}: { viazId: string, incidentId: string, comment: string }) =>
+            incidentService.addIncidentToShipment(viazId, incidentId, comment),
         onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ['shipmentIncidents', id]});
             setAddIncidentOpen(false);
             setSelectedIncidentType("");
             toast({
@@ -212,9 +236,10 @@ const ShipmentDetail = () => {
 
     // Add charge mutation
     const addChargeMutation = useMutation({
-        mutationFn: ({viazId, chargeId}: { viazId: string, chargeId: string }) =>
-            chargeService.addChargeToShipment(viazId, chargeId),
+        mutationFn: ({viazId, chargeId, comment}: { viazId: string, chargeId: string, comment: string }) =>
+            chargeService.addChargeToShipment(viazId, chargeId, comment),
         onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ['shipmentCharges', id]});
             setChargeDialogOpen(false);
             setSelectedChargeType("");
             toast({
@@ -255,7 +280,7 @@ const ShipmentDetail = () => {
 
     const handleSave = async () => {
         if (editedShipment && id) {
-            const { files, ...rest } = editedShipment;
+            const {files, ...rest} = editedShipment;
             const updates: Partial<ShipmentRequest> = {
                 ...rest,
                 transport: editedShipment.transport ? editedShipment.transport.name : undefined,
@@ -401,9 +426,21 @@ const ShipmentDetail = () => {
         if (!shipmentGrade) {
             toast({
                 title: "Error",
-                description: "Please enter a grade for the shipment.",
+                description: "Ingrese la calificación final.",
                 variant: "destructive",
             });
+
+            await queryClient.invalidateQueries({queryKey: ['shipment', id]});
+            return;
+        }
+
+        if (!shipmentObservations) {
+            toast({
+                title: "Error",
+                description: "Ingrese la observación final.",
+                variant: "destructive",
+            });
+            await queryClient.invalidateQueries({queryKey: ['shipment', id]});
             return;
         }
 
@@ -415,6 +452,8 @@ const ShipmentDetail = () => {
                 title: "Embarque Cerrado",
                 description: `El embarque ha sido cerrado con calificación: ${shipmentGrade}`,
             });
+
+            await queryClient.invalidateQueries({queryKey: ['shipment', id]});
             setCloseShipmentOpen(false);
             setShipmentGrade(10);
             setShipmentObservations("");
@@ -455,7 +494,7 @@ const ShipmentDetail = () => {
             return;
         }
 
-        addIncidentMutation.mutate({viazId: id, incidentId: selectedIncidentType});
+        addIncidentMutation.mutate({viazId: id, incidentId: selectedIncidentType, comment: incidentComment});
     };
 
     const handleAddCharge = async () => {
@@ -468,7 +507,8 @@ const ShipmentDetail = () => {
             return;
         }
 
-        addChargeMutation.mutate({viazId: id, chargeId: selectedChargeType});
+        addChargeMutation.mutate({viazId: id, chargeId: selectedChargeType, comment: chargeComment});
+        await queryClient.invalidateQueries({queryKey: ['shipmentCharges', id]});
     };
 
     // Reopen shipment mutation
@@ -477,7 +517,7 @@ const ShipmentDetail = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: ['shipment', id]});
             toast({
-                title: "Success", 
+                title: "Success",
                 description: "Shipment has been reopened successfully.",
             });
         },
@@ -485,7 +525,7 @@ const ShipmentDetail = () => {
             console.error("Error reopening shipment:", error);
             toast({
                 title: "Error",
-                description: "Failed to reopen shipment.", 
+                description: "Failed to reopen shipment.",
                 variant: "destructive",
             });
         }
@@ -494,7 +534,10 @@ const ShipmentDetail = () => {
     const handleReopenShipment = () => {
         if (id) {
             reopenShipmentMutation.mutate(id);
+            queryClient.invalidateQueries({queryKey: ['shipment', id]});
+
         }
+
     };
 
     if (isLoading) {
@@ -519,20 +562,21 @@ const ShipmentDetail = () => {
             {!shipment.open && (
                 <div className="bg-muted/50 border border-muted rounded-lg p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Lock className="h-5 w-5 text-muted-foreground" />
+                        <Lock className="h-5 w-5 text-muted-foreground"/>
                         <div>
                             <p className="font-medium">This shipment is closed</p>
-                            <p className="text-sm text-muted-foreground">This shipment has been closed and is read-only</p>
+                            <p className="text-sm text-muted-foreground">This shipment has been closed and is
+                                read-only</p>
                         </div>
                     </div>
                     {canCloseShipments() && (
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             size="sm"
                             onClick={handleReopenShipment}
                             disabled={reopenShipmentMutation.isPending}
                         >
-                            <Unlock className="h-4 w-4 mr-2" />
+                            <Unlock className="h-4 w-4 mr-2"/>
                             {reopenShipmentMutation.isPending ? "Reopening..." : "Reopen Shipment"}
                         </Button>
                     )}
@@ -617,7 +661,7 @@ const ShipmentDetail = () => {
                         isLoadingTransports={isLoadingTransports}
                         isLoadingCustomerServiceAgents={isLoadingCustomerServiceAgents}
                     />
-                    
+
                     {/* ETA Card */}
                     <Card>
                         <CardHeader>
@@ -637,28 +681,36 @@ const ShipmentDetail = () => {
                         </CardContent>
                     </Card>
                 </div>
+                <div className="space-y-6">
 
-                <ShipmentFilesCard
-                    viazId={id || ''}
-                    isEditing={isEditing && shipment.open}
-                    documents={documents}
-                    isLoadingDocuments={isLoadingDocuments}
-                    handleDeleteFile={handleDeleteFile}
-                    handleViewDocument={handleViewDocument}
-                    getFileNameFromObjectKey={getFileNameFromObjectKey}
-                    getFileExtension={getFileExtension}
-                    guessFileTypeFromExtension={guessFileTypeFromExtension}
-                    isLoadingDocument={isLoadingDocument}
-                    handleUploadFile={handleUploadFile}
-                    refetchDocuments={refetchDocuments}
-                    isUploading={uploadFileMutation.isPending}
-                    handleDragStart={handleDragStart}
-                    handleDragEnter={handleDragEnter}
-                    handleDragEnd={handleDragEnd}
-                    handleDrop={handleDrop}
-                    dragOverIndex={dragOverIndex}
-                />
+
+                    <ShipmentFilesCard
+                        viazId={id || ''}
+                        isEditing={isEditing && shipment.open}
+                        documents={documents}
+                        isLoadingDocuments={isLoadingDocuments}
+                        handleDeleteFile={handleDeleteFile}
+                        handleViewDocument={handleViewDocument}
+                        getFileNameFromObjectKey={getFileNameFromObjectKey}
+                        getFileExtension={getFileExtension}
+                        guessFileTypeFromExtension={guessFileTypeFromExtension}
+                        isLoadingDocument={isLoadingDocument}
+                        handleUploadFile={handleUploadFile}
+                        refetchDocuments={refetchDocuments}
+                        isUploading={uploadFileMutation.isPending}
+                        handleDragStart={handleDragStart}
+                        handleDragEnter={handleDragEnter}
+                        handleDragEnd={handleDragEnd}
+                        handleDrop={handleDrop}
+                        dragOverIndex={dragOverIndex}
+                    />
+                    <ShipmentIncidentsChargesCard incidents={shipmentIncidents} charges={shipmentCharges}
+                                                  isLoading={isLoadingCharges || isLoadingIncidents}
+                                                  error={chargesError?.message || incidentsError?.message}/>
+
+                </div>
             </div>
+
 
             {/* Delete File Confirmation Dialog */}
             <AlertDialog open={!!fileToDelete} onOpenChange={(open) => !open && setFileToDelete(null)}>
@@ -720,7 +772,7 @@ const ShipmentDetail = () => {
 
                             <Input
                                 id="Observations"
-                                placeholder="Ingrese alguna observación si es necesario."
+                                placeholder="Ingrese la observación final."
                                 value={shipmentObservations}
                                 onChange={(e) => setShipmentObservations(e.target.value)}
                             />
@@ -751,27 +803,33 @@ const ShipmentDetail = () => {
                             <Label htmlFor="incident-type">Incident Type</Label>
                             <Select value={selectedIncidentType} onValueChange={setSelectedIncidentType}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select incident type" />
+                                    <SelectValue placeholder="Select incident type"/>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {isLoadingIncidentTypes ? (
                                         <SelectItem value="loading" disabled>Loading...</SelectItem>
                                     ) : (
-                                         incidentTypes.map((incident) => (
-                                            <SelectItem key={incident.id} value={incident.id}>
+                                        incidentTypes.map((incident) => (
+                                            <SelectItem key={incident.incidentId} value={incident.incidentId}>
                                                 {incident.name}
                                             </SelectItem>
                                         ))
                                     )}
                                 </SelectContent>
                             </Select>
+                            <Input
+                                id="incidentObservations"
+                                placeholder="Comentario del incidente."
+                                value={incidentComment}
+                                onChange={(e) => setIncidentComment(e.target.value)}
+                            />
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setAddIncidentOpen(false)}>
                             Cancel
                         </Button>
-                        <Button 
+                        <Button
                             onClick={handleAddIncident}
                             disabled={addIncidentMutation.isPending || !selectedIncidentType}
                         >
@@ -795,27 +853,33 @@ const ShipmentDetail = () => {
                             <Label htmlFor="charge-type">Charge Type</Label>
                             <Select value={selectedChargeType} onValueChange={setSelectedChargeType}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select charge type" />
+                                    <SelectValue placeholder="Select charge type"/>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {isLoadingChargeTypes ? (
                                         <SelectItem value="loading" disabled>Loading...</SelectItem>
                                     ) : (
                                         chargeTypes.map((charge) => (
-                                            <SelectItem key={charge.id} value={charge.id}>
+                                            <SelectItem key={charge.chargeId} value={charge.chargeId}>
                                                 {charge.name}
                                             </SelectItem>
                                         ))
                                     )}
                                 </SelectContent>
                             </Select>
+                            <Input
+                                id="chargeObservations"
+                                placeholder="Comentario del cargo."
+                                value={chargeComment}
+                                onChange={(e) => setChargeComment(e.target.value)}
+                            />
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setChargeDialogOpen(false)}>
                             Cancel
                         </Button>
-                        <Button 
+                        <Button
                             onClick={handleAddCharge}
                             disabled={addChargeMutation.isPending || !selectedChargeType}
                         >

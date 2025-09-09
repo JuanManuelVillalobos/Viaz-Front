@@ -58,6 +58,7 @@ export interface ShipmentFile {
 }
 
 
+
 // Role types
 export interface Role {
     roleId: number;
@@ -100,4 +101,20 @@ export interface ShipmentUpdateRequest {
     cleanArrivalDate?: string;
     eir?: string;
     observations?: string;
+}
+
+export interface ShipmentIncident {
+    shipmentIncidentId: number;
+    shipmentId: string;
+    incidentType: string;
+    comment: string;
+    occurredAt: string; // ISO date string
+}
+
+export interface ShipmentCharge {
+    shipmentChargeId: number;
+    shipmentId: string;
+    chargeType: string;
+    comment: string;
+    occurredAt: string; // ISO date string
 }
