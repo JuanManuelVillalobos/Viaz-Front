@@ -67,7 +67,7 @@ const ShipmentDetail = () => {
     const [selectedIncidentType, setSelectedIncidentType] = useState<string>("");
     const [selectedChargeType, setSelectedChargeType] = useState<string>("");
     const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
-    const {canCloseShipments} = usePermissions();
+    const {canCloseShipments, canCreateShipments} = usePermissions();
 
     // Fetch shipment data
     const {
@@ -586,11 +586,11 @@ const ShipmentDetail = () => {
             <div className="flex items-center flex-wrap gap-2">
                 <Button variant="ghost" onClick={handleBack} className="mr-2">
                     <ArrowLeft className="h-4 w-4 mr-2"/>
-                    Back to Shipments
+                    Regresar
                 </Button>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{shipment.viazId}</h1>
                 <div className="ml-auto flex gap-2">
-                    {shipment.open && (
+                    {shipment.open && canCreateShipments() && (
                         <>
                             <Button
                                 variant="outline"
@@ -598,7 +598,7 @@ const ShipmentDetail = () => {
                                 className="flex items-center gap-2"
                             >
                                 <AlertTriangle className="h-4 w-4"/>
-                                Add Incident
+                                Incidente
                             </Button>
                             <Button
                                 variant="outline"
@@ -606,7 +606,7 @@ const ShipmentDetail = () => {
                                 className="flex items-center gap-2"
                             >
                                 <DollarSign className="h-4 w-4"/>
-                                Add Charge
+                                Cargo
                             </Button>
                             <Button
                                 variant="outline"
@@ -614,37 +614,39 @@ const ShipmentDetail = () => {
                                 className="flex items-center gap-2"
                             >
                                 <Lock className="h-4 w-4"/>
-                                Cerrar Embarque
+                                Cerrar
                             </Button>
                         </>
                     )}
-                    {!isEditing && shipment.open ? (
-                        <Button
-                            onClick={handleEdit}
-                            disabled={updateShipmentMutation.isPending}
-                        >
-                            <Edit className="h-4 w-4 mr-2"/>
-                            Edit Shipment
-                        </Button>
-                    ) : shipment.open ? (
-                        <div className="space-x-2">
+                    {shipment.open && canCreateShipments() && (
+                        !isEditing ? (
                             <Button
-                                variant="outline"
-                                onClick={handleCancel}
+                                onClick={handleEdit}
                                 disabled={updateShipmentMutation.isPending}
                             >
-                                <X className="h-4 w-4 mr-2"/>
-                                Cancel
+                                <Edit className="h-4 w-4 mr-2"/>
+                                Editar
                             </Button>
-                            <Button
-                                onClick={handleSave}
-                                disabled={updateShipmentMutation.isPending}
-                            >
-                                <Save className="h-4 w-4 mr-2"/>
-                                {updateShipmentMutation.isPending ? "Saving..." : "Save Changes"}
-                            </Button>
-                        </div>
-                    ) : null}
+                        ) : (
+                            <div className="space-x-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={handleCancel}
+                                    disabled={updateShipmentMutation.isPending}
+                                >
+                                    <X className="h-4 w-4 mr-2"/>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleSave}
+                                    disabled={updateShipmentMutation.isPending}
+                                >
+                                    <Save className="h-4 w-4 mr-2"/>
+                                    {updateShipmentMutation.isPending ? "Guardando..." : "Guardar Cambios"}
+                                </Button>
+                            </div>
+                        )
+                    )}
                 </div>
             </div>
 
@@ -793,7 +795,7 @@ const ShipmentDetail = () => {
             <Dialog open={addIncidentOpen} onOpenChange={setAddIncidentOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>Add Incident</DialogTitle>
+                        <DialogTitle>Agregar Incidente</DialogTitle>
                         <DialogDescription>
                             Select an incident type to add to this shipment.
                         </DialogDescription>
@@ -843,9 +845,9 @@ const ShipmentDetail = () => {
             <Dialog open={chargeDialogOpen} onOpenChange={setChargeDialogOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>Add Charge</DialogTitle>
+                        <DialogTitle>Agregar Cargo</DialogTitle>
                         <DialogDescription>
-                            Select a charge type to add to this shipment.
+                            Selecciona el tipo de cargo a agregar.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
