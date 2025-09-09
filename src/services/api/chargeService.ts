@@ -1,9 +1,8 @@
 import apiClient from './apiClient';
 
 export interface ChargeType {
-    id: string;
+    chargeId: string;
     name: string;
-    description?: string;
 }
 
 export interface CreateChargeTypeRequest {
@@ -25,7 +24,7 @@ export const chargeService = {
     },
 
     // Add charge to shipment
-    addChargeToShipment: async (viazId: string, chargeId: string): Promise<void> => {
-        await apiClient.post(`/api/shipment/add-charge/${viazId}/${chargeId}`);
+    addChargeToShipment: async (viazId: string, chargeId: string, comment: string): Promise<void> => {
+        await apiClient.post(`/api/shipment/add-charge/${viazId}/${chargeId}/${comment}`);
     }
 };
