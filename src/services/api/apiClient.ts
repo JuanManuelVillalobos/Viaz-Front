@@ -18,7 +18,7 @@ function isTokenExpired(token: string): boolean {
     }
 }
 
-const API_URL = 'http://localhost:8080/';
+const API_URL = 'http://localhost:8080';
 
 const apiClient: AxiosInstance = axios.create({
     baseURL: API_URL,
