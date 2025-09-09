@@ -1,9 +1,8 @@
 import apiClient from './apiClient';
 
 export interface IncidentType {
-    id: string;
+    incidentId: string;
     name: string;
-    description?: string;
 }
 
 export interface CreateIncidentTypeRequest {
@@ -25,7 +24,7 @@ export const incidentService = {
     },
 
     // Add incident to shipment
-    addIncidentToShipment: async (viazId: string, incidentId: string): Promise<void> => {
-        await apiClient.post(`/api/shipment/add-incident/${viazId}/${incidentId}`);
+    addIncidentToShipment: async (viazId: string, incidentId: string, comment : string): Promise<void> => {
+        await apiClient.post(`/api/shipment/add-incident/${viazId}/${incidentId}/${comment}`);
     }
 };
