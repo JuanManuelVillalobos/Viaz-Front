@@ -3,10 +3,12 @@ import { notificationService } from '@/services/api';
 import { NotificationResponseDTO } from '@/types/notification';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { useWebSocketNotifications } from './useWebSocketNotifications';
 
 export const useNotifications = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { isConnected } = useWebSocketNotifications();
 
   const {
     data: notifications = [],
@@ -44,5 +46,6 @@ export const useNotifications = () => {
     error,
     markAsRead: markAsReadMutation.mutate,
     isMarkingAsRead: markAsReadMutation.isPending,
+    isWebSocketConnected: isConnected,
   };
 };
