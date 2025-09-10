@@ -77,7 +77,7 @@ const Shipments = () => {
         const savedColumns = localStorage.getItem("shipmentColumns");
         return savedColumns ? JSON.parse(savedColumns) : allShipmentColumns;
     });
-    const {canManageShipments, canCreateShipments} = usePermissions();
+    const {canManageShipments, canCreateShipments, canDeleteShipments} = usePermissions();
 
     const {data: transports = []} = useQuery<Transport[]>({
         queryKey: ['transports'],
@@ -112,7 +112,7 @@ const Shipments = () => {
         taxFolio: false,
         loadManoeuvre: false,
         pisVinculation: false,
-        departureDate:"",
+        departureDate: "",
         arrivalDate: "",
         unloadDate: "",
         cleaningOrder: "",
@@ -574,7 +574,12 @@ const Shipments = () => {
 
                     {/* New Shipment Button - only show if user can create shipments */}
                     {canCreateShipments() && (
-                        <NewShipmentDialog open={newShipmentOpen} onOpenChange={setNewShipmentOpen} newShipment={newShipment} handleInputChange={handleInputChange} customerServiceAgents={customerServiceAgents} transports={transports} handleNewShipmentSubmit={handleNewShipmentSubmit} createShipmentMutation={createShipmentMutation} resetNewShipment={resetNewShipment}/>
+                        <NewShipmentDialog open={newShipmentOpen} onOpenChange={setNewShipmentOpen}
+                                           newShipment={newShipment} handleInputChange={handleInputChange}
+                                           customerServiceAgents={customerServiceAgents} transports={transports}
+                                           handleNewShipmentSubmit={handleNewShipmentSubmit}
+                                           createShipmentMutation={createShipmentMutation}
+                                           resetNewShipment={resetNewShipment}/>
                     )}
                 </div>
             </div>
@@ -629,13 +634,16 @@ const Shipments = () => {
                                                 onClick={() => handleViewShipment(shipment.viazId)}>
                                                 <Eye/>
                                             </Button>
-                                            <Button
-                                                className="text-destructive focus:text-destructive"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setShipmentToDelete(shipment.viazId)}>
-                                                <Trash/>
-                                            </Button>
+                                            {canDeleteShipments() && (
+                                                <Button
+                                                    className="text-destructive focus:text-destructive"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setShipmentToDelete(shipment.viazId)}>
+                                                    <Trash/>
+                                                </Button>
+                                            )}
+
                                         </div>
                                     </TableCell>
                                 </TableRow>
