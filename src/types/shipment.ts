@@ -33,6 +33,8 @@ export interface Shipment {
     observations?: string;
     files?: number;
     open?: boolean;
+    hasIncidents?: boolean;
+    hasCharges?: boolean;
 }
 
 export interface ShipmentRequest {

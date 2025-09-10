@@ -16,14 +16,14 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5"/>
-                    Incidents & Charges
+                    Incidentes y Cargos
                 </CardTitle>
             </CardHeader>
 
             <CardContent className="space-y-6">
                 {/* Loading / Error */}
                 {isLoading ? (
-                    <p className="text-muted-foreground">Loading shipment details...</p>
+                    <p className="text-muted-foreground">Cargando detalles...</p>
                 ) : error ? (
                     <p className="text-destructive">Error: {error}</p>
                 ) : (
@@ -31,10 +31,10 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
                         {/* Incidents Section */}
                         <div>
                             <h3 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
-                                <AlertTriangle className="h-4 w-4"/> Incidents
+                                <AlertTriangle className="h-4 w-4"/> Incidentes
                             </h3>
                             {incidents.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">No incidents reported.</p>
+                                <p className="text-muted-foreground text-sm">No hay incidentes reportados</p>
                             ) : (
                                 <ul className="space-y-2">
                                     {incidents.map((incident, index) => (
@@ -57,10 +57,10 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
                         {/* Charges Section */}
                         <div>
                             <h3 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
-                                <DollarSign className="h-4 w-4"/> Charges
+                                <DollarSign className="h-4 w-4"/> Cargos
                             </h3>
                             {charges.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">No charges recorded.</p>
+                                <p className="text-muted-foreground text-sm">No hay cargos reportados</p>
                             ) : (
                                 <ul className="space-y-2">
                                     {charges.map((charge, index) => (
