@@ -391,6 +391,20 @@ const Shipments = () => {
             case "files":
                 return value ? value.toString() : "0";
 
+            case "hasIncidents":
+                return (
+                    <Badge variant={value ? "destructive" : "secondary"} className="text-xs">
+                        {value ? 'Sí' : 'No'}
+                    </Badge>
+                );
+
+            case "hasCharges":
+                return (
+                    <Badge variant={value ? "destructive" : "secondary"} className="text-xs">
+                        {value ? 'Sí' : 'No'}
+                    </Badge>
+                );
+
             case "ci":
             case "ccp":
             case "taxFolio":
@@ -608,7 +622,10 @@ const Shipments = () => {
                             const completionData = calculateCompletionData(shipment);
 
                             return (
-                                <TableRow key={shipment.viazId} className={!shipment.open ? "opacity-60" : ""}>
+                                <TableRow key={shipment.viazId} className={`${!shipment.open ? "opacity-60" : ""} ${
+                                  shipment.hasCharges ? 'bg-red-50 hover:bg-red-100' : 
+                                  shipment.hasIncidents ? 'bg-yellow-50 hover:bg-yellow-100' : ''
+                                }`}>
                                     {visibleColumns.map((column) => (
                                         <TableCell key={column.id}>
                                             {getCellValue(shipment, column.id)}

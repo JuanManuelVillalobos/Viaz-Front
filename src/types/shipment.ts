@@ -109,6 +109,8 @@ export const allShipmentColumns: TableColumn[] = [
     {id: "cleanArrivalDate", label: "Fecha de Llegada Limpia", visible: false},
     {id: "eir", label: "EIR", visible: false},
     {id: "observations", label: "Observaciones", visible: false},
+    {id: "hasIncidents", label: "Incidentes", visible: true},
+    {id: "hasCharges", label: "Cargos", visible: true},
 ];
 
 // Default visible columns (subset of allShipmentColumns)
@@ -121,6 +123,8 @@ export const defaultShipmentColumns: TableColumn[] = [
     {id: "status", label: "Estatus", visible: true},
     {id: "shipmentDate", label: "Fecha de Carga", visible: true},
     {id: "files", label: "Docs", visible: true},
+    {id: "hasIncidents", label: "Incidentes", visible: true},
+    {id: "hasCharges", label: "Cargos", visible: true},
 ];
 
 export interface Transport {
