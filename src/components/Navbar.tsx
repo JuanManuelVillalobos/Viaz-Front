@@ -1,4 +1,4 @@
-import {Bell, Menu, LogOut, Settings, UserRound} from "lucide-react";
+import {Menu, LogOut, Settings, UserRound} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {useNavigate} from "react-router-dom";
 import {useState, useEffect} from "react";
@@ -15,6 +15,7 @@ import {Avatar, AvatarFallback} from "@/components/ui/avatar";
 import {Link} from "react-router-dom";
 import {authService} from "@/services/api/authService";
 import {useAuth} from "@/contexts/AuthContext.tsx";
+import {NotificationDropdown} from "./NotificationDropdown";
 
 interface NavbarProps {
     onMenuToggle: () => void;
@@ -60,9 +61,7 @@ const Navbar = ({onMenuToggle}: NavbarProps) => {
                     <Menu className="h-5 w-5"/>
                 </Button>
                 <div className="flex items-center space-x-4">
-                    <Button variant="ghost" size="icon">
-                        <Bell className="h-5 w-5"/>
-                    </Button>
+                    <NotificationDropdown />
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>

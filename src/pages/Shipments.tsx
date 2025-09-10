@@ -469,8 +469,8 @@ const Shipments = () => {
         return {percentage, missing};
     };
 
-    // Get visible columns
-    const visibleColumns = columns.filter(col => col.visible);
+    // Get visible columns (excluding hasIncidents and hasCharges)
+    const visibleColumns = columns.filter(col => col.visible && col.id !== 'hasIncidents' && col.id !== 'hasCharges');
 
     return (
         <div className="space-y-6">
