@@ -63,6 +63,7 @@ export const authService = {
       {},
       { withCredentials: true }
     );
+
     if (response.data.accessToken) {
       localStorage.setItem('accessToken', response.data.accessToken);
       return response.data.accessToken;
