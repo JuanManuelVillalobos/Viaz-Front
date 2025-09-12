@@ -147,5 +147,11 @@ export const apiShipmentService = {
         return response.data;
     },
 
+    deleteIncident: async (incidentId: number): Promise<void> => {
+        await apiClient.delete(`/api/shipment/delete-incident/${incidentId}`);
+    },
 
+    deleteCharge: async (chargeId: number): Promise<void> => {
+        await apiClient.delete(`/api/shipment/delete-charge/${chargeId}`);
+    },
 };

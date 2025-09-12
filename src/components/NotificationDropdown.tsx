@@ -23,7 +23,6 @@ export const NotificationDropdown = () => {
         unreadCount,
         markAsRead,
         isLoading,
-        isWebSocketConnected,
         markAllAsRead
     } = useNotifications();
 
@@ -58,12 +57,6 @@ export const NotificationDropdown = () => {
                 <DropdownMenuLabel className="flex items-center justify-between px-4 pt-3 pb-2">
                     <span>Notifications</span>
                     <div className="flex items-center gap-2">
-                        {isWebSocketConnected && (
-                            <div
-                                className="h-2 w-2 bg-green-500 rounded-full"
-                                title="Connected"
-                            />
-                        )}
                         {unreadCount > 0 && (
                             <Badge variant="secondary" className="text-xs">
                                 {unreadCount} new

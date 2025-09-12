@@ -706,9 +706,13 @@ const ShipmentDetail = () => {
                         handleDrop={handleDrop}
                         dragOverIndex={dragOverIndex}
                     />
-                    <ShipmentIncidentsChargesCard incidents={shipmentIncidents} charges={shipmentCharges}
-                                                  isLoading={isLoadingCharges || isLoadingIncidents}
-                                                  error={chargesError?.message || incidentsError?.message}/>
+                    <ShipmentIncidentsChargesCard 
+                        incidents={shipmentIncidents} 
+                        charges={shipmentCharges}
+                        isLoading={isLoadingCharges || isLoadingIncidents}
+                        error={chargesError?.message || incidentsError?.message}
+                        shipmentId={id}
+                    />
 
                 </div>
             </div>

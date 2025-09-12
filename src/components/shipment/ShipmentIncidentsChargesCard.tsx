@@ -1,16 +1,63 @@
 import {Card, CardHeader, CardTitle, CardContent} from "@/components/ui/card";
-import {AlertTriangle, DollarSign} from "lucide-react";
+import {Button} from "@/components/ui/button";
+import {AlertTriangle, DollarSign, Trash2} from "lucide-react";
 import {format} from "date-fns";
-import {ShipmentCharge, ShipmentIncident} from "@/types/api.ts"
+import {ShipmentCharge, ShipmentIncident} from "@/types/api.ts";
+import {usePermissions} from "@/hooks/usePermissions";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
+import {apiShipmentService} from "@/services/api";
+import {toast} from "@/hooks/use-toast";
 
 interface Props {
     incidents: ShipmentIncident[];
     charges: ShipmentCharge[];
     isLoading: boolean;
     error?: string;
+    shipmentId?: string;
 }
 
-export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, error}: Props) => {
+export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, error, shipmentId}: Props) => {
+    const {hasPermission} = usePermissions();
+    const queryClient = useQueryClient();
+
+    const deleteIncidentMutation = useMutation({
+        mutationFn: apiShipmentService.deleteIncident,
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ['shipment-incidents', shipmentId]});
+            toast({
+                title: 'Incidente eliminado',
+                description: 'El incidente ha sido eliminado exitosamente.',
+            });
+        },
+        onError: () => {
+            toast({
+                title: 'Error',
+                description: 'No se pudo eliminar el incidente.',
+                variant: 'destructive',
+            });
+        },
+    });
+
+    const deleteChargeMutation = useMutation({
+        mutationFn: apiShipmentService.deleteCharge,
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ['shipment-charges', shipmentId]});
+            toast({
+                title: 'Cargo eliminado',
+                description: 'El cargo ha sido eliminado exitosamente.',
+            });
+        },
+        onError: () => {
+            toast({
+                title: 'Error',
+                description: 'No se pudo eliminar el cargo.',
+                variant: 'destructive',
+            });
+        },
+    });
+
+    const canDeleteIncidents = hasPermission('SHIPMENT_INCIDENT_DELETE');
+    const canDeleteCharges = hasPermission('SHIPMENT_CHARGE_DELETE');
     return (
         <Card>
             <CardHeader>
@@ -39,14 +86,29 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
                                 <ul className="space-y-2">
                                     {incidents.map((incident, index) => (
                                         <li key={index} className="border p-3 rounded-md bg-muted/40">
-                                            <div className="text-sm font-medium">
-                                                {incident.incidentType}
-                                            </div>
-                                            <div className="text-sm text-muted-foreground">
-                                                {incident.comment}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground mt-1">
-                                                {format(new Date(incident.occurredAt), "dd MMM yyyy, HH:mm")}
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <div className="text-sm font-medium">
+                                                        {incident.incidentType}
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {incident.comment}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                        {format(new Date(incident.occurredAt), "dd MMM yyyy, HH:mm")}
+                                                    </div>
+                                                </div>
+                                                {canDeleteIncidents && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => deleteIncidentMutation.mutate(incident.shipmentIncidentId)}
+                                                        disabled={deleteIncidentMutation.isPending}
+                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </li>
                                     ))}
@@ -65,14 +127,29 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
                                 <ul className="space-y-2">
                                     {charges.map((charge, index) => (
                                         <li key={index} className="border p-3 rounded-md bg-muted/40">
-                                            <div className="text-sm font-medium">
-                                                {charge.chargeType}
-                                            </div>
-                                            <div className="text-sm text-muted-foreground">
-                                                {charge.comment}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground mt-1">
-                                                {format(new Date(charge.occurredAt), "dd MMM yyyy, HH:mm")}
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <div className="text-sm font-medium">
+                                                        {charge.chargeType}
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {charge.comment}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                        {format(new Date(charge.occurredAt), "dd MMM yyyy, HH:mm")}
+                                                    </div>
+                                                </div>
+                                                {canDeleteCharges && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => deleteChargeMutation.mutate(charge.shipmentChargeId)}
+                                                        disabled={deleteChargeMutation.isPending}
+                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </li>
                                     ))}
