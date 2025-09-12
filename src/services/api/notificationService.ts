@@ -15,4 +15,8 @@ export const notificationService = {
     const response = await apiClient.get(`/api/notification/${userId}/unread-count`);
     return response.data;
   },
+
+    markAllAsRead: async (userId: number): Promise<void> => {
+      await apiClient.post(`/api/notification/${userId}/mark-all-read`);
+    }
 };
