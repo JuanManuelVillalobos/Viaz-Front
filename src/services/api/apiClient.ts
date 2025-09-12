@@ -18,7 +18,7 @@ function isTokenExpired(token: string): boolean {
     }
 }
 
-const API_URL = 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_BACKEND_URL;
 
 const apiClient: AxiosInstance = axios.create({
     baseURL: API_URL,
