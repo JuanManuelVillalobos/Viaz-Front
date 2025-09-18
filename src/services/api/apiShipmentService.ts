@@ -1,11 +1,43 @@
 import apiClient from './apiClient';
-import {ShipmentCharge, ShipmentIncident, ShipmentUpdateRequest, UserSummaryDTO} from '@/types/api';
+import {ShipmentCharge, ShipmentIncident, ShipmentUpdateRequest, UserSummaryDTO, Page, ShipmentFilterOptionsDTO} from '@/types/api';
 import {Shipment, ShipmentRequest, Transport} from "@/types/shipment.ts";
 
 export const apiShipmentService = {
-    // Get all shipments
+    // Get shipments with pagination and filters
+    getShipments: async (
+        page: number = 0, 
+        size: number = 10, 
+        statuses?: string[], 
+        clients?: string[], 
+        carriers?: string[]
+    ): Promise<Page<Shipment>> => {
+        const params = new URLSearchParams();
+        params.append('page', page.toString());
+        params.append('size', size.toString());
+        
+        if (statuses && statuses.length > 0) {
+            statuses.forEach(status => params.append('statuses', status));
+        }
+        if (clients && clients.length > 0) {
+            clients.forEach(client => params.append('clients', client));
+        }
+        if (carriers && carriers.length > 0) {
+            carriers.forEach(carrier => params.append('carriers', carrier));
+        }
+        
+        const response = await apiClient.get(`/api/shipment/shipments?${params.toString()}`);
+        return response.data;
+    },
+
+    // Get all shipments (legacy - keeping for compatibility)
     getAllShipments: async (): Promise<Shipment[]> => {
         const response = await apiClient.get('/api/shipment/get-all-shipments');
+        return response.data;
+    },
+
+    // Get filter options
+    getFilterOptions: async (): Promise<ShipmentFilterOptionsDTO> => {
+        const response = await apiClient.get('/api/shipment/filters');
         return response.data;
     },
 

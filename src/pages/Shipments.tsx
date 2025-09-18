@@ -43,7 +43,7 @@ import {getStatusColor} from "@/services/shipmentService";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {apiShipmentService} from "@/services/api";
-import {UserSummaryDTO} from "@/types/api.ts";
+import {UserSummaryDTO, Page, ShipmentFilterOptionsDTO} from "@/types/api.ts";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel,
     AlertDialogContent,
@@ -71,6 +71,8 @@ const Shipments = () => {
     const [filters, setFilters] = useState<FilterOption>({status: [], carrier: [], client: []});
     const [newShipmentOpen, setNewShipmentOpen] = useState(false);
     const [shipmentToDelete, setShipmentToDelete] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [pageSize] = useState(10);
     const [columns, setColumns] = useState<TableColumn[]>(() => {
         // Try to load column preferences from localStorage
         const savedColumns = localStorage.getItem("shipmentColumns");
@@ -128,12 +130,27 @@ const Shipments = () => {
         localStorage.setItem("shipmentColumns", JSON.stringify(columns));
     }, [columns]);
 
-    // Fetch shipments with React Query
-    const {data: shipments = [], isLoading, error} = useQuery({
-        queryKey: ['shipments'],
-        queryFn: apiShipmentService.getAllShipments,
+    // Fetch filter options
+    const {data: filterOptions} = useQuery<ShipmentFilterOptionsDTO>({
+        queryKey: ['shipment-filters'],
+        queryFn: apiShipmentService.getFilterOptions,
         enabled: canManageShipments(),
     });
+
+    // Fetch shipments with React Query
+    const {data: shipmentsPage, isLoading, error} = useQuery({
+        queryKey: ['shipments', currentPage, pageSize, filters.status, filters.client, filters.carrier],
+        queryFn: () => apiShipmentService.getShipments(
+            currentPage, 
+            pageSize, 
+            filters.status.length > 0 ? filters.status : undefined,
+            filters.client.length > 0 ? filters.client : undefined, 
+            filters.carrier.length > 0 ? filters.carrier : undefined
+        ),
+        enabled: canManageShipments(),
+    });
+
+    const shipments = shipmentsPage?.content || [];
 
     // Toggle column visibility
     const toggleColumnVisibility = (columnId: string) => {
@@ -218,10 +235,10 @@ const Shipments = () => {
         },
     });
 
-    // Extract unique carriers and statuses for filters
-    const carriers = [...new Set(shipments.map(shipment => shipment.transport?.name || '').filter(Boolean))];
-    const statuses = [...new Set(shipments.map(shipment => shipment.status || '').filter(Boolean))];
-    const clients = [...new Set(shipments.map(shipment => shipment.client || '').filter(Boolean))];
+    // Use filter options from API
+    const carriers = filterOptions?.carriers || [];
+    const statuses = filterOptions?.statuses || [];
+    const clients = filterOptions?.clients || [];
 
 
     const handleFilterChange = (type: "status" | "carrier" | "client", value: string) => {
@@ -232,10 +249,12 @@ const Shipments = () => {
 
             return {...prev, [type]: newValues};
         });
+        setCurrentPage(0); // Reset to first page when filters change
     };
 
     const resetFilters = () => {
         setFilters({status: [], carrier: [], client: []});
+        setCurrentPage(0);
     };
 
     const handleInputChange = (field: keyof Shipment, value: Shipment[keyof Shipment]) => {
@@ -247,28 +266,18 @@ const Shipments = () => {
         createShipmentMutation.mutate(newShipment as ShipmentRequest);
     };
 
+    // Client-side search filtering (since we now have server-side filters for status, client, carrier)
     const filteredShipments = shipments.filter(
         (shipment) => {
+            if (!searchTerm) return true;
+            
             const matchesSearch =
                 shipment.viazId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 shipment.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 shipment.origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 shipment.destination?.toLowerCase().includes(searchTerm.toLowerCase());
 
-            const matchesStatus =
-                filters.status.length === 0 ||
-                (shipment.status && filters.status.includes(shipment.status));
-
-            const matchesCarrier =
-                filters.carrier.length === 0 ||
-                (shipment.transport && filters.carrier.includes(shipment.transport.name));
-
-            const matchesClient =
-                filters.client.length === 0 ||
-                (shipment.client && filters.client.includes(shipment.client));
-
-
-            return matchesSearch && matchesStatus && matchesCarrier && matchesClient;
+            return matchesSearch;
         }
     );
 
@@ -704,6 +713,36 @@ const Shipments = () => {
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Pagination Controls */}
+            {shipmentsPage && shipmentsPage.totalPages > 1 && (
+                <div className="flex items-center justify-between px-2">
+                    <div className="text-sm text-muted-foreground">
+                        Showing {currentPage * pageSize + 1} to {Math.min((currentPage + 1) * pageSize, shipmentsPage.totalElements)} of {shipmentsPage.totalElements} results
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(currentPage - 1)}
+                            disabled={currentPage === 0}
+                        >
+                            Previous
+                        </Button>
+                        <div className="text-sm">
+                            Page {currentPage + 1} of {shipmentsPage.totalPages}
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(currentPage + 1)}
+                            disabled={currentPage >= shipmentsPage.totalPages - 1}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={!!shipmentToDelete} onOpenChange={(open) => !open && setShipmentToDelete(null)}>

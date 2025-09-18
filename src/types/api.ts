@@ -118,3 +118,21 @@ export interface ShipmentCharge {
     comment: string;
     occurredAt: string; // ISO date string
 }
+
+// Pagination types
+export interface Page<T> {
+    content: T[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+    first: boolean;
+    last: boolean;
+}
+
+// Filter options
+export interface ShipmentFilterOptionsDTO {
+    statuses: string[];
+    clients: string[];
+    carriers: string[];
+}
