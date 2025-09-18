@@ -7,7 +7,6 @@ export interface ChargeType {
 
 export interface CreateChargeTypeRequest {
     name: string;
-    description?: string;
 }
 
 export const chargeService = {
