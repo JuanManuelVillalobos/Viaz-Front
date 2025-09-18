@@ -80,16 +80,16 @@ const Shipments = () => {
     });
     const {canManageShipments, canCreateShipments, canDeleteShipments} = usePermissions();
 
-    const {data: transports = []} = useQuery<Transport[]>({
+    const {data: transports = [], isLoading: isLoadingTransports} = useQuery<Transport[]>({
         queryKey: ['transports'],
         queryFn: apiShipmentService.getTransports,
-        enabled: newShipmentOpen,
+        enabled: canCreateShipments(),
     });
 
-    const {data: customerServiceAgents = []} = useQuery<UserSummaryDTO[]>({
+    const {data: customerServiceAgents = [], isLoading: isLoadingAgents} = useQuery<UserSummaryDTO[]>({
         queryKey: ['customerServiceAgents'],
         queryFn: apiShipmentService.getCustomerServiceAgents,
-        enabled: newShipmentOpen,
+        enabled: canCreateShipments(),
     });
 
 
@@ -621,12 +621,23 @@ const Shipments = () => {
 
                     {/* New Shipment Button - only show if user can create shipments */}
                     {canCreateShipments() && (
-                        <NewShipmentDialog open={newShipmentOpen} onOpenChange={setNewShipmentOpen}
-                                           newShipment={newShipment} handleInputChange={handleInputChange}
-                                           customerServiceAgents={customerServiceAgents} transports={transports}
-                                           handleNewShipmentSubmit={handleNewShipmentSubmit}
-                                           createShipmentMutation={createShipmentMutation}
-                                           resetNewShipment={resetNewShipment}/>
+                        <NewShipmentDialog 
+                            open={newShipmentOpen} 
+                            onOpenChange={(open) => {
+                                // Prevent closing while data is loading
+                                if (!open && (isLoadingTransports || isLoadingAgents || createShipmentMutation.isPending)) {
+                                    return;
+                                }
+                                setNewShipmentOpen(open);
+                            }}
+                            newShipment={newShipment} 
+                            handleInputChange={handleInputChange}
+                            customerServiceAgents={customerServiceAgents} 
+                            transports={transports}
+                            handleNewShipmentSubmit={handleNewShipmentSubmit}
+                            createShipmentMutation={createShipmentMutation}
+                            resetNewShipment={resetNewShipment}
+                        />
                     )}
                 </div>
             </div>
