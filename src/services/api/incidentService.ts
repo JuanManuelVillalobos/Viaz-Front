@@ -7,7 +7,6 @@ export interface IncidentType {
 
 export interface CreateIncidentTypeRequest {
     name: string;
-    description?: string;
 }
 
 export const incidentService = {
