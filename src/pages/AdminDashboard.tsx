@@ -83,19 +83,17 @@ const AdminDashboard = () => {
     const [isRoleCosmetic, setIsRoleCosmetic] = useState(false);
     const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
     const [availablePermissions, setAvailablePermissions] = useState<string[]>([]);
-    
+
     // Incident Types state
     const [incidentTypes, setIncidentTypes] = useState<any[]>([]);
     const [newIncidentTypeOpen, setNewIncidentTypeOpen] = useState(false);
     const [newIncidentTypeName, setNewIncidentTypeName] = useState('');
-    const [newIncidentTypeDescription, setNewIncidentTypeDescription] = useState('');
-    
+
     // Charge Types state
     const [chargeTypes, setChargeTypes] = useState<any[]>([]);
     const [newChargeTypeOpen, setNewChargeTypeOpen] = useState(false);
     const [newChargeTypeName, setNewChargeTypeName] = useState('');
-    const [newChargeTypeDescription, setNewChargeTypeDescription] = useState('');
-    
+
     // Carrier editing state
     const [editCarrierOpen, setEditCarrierOpen] = useState(false);
     const [editingCarrier, setEditingCarrier] = useState<Carrier | null>(null);
@@ -105,7 +103,7 @@ const AdminDashboard = () => {
         razonSocial: '',
         caat: ''
     });
-    
+
     const [roleDialogOpen, setRoleDialogOpen] = useState(false);
     const [selectedUserForRole, setSelectedUserForRole] = useState<ViazUserDTO | null>(null);
 
@@ -379,21 +377,58 @@ const AdminDashboard = () => {
     };
 
     const handleCreateRole = async () => {
-        if (!newRoleName.trim()) return;
+        const name = newRoleName.trim();
+        const description = newRoleDescription.trim();
+
+        const nameRegex = /^[a-zA-Z0-9_-]+$/;
+
+        // Validation: Name presence
+        if (!name) {
+            toast({
+                title: "Nombre requerido",
+                description: "El nombre del rol no puede estar vacío.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        // Validation: Description presence
+        if (!description) {
+            toast({
+                title: "Descripción requerida",
+                description: "La descripción del rol no puede estar vacía.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        // Validation: Name format
+        if (!nameRegex.test(name)) {
+            toast({
+                title: "Nombre inválido",
+                description: "El nombre solo puede contener letras, números, guiones (-) y guiones bajos (_).",
+                variant: "destructive",
+            });
+            return;
+        }
 
         try {
             const roleData: RoleCreationRequest = {
-                name: newRoleName,
-                description: newRoleDescription || undefined,
+                name,
+                description,
                 permissions: selectedPermissions.size > 0 ? selectedPermissions : undefined,
-                cosmetic: isRoleCosmetic
+                cosmetic: isRoleCosmetic,
             };
+
             await roleService.createRole(roleData);
+
+            // Reset state
             setNewRoleName("");
             setNewRoleDescription("");
             setSelectedPermissions(new Set());
             setNewRoleOpen(false);
-            fetchRoles(); // Refresh roles list
+            fetchRoles();
+
             toast({
                 title: "Rol creado",
                 description: "El rol ha sido creado exitosamente.",
@@ -408,6 +443,7 @@ const AdminDashboard = () => {
         }
     };
 
+
     const handleCreateIncidentType = async () => {
         if (!newIncidentTypeName.trim()) {
             toast({
@@ -421,13 +457,11 @@ const AdminDashboard = () => {
         try {
             const newIncidentType = await incidentService.createIncidentType({
                 name: newIncidentTypeName,
-                description: newIncidentTypeDescription || undefined,
             });
 
             setIncidentTypes([...incidentTypes, newIncidentType]);
             setNewIncidentTypeOpen(false);
             setNewIncidentTypeName('');
-            setNewIncidentTypeDescription('');
 
             toast({
                 title: "Tipo de incidente creado",
@@ -456,13 +490,11 @@ const AdminDashboard = () => {
         try {
             const newChargeType = await chargeService.createChargeType({
                 name: newChargeTypeName,
-                description: newChargeTypeDescription || undefined,
             });
 
             setChargeTypes([...chargeTypes, newChargeType]);
             setNewChargeTypeOpen(false);
             setNewChargeTypeName('');
-            setNewChargeTypeDescription('');
 
             toast({
                 title: "Tipo de cargo creado",
@@ -511,11 +543,11 @@ const AdminDashboard = () => {
         }
 
         try {
-            const updatedCarrier = await carrierService.updateCarrier(editingCarrier.id, editCarrierData);
-            
+            const updatedCarrier = await carrierService.updateCarrier(editingCarrier.carrierId, editCarrierData);
+
             // Update the carriers list
-            setCarriers(carriers.map(c => c.id === editingCarrier.id ? updatedCarrier : c));
-            
+            setCarriers(carriers.map(c => c.carrierId === editingCarrier.carrierId ? updatedCarrier : c));
+
             setEditCarrierOpen(false);
             setEditingCarrier(null);
             setEditCarrierData({
@@ -707,7 +739,7 @@ const AdminDashboard = () => {
                                 </TableHeader>
                                 <TableBody>
                                     {carriers.map((carrier) => (
-                                        <TableRow key={carrier.id}>
+                                        <TableRow key={carrier.carrierId}>
                                             <TableCell className="font-medium">{carrier.name}</TableCell>
                                             <TableCell className="font-light">{carrier.rfc}</TableCell>
                                             <TableCell className="font-light">{carrier.caat}</TableCell>
@@ -721,13 +753,13 @@ const AdminDashboard = () => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                         <DropdownMenuItem onClick={() => handleEditCarrier(carrier)}>
-                                                             <Edit className="mr-2 h-4 w-4"/>
-                                                             Editar
-                                                         </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleEditCarrier(carrier)}>
+                                                            <Edit className="mr-2 h-4 w-4"/>
+                                                            Editar
+                                                        </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             className="text-destructive"
-                                                            onClick={() => handleDeleteCarrier(carrier.id)}
+                                                            onClick={() => handleDeleteCarrier(carrier.carrierId)}
                                                         >
                                                             <Trash2 className="mr-2 h-4 w-4"/>
                                                             Eliminar
@@ -961,7 +993,7 @@ const AdminDashboard = () => {
                                                 />
                                             </div>
                                             <div className="grid gap-2">
-                                                <Label htmlFor="roleDescription">Descripción (Opcional)</Label>
+                                                <Label htmlFor="roleDescription">Descripción de rol</Label>
                                                 <Input
                                                     id="roleDescription"
                                                     value={newRoleDescription}
@@ -1035,7 +1067,7 @@ const AdminDashboard = () => {
                                     <TableRow>
                                         <TableHead>Nombre</TableHead>
                                         <TableHead>Descripción</TableHead>
-                                        <TableHead>ID</TableHead>
+                                        <TableHead>Cosmético?</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -1043,7 +1075,7 @@ const AdminDashboard = () => {
                                         <TableRow key={role.roleId}>
                                             <TableCell className="font-medium">{role.name}</TableCell>
                                             <TableCell>{role.description || "Sin descripción"}</TableCell>
-                                            <TableCell className="text-muted-foreground">{role.roleId}</TableCell>
+                                            <TableCell className="text-muted-foreground">{role.cosmetic ? "Si" : "No"}</TableCell>
                                         </TableRow>
                                     ))}
                                     {roles.length === 0 && (
@@ -1090,15 +1122,6 @@ const AdminDashboard = () => {
                                                     placeholder="Ej: Retraso en aduana"
                                                 />
                                             </div>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="incidentTypeDescription">Descripción (Opcional)</Label>
-                                                <Input
-                                                    id="incidentTypeDescription"
-                                                    value={newIncidentTypeDescription}
-                                                    onChange={(e) => setNewIncidentTypeDescription(e.target.value)}
-                                                    placeholder="Descripción del tipo de incidente"
-                                                />
-                                            </div>
                                         </div>
                                         <DialogFooter>
                                             <Button variant="outline" onClick={() => setNewIncidentTypeOpen(false)}>
@@ -1121,10 +1144,9 @@ const AdminDashboard = () => {
                                 </TableHeader>
                                 <TableBody>
                                     {incidentTypes.map((incidentType) => (
-                                        <TableRow key={incidentType.id}>
+                                        <TableRow key={incidentType.incidentId}>
                                             <TableCell className="font-medium">{incidentType.name}</TableCell>
                                             <TableCell>{incidentType.description || "Sin descripción"}</TableCell>
-                                            <TableCell className="text-muted-foreground">{incidentType.id}</TableCell>
                                         </TableRow>
                                     ))}
                                     {incidentTypes.length === 0 && (
@@ -1169,15 +1191,6 @@ const AdminDashboard = () => {
                                                     value={newChargeTypeName}
                                                     onChange={(e) => setNewChargeTypeName(e.target.value)}
                                                     placeholder="Ej: Costo de almacenaje"
-                                                />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="chargeTypeDescription">Descripción (Opcional)</Label>
-                                                <Input
-                                                    id="chargeTypeDescription"
-                                                    value={newChargeTypeDescription}
-                                                    onChange={(e) => setNewChargeTypeDescription(e.target.value)}
-                                                    placeholder="Descripción del tipo de cargo"
                                                 />
                                             </div>
                                         </div>
