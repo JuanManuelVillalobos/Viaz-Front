@@ -35,6 +35,7 @@ export interface Shipment {
     open?: boolean;
     hasIncidents?: boolean;
     hasCharges?: boolean;
+    rating?: number;
 }
 
 export interface ShipmentRequest {

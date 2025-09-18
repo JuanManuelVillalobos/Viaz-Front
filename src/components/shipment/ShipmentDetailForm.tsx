@@ -313,15 +313,6 @@ export const ShipmentDetailForm = ({
                                         onChange={e => handleInputChange("shipmentDate", e.target.value)}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="terminal">Terminal</Label>
-                                    <Input
-                                        id="terminal"
-                                        value={editedShipment.terminal || ''}
-                                        onChange={e => handleInputChange("terminal", e.target.value)}
-                                        placeholder="Terminal"
-                                    />
-                                </div>
                             </div>
                         </TabsContent>
 

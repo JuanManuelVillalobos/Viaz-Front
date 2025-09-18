@@ -1,6 +1,6 @@
 import {useState, useEffect} from "react";
 import {
-    Search, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck, Plus, Eye, Lock, Trash
+    Search, MapPin, Columns, ListFilter, User, Truck, Eye, Lock, Trash
 } from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
@@ -43,8 +43,6 @@ import {getStatusColor} from "@/services/shipmentService";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {apiShipmentService} from "@/services/api";
-import {Textarea} from "@/components/ui/textarea";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {UserSummaryDTO} from "@/types/api.ts";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -62,6 +60,7 @@ import {NewShipmentDialog} from "@/components/shipment/NewShipmentDialog.tsx";
 type FilterOption = {
     status: string[];
     carrier: string[];
+    client: string[]
 };
 
 const Shipments = () => {
@@ -69,7 +68,7 @@ const Shipments = () => {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
     const [filterOpen, setFilterOpen] = useState(false);
-    const [filters, setFilters] = useState<FilterOption>({status: [], carrier: []});
+    const [filters, setFilters] = useState<FilterOption>({status: [], carrier: [], client: []});
     const [newShipmentOpen, setNewShipmentOpen] = useState(false);
     const [shipmentToDelete, setShipmentToDelete] = useState<string | null>(null);
     const [columns, setColumns] = useState<TableColumn[]>(() => {
@@ -164,7 +163,7 @@ const Shipments = () => {
 
             toast({
                 title: "Shipment Created",
-                description: `New shipment from ${newShipment.origin} to ${newShipment.destination} has been created.`,
+                description: `Nuevo embarque de ${newShipment.origin} a ${newShipment.destination} ha sido creado.`,
             });
 
             resetNewShipment();
@@ -222,8 +221,10 @@ const Shipments = () => {
     // Extract unique carriers and statuses for filters
     const carriers = [...new Set(shipments.map(shipment => shipment.transport?.name || '').filter(Boolean))];
     const statuses = [...new Set(shipments.map(shipment => shipment.status || '').filter(Boolean))];
+    const clients = [...new Set(shipments.map(shipment => shipment.client || '').filter(Boolean))];
 
-    const handleFilterChange = (type: "status" | "carrier", value: string) => {
+
+    const handleFilterChange = (type: "status" | "carrier" | "client", value: string) => {
         setFilters(prev => {
             const newValues = prev[type].includes(value)
                 ? prev[type].filter(v => v !== value)
@@ -234,7 +235,7 @@ const Shipments = () => {
     };
 
     const resetFilters = () => {
-        setFilters({status: [], carrier: []});
+        setFilters({status: [], carrier: [], client: []});
     };
 
     const handleInputChange = (field: keyof Shipment, value: Shipment[keyof Shipment]) => {
@@ -262,7 +263,12 @@ const Shipments = () => {
                 filters.carrier.length === 0 ||
                 (shipment.transport && filters.carrier.includes(shipment.transport.name));
 
-            return matchesSearch && matchesStatus && matchesCarrier;
+            const matchesClient =
+                filters.client.length === 0 ||
+                (shipment.client && filters.client.includes(shipment.client));
+
+
+            return matchesSearch && matchesStatus && matchesCarrier && matchesClient;
         }
     );
 
@@ -310,7 +316,7 @@ const Shipments = () => {
                         <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground"/>
                         <h2 className="text-xl font-semibold mb-2">Acceso Restringido</h2>
                         <p className="text-muted-foreground">
-                            No tienes permisos para ver los envíos.
+                            No tienes permisos para ver los embarques.
                         </p>
                     </CardContent>
                 </Card>
@@ -478,7 +484,7 @@ const Shipments = () => {
                 <div className="relative w-full sm:w-96">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
                     <Input
-                        placeholder="Search shipments..."
+                        placeholder="Buscar..."
                         className="pl-8"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -526,7 +532,7 @@ const Shipments = () => {
                                 </Badge>}
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
+                        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
                                 <DialogTitle>Filtrar Embarques</DialogTitle>
                                 <DialogDescription>
@@ -536,7 +542,7 @@ const Shipments = () => {
                             <div className="space-y-4">
                                 <div>
                                     <Label className="text-sm font-medium">Status</Label>
-                                    <div className="mt-2 space-y-2">
+                                    <div className="mt-2 max-h-[150px] overflow-y-auto space-y-2 pr-2">
                                         {statuses.map(status => (
                                             <div key={status} className="flex items-center space-x-2">
                                                 <Checkbox
@@ -553,7 +559,7 @@ const Shipments = () => {
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium">Carrier</Label>
-                                    <div className="mt-2 space-y-2">
+                                    <div className="mt-2 max-h-[150px] overflow-y-auto space-y-2 pr-2">
                                         {carriers.map(carrier => (
                                             <div key={carrier} className="flex items-center space-x-2">
                                                 <Checkbox
@@ -563,6 +569,23 @@ const Shipments = () => {
                                                 />
                                                 <Label htmlFor={`carrier-${carrier}`} className="text-sm">
                                                     {carrier}
+                                                </Label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="text-sm font-medium">Cliente</Label>
+                                    <div className="mt-2 max-h-[150px] overflow-y-auto space-y-2 pr-2">
+                                        {clients.map(client => (
+                                            <div key={client} className="flex items-center space-x-2">
+                                                <Checkbox
+                                                    id={`client-${client}`}
+                                                    checked={filters.client.includes(client)}
+                                                    onCheckedChange={() => handleFilterChange("client", client)}
+                                                />
+                                                <Label htmlFor={`client-${client}`} className="text-sm">
+                                                    {client}
                                                 </Label>
                                             </div>
                                         ))}
@@ -581,10 +604,11 @@ const Shipments = () => {
                     </Dialog>
 
                     {/* Export Excel Button */}
-                    <Button variant="outline" size="sm" onClick={handleExportExcel}>
-                        <FileSpreadsheet className="mr-2 h-4 w-4"/>
-                        Export
-                    </Button>
+                    {/*TODO FIX EXCEL EXPORT*/}
+                    {/*<Button variant="outline" size="sm" onClick={handleExportExcel}>*/}
+                    {/*    <FileSpreadsheet className="mr-2 h-4 w-4"/>*/}
+                    {/*    Export*/}
+                    {/*</Button>*/}
 
                     {/* New Shipment Button - only show if user can create shipments */}
                     {canCreateShipments() && (
@@ -623,8 +647,8 @@ const Shipments = () => {
 
                             return (
                                 <TableRow key={shipment.viazId} className={`${!shipment.open ? "opacity-60" : ""} ${
-                                  shipment.hasCharges ? 'bg-red-50 hover:bg-red-100' : 
-                                  shipment.hasIncidents ? 'bg-yellow-50 hover:bg-yellow-100' : ''
+                                    shipment.hasCharges ? 'bg-red-50 hover:bg-red-100' :
+                                        shipment.hasIncidents ? 'bg-yellow-50 hover:bg-yellow-100' : ''
                                 }`}>
                                     {visibleColumns.map((column) => (
                                         <TableCell key={column.id}>
@@ -642,7 +666,7 @@ const Shipments = () => {
                                             {!shipment.open && (
                                                 <Badge variant="secondary" className="flex items-center gap-1">
                                                     <Lock className="h-3 w-3"/>
-                                                    Closed
+                                                    Cerrado
                                                 </Badge>
                                             )}
                                             <Button

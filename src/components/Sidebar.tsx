@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { HomeIcon, PackageIcon, UsersIcon, ShieldIcon } from "lucide-react";
+import { HomeIcon, PackageIcon, ShieldIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -14,9 +14,9 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
   const { canManageShipments, canManageUsers, canManageRoles } = usePermissions();
   
   const allMenuItems = [
-    { name: "Dashboard", path: "/", icon: HomeIcon, requiresPermission: false },
-    { name: "Shipments", path: "/shipments", icon: PackageIcon, permission: canManageShipments },
-    { name: "Admin Panel", path: "/admin", icon: ShieldIcon, permission: () => canManageUsers() || canManageRoles() },
+    { name: "Tablero", path: "/", icon: HomeIcon, requiresPermission: false },
+    { name: "Embarques", path: "/shipments", icon: PackageIcon, permission: canManageShipments },
+    { name: "Panel de Administrador", path: "/admin", icon: ShieldIcon, permission: () => canManageUsers() || canManageRoles() },
   ];
 
   const menuItems = allMenuItems.filter(item => 
@@ -32,9 +32,9 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
     >
       <div className="p-4 h-16 border-b border-border flex items-center justify-center">
         {isOpen ? (
-          <img src={'viaz-logo-large.svg'} alt={"viaz-logo"} />
+          <img src={'/viaz-logo-large.svg'} alt={"viaz-logo"} />
         ) : (
-          <img src={'viaz-logo-small.svg'} alt={"viaz-logo"} width={47}/>
+          <img src={'/viaz-logo-small.svg'} alt={"viaz-logo"} width={47}/>
         )}
       </div>
       <nav className="p-2">

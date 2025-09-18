@@ -12,7 +12,7 @@ import {ScrollArea} from "@/components/ui/scroll-area";
 import {useNotifications} from "@/hooks/useNotifications";
 import {formatDistanceToNow} from "date-fns";
 import {es} from "date-fns/locale";
-import {Tabs, TabsList, TabsTrigger, TabsContent} from "@/components/ui/tabs"; // <- Make sure you have this
+import {Tabs, TabsList, TabsTrigger, TabsContent} from "@/components/ui/tabs";
 
 import {useState} from "react";
 import {useAuth} from "@/contexts/AuthContext.tsx";
@@ -59,7 +59,7 @@ export const NotificationDropdown = () => {
                     <div className="flex items-center gap-2">
                         {unreadCount > 0 && (
                             <Badge variant="secondary" className="text-xs">
-                                {unreadCount} new
+                                {unreadCount} nuevos
                             </Badge>
                         )}
                     </div>
@@ -71,10 +71,10 @@ export const NotificationDropdown = () => {
                     <div className="flex items-center justify-between px-4 border-b py-2">
                         <TabsList className="flex space-x-2">
                             <TabsTrigger value="unread" className="text-sm">
-                                Unread
+                                No leidos
                             </TabsTrigger>
                             <TabsTrigger value="read" className="text-sm">
-                                Read
+                                Leidos
                             </TabsTrigger>
                         </TabsList>
                         {unreadNotifications.length > 0 && (
@@ -95,11 +95,11 @@ export const NotificationDropdown = () => {
                     <TabsContent value="unread">
                         {isLoading ? (
                             <div className="p-4 text-center text-sm text-muted-foreground">
-                                Loading notifications...
+                                Cargando notificaciones...
                             </div>
                         ) : unreadNotifications.length === 0 ? (
                             <div className="p-4 text-center text-sm text-muted-foreground">
-                                No unread notifications
+                                Sin notificaciones no leidas
                             </div>
                         ) : (
                             <>
@@ -135,11 +135,11 @@ export const NotificationDropdown = () => {
                     <TabsContent value="read">
                         {isLoading ? (
                             <div className="p-4 text-center text-sm text-muted-foreground">
-                                Loading notifications...
+                                Cargando notificaciones...
                             </div>
                         ) : readNotifications.length === 0 ? (
                             <div className="p-4 text-center text-sm text-muted-foreground">
-                                No read notifications
+                               Sin notificaciones leidas
                             </div>
                         ) : (
                             <ScrollArea className="max-h-64 overflow-auto">

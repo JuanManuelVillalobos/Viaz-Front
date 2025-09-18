@@ -1,7 +1,7 @@
 import apiClient from './apiClient';
 
 export interface Carrier {
-    id: string;
+    carrierId: string;
     name: string;
     rfc: string;
     razonSocial: string;
@@ -40,7 +40,7 @@ export const carrierService = {
 
     // Update a carrier
     updateCarrier: async (carrierId: string, carrierData: Partial<Carrier>): Promise<Carrier> => {
-        const response = await apiClient.put(`/api/carrier/update-carrier/${carrierId}`, carrierData);
+        const response = await apiClient.patch(`/api/carrier/update-carrier/${carrierId}`, carrierData);
         return response.data;
     }
 };
