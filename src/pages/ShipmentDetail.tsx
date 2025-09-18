@@ -495,6 +495,9 @@ const ShipmentDetail = () => {
         }
 
         addIncidentMutation.mutate({viazId: id, incidentId: selectedIncidentType, comment: incidentComment});
+        await queryClient.invalidateQueries({queryKey: ['shipmentIncidents', id]});
+        setIncidentComment("")
+
     };
 
     const handleAddCharge = async () => {
@@ -509,6 +512,8 @@ const ShipmentDetail = () => {
 
         addChargeMutation.mutate({viazId: id, chargeId: selectedChargeType, comment: chargeComment});
         await queryClient.invalidateQueries({queryKey: ['shipmentCharges', id]});
+
+        setChargeComment("")
     };
 
     // Reopen shipment mutation
@@ -564,11 +569,22 @@ const ShipmentDetail = () => {
                     <div className="flex items-center gap-3">
                         <Lock className="h-5 w-5 text-muted-foreground"/>
                         <div>
-                            <p className="font-medium">This shipment is closed</p>
-                            <p className="text-sm text-muted-foreground">This shipment has been closed and is
-                                read-only</p>
+                            <div className="flex items-center gap-2">
+                                <p className="font-medium text-lg">Este embarque ha sido cerrado con calificación de </p>
+
+                                {/* Rating Badge */}
+                                <div
+                                    className="bg-yellow-100 text-yellow-800 text-sm font-semibold px-2 py-1 rounded flex items-center gap-1">
+                                    ⭐ {shipment.rating ?? "N/A"}
+                                </div>
+                            </div>
+
+                            <p className="text-sm text-muted-foreground">
+                                Este embarque ha sido cerrado y solo se puede leer
+                            </p>
                         </div>
                     </div>
+
                     {canCloseShipments() && (
                         <Button
                             variant="outline"
@@ -577,10 +593,11 @@ const ShipmentDetail = () => {
                             disabled={reopenShipmentMutation.isPending}
                         >
                             <Unlock className="h-4 w-4 mr-2"/>
-                            {reopenShipmentMutation.isPending ? "Reopening..." : "Reopen Shipment"}
+                            {reopenShipmentMutation.isPending ? "Reabriendo..." : "Reabrir Embarque"}
                         </Button>
                     )}
                 </div>
+
             )}
 
             <div className="flex items-center flex-wrap gap-2">
@@ -669,7 +686,7 @@ const ShipmentDetail = () => {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Clock className="h-5 w-5"/>
-                                Estimated Time of Arrival
+                                Tiempo estimado de entrega
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -706,8 +723,8 @@ const ShipmentDetail = () => {
                         handleDrop={handleDrop}
                         dragOverIndex={dragOverIndex}
                     />
-                    <ShipmentIncidentsChargesCard 
-                        incidents={shipmentIncidents} 
+                    <ShipmentIncidentsChargesCard
+                        incidents={shipmentIncidents}
                         charges={shipmentCharges}
                         isLoading={isLoadingCharges || isLoadingIncidents}
                         error={chargesError?.message || incidentsError?.message}
