@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { HomeIcon, PackageIcon, UsersIcon, ShieldIcon } from "lucide-react";
+import { HomeIcon, PackageIcon, ShieldIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
 
