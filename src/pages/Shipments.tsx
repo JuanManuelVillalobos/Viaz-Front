@@ -1,6 +1,6 @@
 import {useState, useEffect} from "react";
 import {
-    Search, MapPin, Columns, FileSpreadsheet, ListFilter, User, Truck, Plus, Eye, Lock, Trash
+    Search, MapPin, Columns, ListFilter, User, Truck, Eye, Lock, Trash
 } from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
@@ -43,8 +43,6 @@ import {getStatusColor} from "@/services/shipmentService";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {apiShipmentService} from "@/services/api";
-import {Textarea} from "@/components/ui/textarea";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {UserSummaryDTO} from "@/types/api.ts";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel,
