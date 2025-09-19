@@ -163,12 +163,6 @@ export const apiShipmentService = {
         await apiClient.post(`/api/shipment/reopen-shipment/${viazId}`);
     },
 
-    // Get total shipments managed last month
-    getLastMonthTotalShipments: async (): Promise<number> => {
-        const response = await apiClient.get('/api/shipment/get-last-month-total-shipments');
-        return response.data;
-    },
-
     getShipmentCharges: async (viazId: string): Promise<ShipmentCharge[]> => {
         const response = await apiClient.get(`/api/shipment/get-charges/${viazId}`);
         return response.data;
