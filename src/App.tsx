@@ -68,6 +68,7 @@ const App = () => {
                                 <Route path="shipments" element={<Shipments/>}/>
                                 <Route path="shipments/:id" element={<ShipmentDetail/>}/>
                                 <Route path="admin" element={<AdminDashboard/>}/>
+                                {/*TODO ADD PROFILE AND SETTINGS*/}
                                 <Route path="profile" element={<Profile/>}/>
                                 <Route path="settings" element={<Settings/>}/>
                             </Route>
