@@ -9,7 +9,7 @@ import {
     Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
 import {useQuery} from "@tanstack/react-query";
-import {apiShipmentService} from "@/services/api";
+import {apiStatsService} from "@/services/api/apiStatsService.ts";
 
 const Index = () => {
     const monthlyData = [
@@ -29,9 +29,22 @@ const Index = () => {
 
     const COLORS = ["#0088FE", "#776424"];
 
-    const {data: numberOfShipments, isLoading, error} = useQuery({
+    const {
+        data: numberOfShipmentsThisMonth,
+        isLoading: isLoadingNumberOfShipmentsThisMonth,
+        error: errorNumberOfShipmentsThisMonth,
+    } = useQuery<number, Error>({
         queryKey: ['lastMonthTotalShipments'],
-        queryFn: apiShipmentService.getLastMonthTotalShipments,
+        queryFn: apiStatsService.getLastMonthTotalShipments,
+    });
+
+    const {
+        data: numberOfShipmentsInTransit,
+        isLoading: isLoadingNumberOfShipmentsInTransit,
+        error: errornumberOfShipmentsInTransit
+    } = useQuery({
+        queryKey: ['numberOfShipmentsInTransit'],
+        queryFn: apiStatsService.getShipmentInTransitCount,
     });
 
 
@@ -45,7 +58,7 @@ const Index = () => {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     title="Embarques"
-                    value={isLoading ? "..." : error ? "Error" : numberOfShipments ?? 0}
+                    value={isLoadingNumberOfShipmentsThisMonth ? "..." : errorNumberOfShipmentsThisMonth ? "Error" : numberOfShipmentsThisMonth ?? 0}
                     icon={Package}
                     description="Embarques este mes"
                     trend={{value: "12%", positive: true}}
@@ -60,7 +73,7 @@ const Index = () => {
                 />
                 <StatCard
                     title="En transito"
-                    value="205"
+                    value={isLoadingNumberOfShipmentsInTransit ? "..." : errornumberOfShipmentsInTransit ? "Error" : numberOfShipmentsInTransit ?? 0}
                     icon={TruckIcon}
                     description="Currently in transit"
                 />
