@@ -141,10 +141,10 @@ const Shipments = () => {
     const {data: shipmentsPage, isLoading, error} = useQuery({
         queryKey: ['shipments', currentPage, pageSize, filters.status, filters.client, filters.carrier],
         queryFn: () => apiShipmentService.getShipments(
-            currentPage, 
-            pageSize, 
+            currentPage,
+            pageSize,
             filters.status.length > 0 ? filters.status : undefined,
-            filters.client.length > 0 ? filters.client : undefined, 
+            filters.client.length > 0 ? filters.client : undefined,
             filters.carrier.length > 0 ? filters.carrier : undefined
         ),
         enabled: canManageShipments(),
@@ -270,7 +270,7 @@ const Shipments = () => {
     const filteredShipments = shipments.filter(
         (shipment) => {
             if (!searchTerm) return true;
-            
+
             const matchesSearch =
                 shipment.viazId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 shipment.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -329,30 +329,6 @@ const Shipments = () => {
                         </p>
                     </CardContent>
                 </Card>
-            </div>
-        );
-    }
-
-    // If loading, show loading state
-    if (isLoading) {
-        return (
-            <div className="space-y-6">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Shipments</h1>
-                    <p className="text-muted-foreground">Loading shipments...</p>
-                </div>
-            </div>
-        );
-    }
-
-    // If error, show error state
-    if (error) {
-        return (
-            <div className="space-y-6">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Shipments</h1>
-                    <p className="text-red-500">Error loading shipments. Please try again later.</p>
-                </div>
             </div>
         );
     }
@@ -621,8 +597,8 @@ const Shipments = () => {
 
                     {/* New Shipment Button - only show if user can create shipments */}
                     {canCreateShipments() && (
-                        <NewShipmentDialog 
-                            open={newShipmentOpen} 
+                        <NewShipmentDialog
+                            open={newShipmentOpen}
                             onOpenChange={(open) => {
                                 // Prevent closing while data is loading
                                 if (!open && (isLoadingTransports || isLoadingAgents || createShipmentMutation.isPending)) {
@@ -630,9 +606,9 @@ const Shipments = () => {
                                 }
                                 setNewShipmentOpen(open);
                             }}
-                            newShipment={newShipment} 
+                            newShipment={newShipment}
                             handleInputChange={handleInputChange}
-                            customerServiceAgents={customerServiceAgents} 
+                            customerServiceAgents={customerServiceAgents}
                             transports={transports}
                             handleNewShipmentSubmit={handleNewShipmentSubmit}
                             createShipmentMutation={createShipmentMutation}
@@ -662,66 +638,93 @@ const Shipments = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredShipments.map((shipment) => {
-                            const completionData = calculateCompletionData(shipment);
-
-                            return (
-                                <TableRow key={shipment.viazId} className={`${!shipment.open ? "opacity-60" : ""} ${
-                                    shipment.hasCharges ? 'bg-red-50 hover:bg-red-100' :
-                                        shipment.hasIncidents ? 'bg-yellow-50 hover:bg-yellow-100' : ''
-                                }`}>
-                                    {visibleColumns.map((column) => (
-                                        <TableCell key={column.id}>
-                                            {getCellValue(shipment, column.id)}
-                                        </TableCell>
-                                    ))}
-                                    <TableCell>
-                                        <ProgressCircle
-                                            progress={completionData.percentage}
-                                            missing={completionData.missing}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center">
-                                            {!shipment.open && (
-                                                <Badge variant="secondary" className="flex items-center gap-1">
-                                                    <Lock className="h-3 w-3"/>
-                                                    Cerrado
-                                                </Badge>
-                                            )}
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleViewShipment(shipment.viazId)}>
-                                                <Eye/>
-                                            </Button>
-                                            {canDeleteShipments() && (
-                                                <Button
-                                                    className="text-destructive focus:text-destructive"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => setShipmentToDelete(shipment.viazId)}>
-                                                    <Trash/>
-                                                </Button>
-                                            )}
-
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
-
-                        {filteredShipments.length === 0 && (
+                        {isLoading ? (
                             <TableRow>
                                 <TableCell colSpan={visibleColumns.length + 2} className="text-center py-6">
-                                    {searchTerm || filters.status.length > 0 || filters.carrier.length > 0
-                                        ? "No hay embarques que coincidan con los criterios de busqueda."
-                                        : "No hay embarques disponibles."
-                                    }
+                                    Cargando embarques...
                                 </TableCell>
                             </TableRow>
+                        ) : error ? (
+                            <TableRow>
+                                <TableCell colSpan={visibleColumns.length + 2}
+                                           className="text-center py-6 text-red-500">
+                                    Error al cargar embarques. Por favor, intente de nuevo.
+                                </TableCell>
+                            </TableRow>
+                        ) : filteredShipments.length === 0 && (searchTerm || filters.status.length > 0 || filters.carrier.length > 0) ? (
+                            <TableRow>
+                                <TableCell colSpan={visibleColumns.length + 2} className="text-center py-6">
+                                    No hay embarques que coincidan con los criterios de búsqueda.
+                                </TableCell>
+                            </TableRow>
+                        ) : filteredShipments.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={visibleColumns.length + 2} className="text-center py-6">
+                                    No hay embarques disponibles.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            // ✅ Make sure to wrap the map inside this final "else" block
+                            <>
+                                {filteredShipments.map((shipment) => {
+                                    const completionData = calculateCompletionData(shipment);
+
+                                    return (
+                                        <TableRow
+                                            key={shipment.viazId}
+                                            className={`${!shipment.open ? "opacity-60" : ""} ${
+                                                shipment.hasCharges
+                                                    ? "bg-red-50 hover:bg-red-100"
+                                                    : shipment.hasIncidents
+                                                        ? "bg-yellow-50 hover:bg-yellow-100"
+                                                        : ""
+                                            }`}
+                                        >
+                                            {visibleColumns.map((column) => (
+                                                <TableCell key={column.id}>
+                                                    {getCellValue(shipment, column.id)}
+                                                </TableCell>
+                                            ))}
+                                            <TableCell>
+                                                <ProgressCircle
+                                                    progress={completionData.percentage}
+                                                    missing={completionData.missing}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center">
+                                                    {!shipment.open && (
+                                                        <Badge variant="secondary" className="flex items-center gap-1">
+                                                            <Lock className="h-3 w-3"/>
+                                                            Cerrado
+                                                        </Badge>
+                                                    )}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleViewShipment(shipment.viazId)}
+                                                    >
+                                                        <Eye/>
+                                                    </Button>
+                                                    {canDeleteShipments() && (
+                                                        <Button
+                                                            className="text-destructive focus:text-destructive"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setShipmentToDelete(shipment.viazId)}
+                                                        >
+                                                            <Trash/>
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </>
                         )}
                     </TableBody>
+
                 </Table>
             </div>
 
