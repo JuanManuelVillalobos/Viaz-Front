@@ -82,22 +82,22 @@ const Navbar = ({onMenuToggle}: NavbarProps) => {
                                 </div>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator/>
-                            <DropdownMenuItem asChild>
-                                <Link to="/profile" className="cursor-pointer">
-                                    <UserRound className="mr-2 h-4 w-4"/>
-                                    <span>Profile</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link to="/settings" className="cursor-pointer">
-                                    <Settings className="mr-2 h-4 w-4"/>
-                                    <span>Settings</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator/>
+                            {/*<DropdownMenuItem asChild>*/}
+                            {/*    <Link to="/profile" className="cursor-pointer">*/}
+                            {/*        <UserRound className="mr-2 h-4 w-4"/>*/}
+                            {/*        <span>Profile</span>*/}
+                            {/*    </Link>*/}
+                            {/*</DropdownMenuItem>*/}
+                            {/*<DropdownMenuItem asChild>*/}
+                            {/*    <Link to="/settings" className="cursor-pointer">*/}
+                            {/*        <Settings className="mr-2 h-4 w-4"/>*/}
+                            {/*        <span>Settings</span>*/}
+                            {/*    </Link>*/}
+                            {/*</DropdownMenuItem>*/}
+                            {/*<DropdownMenuSeparator/>*/}
                             <DropdownMenuItem onClick={handleLogout}>
                                 <LogOut className="mr-2 h-4 w-4"/>
-                                <span>Log out</span>
+                                <span>Cerrar Sesión</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
