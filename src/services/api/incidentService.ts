@@ -1,12 +1,14 @@
 import apiClient from './apiClient';
 
 export interface IncidentType {
-    incidentId: string;
+    incidentId: number;
     name: string;
+    penalty: number;
 }
 
 export interface CreateIncidentTypeRequest {
     name: string;
+    penalty: number;
 }
 
 export const incidentService = {
@@ -23,7 +25,11 @@ export const incidentService = {
     },
 
     // Add incident to shipment
-    addIncidentToShipment: async (viazId: string, incidentId: string, comment : string): Promise<void> => {
+    addIncidentToShipment: async (viazId: string, incidentId: number, comment : string): Promise<void> => {
         await apiClient.post(`/api/shipment/add-incident/${viazId}/${incidentId}/${comment}`);
+    },
+
+    deleteIncidentType: async (incidentId: number): Promise<void> => {
+        await apiClient.delete(`/api/incident/delete-incident-type/${incidentId}`);
     }
 };
