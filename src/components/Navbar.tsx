@@ -1,7 +1,6 @@
-import {Menu, LogOut, Settings, UserRound} from "lucide-react";
+import {Menu, LogOut} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {useNavigate} from "react-router-dom";
-import {useState, useEffect} from "react";
 import {toast} from "@/hooks/use-toast";
 import {
     DropdownMenu,
@@ -12,7 +11,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {Avatar, AvatarFallback} from "@/components/ui/avatar";
-import {Link} from "react-router-dom";
 import {authService} from "@/services/api/authService";
 import {useAuth} from "@/contexts/AuthContext.tsx";
 import {NotificationDropdown} from "./NotificationDropdown";
@@ -82,22 +80,22 @@ const Navbar = ({onMenuToggle}: NavbarProps) => {
                                 </div>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator/>
-                            <DropdownMenuItem asChild>
-                                <Link to="/profile" className="cursor-pointer">
-                                    <UserRound className="mr-2 h-4 w-4"/>
-                                    <span>Profile</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link to="/settings" className="cursor-pointer">
-                                    <Settings className="mr-2 h-4 w-4"/>
-                                    <span>Settings</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator/>
+                            {/*<DropdownMenuItem asChild>*/}
+                            {/*    <Link to="/profile" className="cursor-pointer">*/}
+                            {/*        <UserRound className="mr-2 h-4 w-4"/>*/}
+                            {/*        <span>Profile</span>*/}
+                            {/*    </Link>*/}
+                            {/*</DropdownMenuItem>*/}
+                            {/*<DropdownMenuItem asChild>*/}
+                            {/*    <Link to="/settings" className="cursor-pointer">*/}
+                            {/*        <Settings className="mr-2 h-4 w-4"/>*/}
+                            {/*        <span>Settings</span>*/}
+                            {/*    </Link>*/}
+                            {/*</DropdownMenuItem>*/}
+                            {/*<DropdownMenuSeparator/>*/}
                             <DropdownMenuItem onClick={handleLogout}>
                                 <LogOut className="mr-2 h-4 w-4"/>
-                                <span>Log out</span>
+                                <span>Cerrar Sesión</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

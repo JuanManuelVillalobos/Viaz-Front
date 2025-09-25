@@ -1,4 +1,4 @@
-import {Calendar, Truck, MapPin, User, Check, X} from "lucide-react";
+import {Calendar, Truck, MapPin, User, Check, X, Tag} from "lucide-react";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
@@ -13,8 +13,14 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {Shipment, Transport} from "@/types/shipment.ts";
+import {Shipment, SHIPMENT_STATUS_OPTIONS, Transport} from "@/types/shipment.ts";
 import {UserSummaryDTO} from "@/types/api.ts";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu.tsx";
 
 interface ShipmentDetailFormProps {
     shipment: Shipment;
@@ -26,6 +32,7 @@ interface ShipmentDetailFormProps {
     customerServiceAgents: UserSummaryDTO[];
     isLoadingTransports: boolean;
     isLoadingCustomerServiceAgents: boolean;
+    handleStatusChange: (viazId: string, status: string) => void;
 }
 
 export const ShipmentDetailForm = ({
@@ -37,9 +44,9 @@ export const ShipmentDetailForm = ({
                                        transports,
                                        isLoadingTransports,
                                        customerServiceAgents,
-                                       isLoadingCustomerServiceAgents
+                                       isLoadingCustomerServiceAgents,
+                                       handleStatusChange
                                    }: ShipmentDetailFormProps) => {
-
 
     return (
         <Card>
@@ -173,27 +180,25 @@ export const ShipmentDetailForm = ({
                                         onValueChange={value => handleInputChange("status", value)}
                                     >
                                         <SelectTrigger id="status">
-                                            <SelectValue placeholder="Select status"/>
+                                            <SelectValue placeholder="Información Pendiente"/>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Información Pendiente">Información
-                                                Pendiente</SelectItem>
-                                            <SelectItem value="Folio Pendiente">Folio
-                                                Pendiente</SelectItem>
-                                            <SelectItem value="Maniobras Pendientes">Maniobras
-                                                Pendiente</SelectItem>
-                                            <SelectItem value="Todo Ok">Todo Ok</SelectItem>
-                                            <SelectItem value="En Puerto">En Puerto</SelectItem>
-                                            <SelectItem value="En Transito">En Transito</SelectItem>
-                                            <SelectItem value="En Destino">En Destino</SelectItem>
-                                            <SelectItem value="POD Pendiente">POD Pendiente</SelectItem>
-                                            <SelectItem value="Vacío Pendiente"> Vacío
-                                                Pendiente</SelectItem>
-                                            <SelectItem value="Ingresado">Ingresado</SelectItem>
-                                            <SelectItem value="Egresado">Egresado</SelectItem>
+                                            {SHIPMENT_STATUS_OPTIONS.map((option) => (
+                                                <SelectItem key={option} value={option}>
+                                                    {option}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="foreignReference">Referencia externa</Label>
+                                <Input
+                                    id="foreignReference"
+                                    value={editedShipment.foreignReference || ''}
+                                    onChange={e => handleInputChange("foreignReference", e.target.value)}
+                                />
                             </div>
                         </TabsContent>
 
@@ -230,17 +235,6 @@ export const ShipmentDetailForm = ({
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="operator">Operador o Referencia</Label>
-                                    <Input
-                                        id="operator"
-                                        value={editedShipment.operator || ''}
-                                        onChange={e => handleInputChange("operator", e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
                                     <Label htmlFor="terminal">Terminal</Label>
                                     <Input
                                         id="terminal"
@@ -248,6 +242,9 @@ export const ShipmentDetailForm = ({
                                         onChange={e => handleInputChange("terminal", e.target.value)}
                                     />
                                 </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="pod">POD</Label>
                                     <Select
@@ -266,7 +263,8 @@ export const ShipmentDetailForm = ({
                             </div>
                         </TabsContent>
 
-                        {/* Container Tab */}
+                        {/* Container Tab */
+                        }
                         <TabsContent value="contenedor" className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -316,8 +314,26 @@ export const ShipmentDetailForm = ({
                             </div>
                         </TabsContent>
 
-                        {/* Vacuum Tab */}
+                        {/* Vacuum Tab */
+                        }
                         <TabsContent value="vacio" className="space-y-4">
+                            <div className="space-y-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="hasCleaningAppointment"
+                                           className="inline-flex items-center cursor-pointer">
+                                        <input
+                                            id="hasCleaningAppointment"
+                                            type="checkbox"
+                                            checked={editedShipment.hasCleaningAppointment || false}
+                                            onChange={(e) =>
+                                                handleInputChange("hasCleaningAppointment", e.target.checked)
+                                            }
+                                            className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        ¿Hay cita de vacío?
+                                    </Label>
+                                </div>
+                            </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="cleaningOrder">Maniobra de Vacío</Label>
@@ -337,12 +353,12 @@ export const ShipmentDetailForm = ({
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="cleaningDate">Fecha de Vacío</Label>
+                                    <Label htmlFor="cleanArrivalDate">Entrega de Vacío</Label>
                                     <Input
-                                        id="cleaningDate"
-                                        type="datetime-local"
-                                        value={editedShipment.cleaningDate || ''}
-                                        onChange={e => handleInputChange("cleaningDate", e.target.value)}
+                                        id="cleanArrivalDate"
+                                        type="date"
+                                        value={editedShipment.cleanArrivalDate || ''}
+                                        onChange={e => handleInputChange("cleanArrivalDate", e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -367,19 +383,24 @@ export const ShipmentDetailForm = ({
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="cleanArrivalDate">Entrega de Vacío</Label>
-                                    <Input
-                                        id="cleanArrivalDate"
-                                        type="date"
-                                        value={editedShipment.cleanArrivalDate || ''}
-                                        onChange={e => handleInputChange("cleanArrivalDate", e.target.value)}
-                                    />
-                                </div>
+                                {editedShipment.hasCleaningAppointment && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="cleaningAppointmentDate">Fecha de Cita de Vacío</Label>
+                                        <Input
+                                            id="cleaningAppointmentDate"
+                                            type="datetime-local"
+                                            value={editedShipment.cleaningAppointmentDate || ''}
+                                            onChange={(e) =>
+                                                handleInputChange("cleaningAppointmentDate", e.target.value)
+                                            }
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </TabsContent>
 
-                        {/* Documents & Dates Tab */}
+                        {/* Documents & Dates Tab */
+                        }
                         <TabsContent value="documents" className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -563,12 +584,37 @@ export const ShipmentDetailForm = ({
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Estatus</p>
                                     <div className="mt-1">
-                                        <Badge className={getStatusColor(shipment.status || '')}>
-                                            {shipment.status ?
-                                                shipment.status.charAt(0).toUpperCase() +
-                                                shipment.status.slice(1) :
-                                                'Unknown'}
-                                        </Badge>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <div className="cursor-pointer w-fit">
+                                                    <Badge className={getStatusColor(shipment.status || '')}>
+                                                        {shipment.status
+                                                            ? shipment.status.charAt(0).toUpperCase() + shipment.status.slice(1)
+                                                            : 'Unknown'}
+                                                    </Badge>
+                                                </div>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent>
+                                                {SHIPMENT_STATUS_OPTIONS.map((status) => (
+                                                    <DropdownMenuItem
+                                                        key={status}
+                                                        onSelect={() => handleStatusChange(shipment.fullViazId, status)}
+                                                    >
+                                                        {status}
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Referencia Externa</p>
+                                    <div className="flex items-center mt-1">
+                                        <Tag className="h-4 w-4 mr-2 text-muted-foreground"/>
+                                        <p className="text-base">{shipment.foreignReference || 'N/A'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -585,19 +631,12 @@ export const ShipmentDetailForm = ({
                                     </div>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Operador o Referencia</p>
-                                    <div className="flex items-center mt-1">
-                                        <User className="h-4 w-4 mr-2 text-muted-foreground"/>
-                                        <p className="text-base">{shipment.operator || 'N/A'}</p>
-                                    </div>
+                                    <p className="text-sm font-medium text-muted-foreground">Terminal</p>
+                                    <p className="text-base mt-1">{shipment.terminal || 'N/A'}</p>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Terminal</p>
-                                    <p className="text-base mt-1">{shipment.terminal || 'N/A'}</p>
-                                </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">POD</p>
                                     <p className="text-base mt-1">{shipment.pod || 'N/A'}</p>
@@ -645,12 +684,12 @@ export const ShipmentDetailForm = ({
                                     <p className="text-base mt-1">{shipment.cleaningOrder || 'N/A'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Fecha de Vacío</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Entrega de Vacío</p>
                                     <div className="flex items-center mt-1">
                                         <Calendar className="h-4 w-4 mr-2 text-muted-foreground"/>
                                         <p className="text-base">
-                                            {shipment.cleaningDate ?
-                                                new Date(shipment.cleaningDate).toLocaleString() :
+                                            {shipment.cleanArrivalDate ?
+                                                new Date(shipment.cleanArrivalDate).toLocaleDateString() :
                                                 'N/A'}
                                         </p>
                                     </div>
@@ -663,15 +702,24 @@ export const ShipmentDetailForm = ({
                                     <p className="text-base mt-1">{shipment.cleaningPatio || 'N/A'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Entrega de Vacío</p>
-                                    <div className="flex items-center mt-1">
-                                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground"/>
-                                        <p className="text-base">
-                                            {shipment.cleanArrivalDate ?
-                                                new Date(shipment.cleanArrivalDate).toLocaleDateString() :
-                                                'N/A'}
+                                    {shipment.hasCleaningAppointment == true ? (
+                                        <>
+                                            <p className="text-sm font-medium text-muted-foreground">Fecha de Cita de
+                                                Vacío</p>
+                                            <div className="flex items-center mt-1">
+                                                <Calendar className="h-4 w-4 mr-2 text-muted-foreground"/>
+                                                <p className="text-base">
+                                                    {shipment.cleaningAppointmentDate ?
+                                                        new Date(shipment.cleaningAppointmentDate).toLocaleString() :
+                                                        'N/A'}
+                                                </p>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground italic mt-1">
+                                            No hay cita de vacío
                                         </p>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         </TabsContent>
@@ -774,5 +822,6 @@ export const ShipmentDetailForm = ({
                 )}
             </CardContent>
         </Card>
-    );
+    )
+        ;
 };

@@ -26,7 +26,7 @@ const ForgotPassword = () => {
         if (!email) {
             toast({
                 title: "Error",
-                description: "Please enter your email address",
+                description: "por favor ingresa tu email",
                 variant: "destructive",
             });
             return;
@@ -61,12 +61,12 @@ const ForgotPassword = () => {
                         </div>
                     </div>
                     <CardTitle className="text-2xl font-bold text-center">
-                        {isSubmitted ? "Check Your Email" : "Forgot Password"}
+                        {isSubmitted ? "Revisa tu Correo" : "Recuperación de Contraseña"}
                     </CardTitle>
                     <CardDescription className="text-center">
                         {isSubmitted
-                            ? "We've sent you an email with instructions to reset your password"
-                            : "Enter your email and we'll send you a link to reset your password"
+                            ? "Te hemos mandado las instrucciones para reiniciar tu contraseña"
+                            : "Ingresa tu contraseña y te mandaremos un enlace para reiniciar tu contraseña"
                         }
                     </CardDescription>
                 </CardHeader>
@@ -75,12 +75,14 @@ const ForgotPassword = () => {
                         <div className="flex flex-col items-center space-y-4 py-4">
                             <CheckCircle className="h-16 w-16 text-green-500"/>
                             <p className="text-center text-muted-foreground">
-                                Please check your email inbox and follow the instructions to reset your password.
-                                If you don't see the email, check your spam folder.
+                                Por favor revisa tu bandeja de entrada y sigue las instrucciones para restablecer la
+                                contraseña.
+                                Si no ves el correo, revisa la bandeja de spam.
+
                             </p>
                             <Button asChild className="mt-4">
                                 <Link to="/login">
-                                    Return to Login
+                                    Regresar a Inicio de Sesión
                                 </Link>
                             </Button>
                         </div>
@@ -93,7 +95,7 @@ const ForgotPassword = () => {
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="name@example.com"
+                                        placeholder="nombre@ejemplo.com"
                                         className="pl-8"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
@@ -101,7 +103,7 @@ const ForgotPassword = () => {
                                 </div>
                             </div>
                             <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? "Sending..." : "Send Reset Link"}
+                                {isLoading ? "Enviando..." : "Enviar enlace de restauración"}
                             </Button>
                         </form>
                     )}
@@ -111,7 +113,7 @@ const ForgotPassword = () => {
                         <Button variant="link" asChild>
                             <Link to="/login" className="flex items-center">
                                 <ArrowLeft className="mr-2 h-4 w-4"/>
-                                Back to login
+                                Regreso a Inicio de Sesión
                             </Link>
                         </Button>
                     </CardFooter>

@@ -1,12 +1,14 @@
 import apiClient from './apiClient';
 
 export interface ChargeType {
-    chargeId: string;
+    chargeId: number;
     name: string;
+    penalty: number;
 }
 
 export interface CreateChargeTypeRequest {
     name: string;
+    penalty: number;
 }
 
 export const chargeService = {
@@ -23,7 +25,11 @@ export const chargeService = {
     },
 
     // Add charge to shipment
-    addChargeToShipment: async (viazId: string, chargeId: string, comment: string): Promise<void> => {
+    addChargeToShipment: async (viazId: string, chargeId: number, comment: string): Promise<void> => {
         await apiClient.post(`/api/shipment/add-charge/${viazId}/${chargeId}/${comment}`);
+    },
+
+    deleteChargeType: async (chargeId: number): Promise<void> => {
+        await apiClient.delete(`/api/charge/delete-charge-type/${chargeId}`);
     }
 };

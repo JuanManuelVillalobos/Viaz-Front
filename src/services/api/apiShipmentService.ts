@@ -1,33 +1,46 @@
 import apiClient from './apiClient';
-import {ShipmentCharge, ShipmentIncident, ShipmentUpdateRequest, UserSummaryDTO, Page, ShipmentFilterOptionsDTO} from '@/types/api';
+import {
+    ShipmentCharge,
+    ShipmentIncident,
+    ShipmentUpdateRequest,
+    UserSummaryDTO,
+    Page,
+    ShipmentFilterOptionsDTO
+} from '@/types/api';
 import {Shipment, ShipmentRequest, Transport} from "@/types/shipment.ts";
 
 export const apiShipmentService = {
     // Get shipments with pagination and filters
+    // Get shipments with pagination, filters, and search
     getShipments: async (
-        page: number = 0, 
-        size: number = 10, 
-        statuses?: string[], 
-        clients?: string[], 
-        carriers?: string[]
+        page: number = 0,
+        size: number = 10,
+        statuses?: string[],
+        clients?: string[],
+        carriers?: string[],
+        search?: string
     ): Promise<Page<Shipment>> => {
         const params = new URLSearchParams();
-        params.append('page', page.toString());
-        params.append('size', size.toString());
-        
+        params.append("page", page.toString());
+        params.append("size", size.toString());
+
         if (statuses && statuses.length > 0) {
-            statuses.forEach(status => params.append('statuses', status));
+            statuses.forEach(status => params.append("statuses", status));
         }
         if (clients && clients.length > 0) {
-            clients.forEach(client => params.append('clients', client));
+            clients.forEach(client => params.append("clients", client));
         }
         if (carriers && carriers.length > 0) {
-            carriers.forEach(carrier => params.append('carriers', carrier));
+            carriers.forEach(carrier => params.append("carriers", carrier));
         }
-        
+        if (search && search.trim().length > 0) {
+            params.append("search", search.trim());
+        }
+
         const response = await apiClient.get(`/api/shipment/shipments?${params.toString()}`);
         return response.data;
     },
+
 
     // Get all shipments (legacy - keeping for compatibility)
     getAllShipments: async (): Promise<Shipment[]> => {
@@ -163,12 +176,6 @@ export const apiShipmentService = {
         await apiClient.post(`/api/shipment/reopen-shipment/${viazId}`);
     },
 
-    // Get total shipments managed last month
-    getLastMonthTotalShipments: async (): Promise<number> => {
-        const response = await apiClient.get('/api/shipment/get-last-month-total-shipments');
-        return response.data;
-    },
-
     getShipmentCharges: async (viazId: string): Promise<ShipmentCharge[]> => {
         const response = await apiClient.get(`/api/shipment/get-charges/${viazId}`);
         return response.data;
@@ -186,4 +193,15 @@ export const apiShipmentService = {
     deleteCharge: async (chargeId: number): Promise<void> => {
         await apiClient.delete(`/api/shipment/delete-charge/${chargeId}`);
     },
+
+    changeShipmentStatus: async (viazId: string, status: string): Promise<any> => {
+        const params = new URLSearchParams();
+        params.append('status', status);
+
+        const url = `/api/shipment/change-shipment-status/${viazId}/?${params.toString()}`;
+
+        const response = await apiClient.post(url);
+        return response.data;
+    }
 };
+

@@ -86,7 +86,7 @@ export const NotificationDropdown = () => {
                                     markAllAsRead(user.user.userId)
                                 }
                             >
-                                Mark all as read
+                                Marcar leídos
                             </Button>
                         )}
                     </div>

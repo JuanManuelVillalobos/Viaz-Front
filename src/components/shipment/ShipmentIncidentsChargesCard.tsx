@@ -23,7 +23,7 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
     const deleteIncidentMutation = useMutation({
         mutationFn: apiShipmentService.deleteIncident,
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: ['shipment-incidents', shipmentId]});
+            queryClient.invalidateQueries({queryKey: ['shipmentIncidents', shipmentId]});
             toast({
                 title: 'Incidente eliminado',
                 description: 'El incidente ha sido eliminado exitosamente.',
@@ -41,7 +41,7 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
     const deleteChargeMutation = useMutation({
         mutationFn: apiShipmentService.deleteCharge,
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: ['shipment-charges', shipmentId]});
+            queryClient.invalidateQueries({queryKey: ['shipmentCharges', shipmentId]});
             toast({
                 title: 'Cargo eliminado',
                 description: 'El cargo ha sido eliminado exitosamente.',

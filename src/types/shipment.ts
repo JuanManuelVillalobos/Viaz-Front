@@ -1,7 +1,8 @@
 import {UserSummaryDTO} from "@/types/api.ts";
 
 export interface Shipment {
-    viazId: string;
+    baseViazId: string;
+    fullViazId: string;
     transportMethod?: string;
     customerServiceAgent?: UserSummaryDTO;
     typeOfService?: string;
@@ -14,7 +15,7 @@ export interface Shipment {
     containerType?: string;
     shipmentDate?: string;
     transport?: Transport;
-    operator?: string;
+    foreignReference?: string;
     terminal?: string;
     ci?: boolean;
     ccp?: boolean;
@@ -27,19 +28,22 @@ export interface Shipment {
     cleaningOrder?: string;
     pod?: string;
     cleaningPatio?: string;
-    cleaningDate?: string;
+    hasCleaningAppointment?: boolean;
+    cleaningAppointmentDate?: string;
     cleanArrivalDate?: string;
     eir?: string;
     observations?: string;
-    files?: number;
     open?: boolean;
     hasIncidents?: boolean;
     hasCharges?: boolean;
     rating?: number;
+    customerServiceRating?: number;
+    shipmentRating?: number;
+    ratingObservation?: string;
 }
 
 export interface ShipmentRequest {
-    viazId: string;
+    fullViazId: string;
     transportMethod?: string;
     customerServiceAgent?: string;
     typeOfService?: string;
@@ -52,7 +56,7 @@ export interface ShipmentRequest {
     containerType?: string;
     shipmentDate?: string;
     transport?: string;
-    operator?: string;
+    foreignReference?: string;
     terminal?: string;
     ci?: boolean;
     ccp?: boolean;
@@ -65,7 +69,8 @@ export interface ShipmentRequest {
     cleaningOrder?: string;
     pod?: string;
     cleaningPatio?: string;
-    cleaningDate?: string;
+    hasCleaningAppointment?: boolean;
+    cleaningAppointmentDate?: string;
     cleanArrivalDate?: string;
     eir?: string;
     observations?: string;
@@ -79,21 +84,20 @@ export interface TableColumn {
 
 // All available shipment table columns
 export const allShipmentColumns: TableColumn[] = [
-    {id: "viazId", label: "Referencia", visible: true},
+    {id: "fullViazId", label: "Referencia", visible: true},
     {id: "client", label: "Cliente", visible: true},
     {id: "origin", label: "Origen", visible: true},
     {id: "destination", label: "Destino", visible: true},
     {id: "status", label: "Estatus", visible: true},
     {id: "shipmentDate", label: "Fecha de Carga", visible: true},
     {id: "transport", label: "Transporte", visible: true},
-    {id: "files", label: "Docs", visible: true},
     {id: "transportMethod", label: "Método de Transporte", visible: false},
     {id: "customerServiceAgent", label: "Customer Service", visible: false},
     {id: "typeOfService", label: "Tipo de Servicio", visible: false},
     {id: "customsAgent", label: "Agente Aduanal", visible: false},
     {id: "container", label: "Contenedor", visible: false},
     {id: "containerType", label: "Tipo de Contenedor", visible: false},
-    {id: "operator", label: "Operador", visible: false},
+    {id: "foreignReference", label: "Referencia Externa", visible: false},
     {id: "terminal", label: "Terminal", visible: false},
     {id: "ci", label: "CI", visible: false},
     {id: "ccp", label: "CCP", visible: false},
@@ -106,7 +110,7 @@ export const allShipmentColumns: TableColumn[] = [
     {id: "cleaningOrder", label: "Orden de Limpieza", visible: false},
     {id: "pod", label: "POD", visible: false},
     {id: "cleaningPatio", label: "Patio de Limpieza", visible: false},
-    {id: "cleaningDate", label: "Fecha de Limpieza", visible: false},
+    {id: "cleaningAppointmentDate", label: "Fecha de Limpieza", visible: false},
     {id: "cleanArrivalDate", label: "Fecha de Llegada Limpia", visible: false},
     {id: "eir", label: "EIR", visible: false},
     {id: "observations", label: "Observaciones", visible: false},
@@ -116,14 +120,13 @@ export const allShipmentColumns: TableColumn[] = [
 
 // Default visible columns (subset of allShipmentColumns)
 export const defaultShipmentColumns: TableColumn[] = [
-    {id: "viazId", label: "Referencia", visible: true},
+    {id: "fullViazId", label: "Referencia", visible: true},
     {id: "origin", label: "Origen", visible: true},
     {id: "destination", label: "Destino", visible: true},
     {id: "client", label: "Cliente", visible: true},
     {id: "transport", label: "Transporte", visible: true},
     {id: "status", label: "Estatus", visible: true},
     {id: "shipmentDate", label: "Fecha de Carga", visible: true},
-    {id: "files", label: "Docs", visible: true},
     {id: "hasIncidents", label: "Incidentes", visible: true},
     {id: "hasCharges", label: "Cargos", visible: true},
 ];
@@ -132,3 +135,17 @@ export interface Transport {
     id: string;
     name: string;
 }
+
+export const SHIPMENT_STATUS_OPTIONS = [
+    "Información Pendiente",
+    "Folio Pendiente",
+    "Maniobras Pendientes",
+    "Todo Ok",
+    "En Puerto",
+    "En Transito",
+    "En Destino",
+    "POD Pendiente",
+    "Vacío Pendiente",
+    "Ingresado",
+    "Egresado",
+];
