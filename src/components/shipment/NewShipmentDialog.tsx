@@ -21,7 +21,7 @@ import {
 } from "../ui/select"; // Adjust path as needed
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "../ui/tabs"; // Adjust path as needed
 import {Textarea} from "../ui/textarea";
-import {Shipment, ShipmentRequest, Transport} from "@/types/shipment.ts";
+import {Shipment, SHIPMENT_STATUS_OPTIONS, ShipmentRequest, Transport} from "@/types/shipment.ts";
 import {UserSummaryDTO} from "@/types/api.ts"; // Adjust path as needed
 
 
@@ -189,36 +189,28 @@ export function NewShipmentDialog({
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="status">Estatus</Label>
-                                <Select
-                                    value={newShipment.status}
-                                    onValueChange={(value) => handleInputChange("status", value)}
-                                >
+                                <Select>
                                     <SelectTrigger id="status">
-                                        <SelectValue placeholder="Estatus"/>
+                                        <SelectValue placeholder="Información Pendiente"/>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Información Pendiente">
-                                            Información Pendiente
-                                        </SelectItem>
-                                        <SelectItem value="Folio Pendiente">
-                                            Folio Pendiente
-                                        </SelectItem>
-                                        <SelectItem value="Maniobras Pendientes">
-                                            Maniobras Pendiente
-                                        </SelectItem>
-                                        <SelectItem value="Todo Ok">Todo Ok</SelectItem>
-                                        <SelectItem value="En Puerto">En Puerto</SelectItem>
-                                        <SelectItem value="En Transito">En Transito</SelectItem>
-                                        <SelectItem value="En Destino">En Destino</SelectItem>
-                                        <SelectItem value="POD Pendiente">POD Pendiente</SelectItem>
-                                        <SelectItem value="Vacío Pendiente">
-                                            {" "}
-                                            Vacío Pendiente
-                                        </SelectItem>
-                                        <SelectItem value="Ingresado">Ingresado</SelectItem>
-                                        <SelectItem value="Egresado">Egresado</SelectItem>
+                                        {SHIPMENT_STATUS_OPTIONS.map((option) => (
+                                            <SelectItem key={option} value={option}>
+                                                {option}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="shipmentOperator">Referencia Externa</Label>
+                                <Input
+                                    id="shipmentOperator"
+                                    value={newShipment.foreignReference}
+                                    onChange={(e) =>
+                                        handleInputChange("foreignReference", e.target.value)
+                                    }
+                                />
                             </div>
                         </div>
                     </TabsContent>
@@ -306,20 +298,6 @@ export function NewShipmentDialog({
                                     </SelectContent>
                                 </Select>
                             </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="shipmentOperator">Operador o Referencia</Label>
-                                <Input
-                                    id="shipmentOperator"
-                                    value={newShipment.operator}
-                                    onChange={(e) =>
-                                        handleInputChange("operator", e.target.value)
-                                    }
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="shipmentTerminal">Terminal</Label>
                                 <Input
@@ -330,6 +308,9 @@ export function NewShipmentDialog({
                                     }
                                 />
                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="portOfDischarge">POD</Label>
                                 <Select
@@ -477,14 +458,25 @@ export function NewShipmentDialog({
 
                     {/*Cleaning Tab*/}
                     <TabsContent value="vacio" className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="hasCleaningAppointment" className="inline-flex items-center cursor-pointer">
+                                <input
+                                    id="hasCleaningAppointment"
+                                    type="checkbox"
+                                    checked={newShipment.hasCleaningAppointment || false}
+                                    onChange={(e) => handleInputChange("hasCleaningAppointment", e.target.checked)}
+                                    className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                ¿Hay cita de vacío?
+                            </Label>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="vacuumManoeuvre">Maniobra de Vacío</Label>
                                 <Select
                                     value={newShipment.cleaningOrder}
-                                    onValueChange={(value) =>
-                                        handleInputChange("cleaningOrder", value)
-                                    }
+                                    onValueChange={(value) => handleInputChange("cleaningOrder", value)}
                                 >
                                     <SelectTrigger id="vacuumManoeuvre">
                                         <SelectValue placeholder="Selecciona estatus"/>
@@ -497,26 +489,26 @@ export function NewShipmentDialog({
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="cleaningDate">Fecha de Vacío</Label>
-                                <Input
-                                    id="cleaningDate"
-                                    type="datetime-local"
-                                    value={newShipment.cleaningDate}
-                                    onChange={(e) =>
-                                        handleInputChange("cleaningDate", e.target.value)
-                                    }
-                                />
-                            </div>
+
+                            {newShipment.hasCleaningAppointment && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="cleaningDate">Fecha de Cita de Vacío</Label>
+                                    <Input
+                                        id="cleaningDate"
+                                        type="datetime-local"
+                                        value={newShipment.cleaningAppointmentDate}
+                                        onChange={(e) => handleInputChange("cleaningAppointmentDate", e.target.value)}
+                                    />
+                                </div>
+                            )}
                         </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="containerType">Patio</Label>
                                 <Select
                                     value={newShipment.cleaningPatio}
-                                    onValueChange={(value) =>
-                                        handleInputChange("cleaningPatio", value)
-                                    }
+                                    onValueChange={(value) => handleInputChange("cleaningPatio", value)}
                                 >
                                     <SelectTrigger id="cleaningPatio">
                                         <SelectValue placeholder="Selecciona el patio"/>
@@ -538,13 +530,12 @@ export function NewShipmentDialog({
                                     id="cleanArrivalDate"
                                     type="date"
                                     value={newShipment.cleanArrivalDate}
-                                    onChange={(e) =>
-                                        handleInputChange("cleanArrivalDate", e.target.value)
-                                    }
+                                    onChange={(e) => handleInputChange("cleanArrivalDate", e.target.value)}
                                 />
                             </div>
                         </div>
                     </TabsContent>
+
                 </Tabs>
 
                 <DialogFooter>
