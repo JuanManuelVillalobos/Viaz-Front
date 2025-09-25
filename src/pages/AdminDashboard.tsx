@@ -51,10 +51,10 @@ import {
 import {Avatar, AvatarFallback} from "@/components/ui/avatar";
 import {toast, useToast} from "@/hooks/use-toast";
 import {carrierService, Carrier, CreateCarrierRequest} from "@/services/api/carrierService";
-import {roleService, Role, RoleCreationRequest} from "@/services/api/roleService";
+import {roleService, RoleCreationRequest} from "@/services/api/roleService";
 import {incidentService} from "@/services/api/incidentService";
 import {chargeService} from "@/services/api/chargeService";
-import {apiShipmentService, authService, userService} from "@/services/api";
+import {authService, userService} from "@/services/api";
 import {ViazUserDTO, UserStatus} from "@/types/api";
 import {format} from "date-fns";
 import {Switch} from "@/components/ui/switch.tsx";
