@@ -42,6 +42,7 @@ import {DocumentViewer} from "@/components/shipment/DocumentViewer";
 import {Shipment, ShipmentRequest, Transport} from "@/types/shipment";
 import {UserSummaryDTO} from "@/types/api.ts";
 import {ShipmentIncidentsChargesCard} from "@/components/shipment/ShipmentIncidentsChargesCard.tsx";
+import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip.tsx";
 
 const ShipmentDetail = () => {
     const {id} = useParams<{ id: string }>();
@@ -213,7 +214,7 @@ const ShipmentDetail = () => {
 
     // Add incident mutation
     const addIncidentMutation = useMutation({
-        mutationFn: ({viazId, incidentId, comment}: { viazId: string, incidentId: string, comment: string }) =>
+        mutationFn: ({viazId, incidentId, comment}: { viazId: string, incidentId: number, comment: string }) =>
             incidentService.addIncidentToShipment(viazId, incidentId, comment),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: ['shipmentIncidents', id]});
@@ -236,7 +237,7 @@ const ShipmentDetail = () => {
 
     // Add charge mutation
     const addChargeMutation = useMutation({
-        mutationFn: ({viazId, chargeId, comment}: { viazId: string, chargeId: string, comment: string }) =>
+        mutationFn: ({viazId, chargeId, comment}: { viazId: string, chargeId: number, comment: string }) =>
             chargeService.addChargeToShipment(viazId, chargeId, comment),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: ['shipmentCharges', id]});
@@ -280,7 +281,7 @@ const ShipmentDetail = () => {
 
     const handleSave = async () => {
         if (editedShipment && id) {
-            const {files, ...rest} = editedShipment;
+            const {...rest} = editedShipment;
             const updates: Partial<ShipmentRequest> = {
                 ...rest,
                 transport: editedShipment.transport ? editedShipment.transport.name : undefined,
@@ -446,7 +447,7 @@ const ShipmentDetail = () => {
 
         try {
 
-            await apiShipmentService.closeShipment(shipment.viazId, shipmentGrade, shipmentObservations)
+            await apiShipmentService.closeShipment(shipment.fullViazId, shipmentGrade, shipmentObservations)
 
             toast({
                 title: "Embarque Cerrado",
@@ -494,7 +495,7 @@ const ShipmentDetail = () => {
             return;
         }
 
-        addIncidentMutation.mutate({viazId: id, incidentId: selectedIncidentType, comment: incidentComment});
+        addIncidentMutation.mutate({viazId: id, incidentId: Number(selectedIncidentType), comment: incidentComment});
         await queryClient.invalidateQueries({queryKey: ['shipmentIncidents', id]});
         setIncidentComment("")
 
@@ -510,7 +511,7 @@ const ShipmentDetail = () => {
             return;
         }
 
-        addChargeMutation.mutate({viazId: id, chargeId: selectedChargeType, comment: chargeComment});
+        addChargeMutation.mutate({viazId: id, chargeId: Number(selectedChargeType), comment: chargeComment});
         await queryClient.invalidateQueries({queryKey: ['shipmentCharges', id]});
 
         setChargeComment("")
@@ -570,20 +571,40 @@ const ShipmentDetail = () => {
                         <Lock className="h-5 w-5 text-muted-foreground"/>
                         <div>
                             <div className="flex items-center gap-2">
-                                <p className="font-medium text-lg">Este embarque ha sido cerrado con calificación de </p>
+                                <p className="font-medium text-lg">
+                                    Este embarque ha sido cerrado con calificación de
+                                </p>
 
                                 {/* Rating Badge */}
-                                <div
-                                    className="bg-yellow-100 text-yellow-800 text-sm font-semibold px-2 py-1 rounded flex items-center gap-1">
-                                    ⭐ {shipment.rating ?? "N/A"}
-                                </div>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div
+                                            className="bg-yellow-100 text-yellow-800 text-sm font-semibold px-2 py-1 rounded flex items-center gap-1 cursor-help"
+                                        >
+                                            ⭐ {shipment.rating ?? "N/A"}
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                        Calificación combinada de atención al cliente
+                                        ({shipment.customerServiceRating ?? "N/A"}) y embarque
+                                        ({shipment.shipmentRating ?? "N/A"}).
+                                    </TooltipContent>
+                                </Tooltip>
                             </div>
+
+                            {/* Show rating observation if it exists */}
+                            {shipment.ratingObservation && (
+                                <p className="mt-1 text-sm italic text-muted-foreground">
+                                    {shipment.ratingObservation}
+                                </p>
+                            )}
 
                             <p className="text-sm text-muted-foreground">
                                 Este embarque ha sido cerrado y solo se puede leer
                             </p>
                         </div>
                     </div>
+
 
                     {canCloseShipments() && (
                         <Button
@@ -605,7 +626,7 @@ const ShipmentDetail = () => {
                     <ArrowLeft className="h-4 w-4 mr-2"/>
                     Regresar
                 </Button>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{shipment.viazId}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{shipment.fullViazId}</h1>
                 <div className="ml-auto flex gap-2">
                     {shipment.open && canCreateShipments() && (
                         <>
@@ -682,27 +703,25 @@ const ShipmentDetail = () => {
                     />
 
                     {/* ETA Card */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Clock className="h-5 w-5"/>
-                                Tiempo estimado de entrega
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {isLoadingEta ? (
-                                <p className="text-muted-foreground">Loading ETA...</p>
-                            ) : eta !== undefined ? (
-                                <p className="text-lg font-semibold">{formatEta(eta)}</p>
-                            ) : (
-                                <p className="text-muted-foreground">ETA not available</p>
-                            )}
-                        </CardContent>
-                    </Card>
+                    {/*<Card>*/}
+                    {/*    <CardHeader>*/}
+                    {/*        <CardTitle className="flex items-center gap-2">*/}
+                    {/*            <Clock className="h-5 w-5"/>*/}
+                    {/*            Tiempo estimado de entrega*/}
+                    {/*        </CardTitle>*/}
+                    {/*    </CardHeader>*/}
+                    {/*    <CardContent>*/}
+                    {/*        {isLoadingEta ? (*/}
+                    {/*            <p className="text-muted-foreground">Loading ETA...</p>*/}
+                    {/*        ) : eta !== undefined ? (*/}
+                    {/*            <p className="text-lg font-semibold">{formatEta(eta)}</p>*/}
+                    {/*        ) : (*/}
+                    {/*            <p className="text-muted-foreground">ETA not available</p>*/}
+                    {/*        )}*/}
+                    {/*    </CardContent>*/}
+                    {/*</Card>*/}
                 </div>
                 <div className="space-y-6">
-
-
                     <ShipmentFilesCard
                         viazId={id || ''}
                         isEditing={isEditing && shipment.open}
@@ -833,7 +852,8 @@ const ShipmentDetail = () => {
                                         <SelectItem value="loading" disabled>Loading...</SelectItem>
                                     ) : (
                                         incidentTypes.map((incident) => (
-                                            <SelectItem key={incident.incidentId} value={incident.incidentId}>
+                                            <SelectItem key={incident.incidentId}
+                                                        value={incident.incidentId.toString()}>
                                                 {incident.name}
                                             </SelectItem>
                                         ))
@@ -883,7 +903,7 @@ const ShipmentDetail = () => {
                                         <SelectItem value="loading" disabled>Loading...</SelectItem>
                                     ) : (
                                         chargeTypes.map((charge) => (
-                                            <SelectItem key={charge.chargeId} value={charge.chargeId}>
+                                            <SelectItem key={charge.chargeId} value={charge.chargeId.toString()}>
                                                 {charge.name}
                                             </SelectItem>
                                         ))
