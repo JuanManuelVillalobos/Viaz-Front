@@ -21,9 +21,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.tsx";
-import {useMutation} from "@tanstack/react-query";
-import {apiShipmentService} from "@/services/api";
-import {toast} from "@/hooks/use-toast.ts";
 
 interface ShipmentDetailFormProps {
     shipment: Shipment;
