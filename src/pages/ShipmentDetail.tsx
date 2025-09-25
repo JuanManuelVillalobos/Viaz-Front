@@ -431,7 +431,6 @@ const ShipmentDetail = () => {
                 variant: "destructive",
             });
 
-            await queryClient.invalidateQueries({queryKey: ['shipment', id]});
             return;
         }
 
@@ -537,6 +536,28 @@ const ShipmentDetail = () => {
         }
     });
 
+    const changeShipmentStatusMutation = useMutation({
+        mutationFn: ({viazId, status}: { viazId: string; status: string }) =>
+            apiShipmentService.changeShipmentStatus(viazId, status),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({queryKey: ['shipment', id]}).then(() =>
+                toast({
+                    title: "Estatus actualizado",
+                    description: `El estatus del embarque ${variables.viazId} se cambió a "${variables.status}".`,
+                })
+            );
+
+
+        },
+        onError: (error: any) => {
+            toast({
+                title: "Error al actualizar estatus",
+                description: error.message || "Intenta de nuevo más tarde.",
+                variant: "destructive",
+            });
+        },
+    });
+
     const handleReopenShipment = () => {
         if (id) {
             reopenShipmentMutation.mutate(id);
@@ -566,27 +587,6 @@ const ShipmentDetail = () => {
         changeShipmentStatusMutation.mutate({viazId, status});
     };
 
-    const changeShipmentStatusMutation = useMutation({
-        mutationFn: ({viazId, status}: { viazId: string; status: string }) =>
-            apiShipmentService.changeShipmentStatus(viazId, status),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({queryKey: ['shipment', id]}).then(() =>
-                toast({
-                    title: "Estatus actualizado",
-                    description: `El estatus del embarque ${variables.viazId} se cambió a "${variables.status}".`,
-                })
-            );
-
-
-        },
-        onError: (error: any) => {
-            toast({
-                title: "Error al actualizar estatus",
-                description: error.message || "Intenta de nuevo más tarde.",
-                variant: "destructive",
-            });
-        },
-    });
 
     return (
         <div className="space-y-6">
