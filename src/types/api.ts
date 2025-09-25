@@ -10,8 +10,8 @@ export interface Token {
 }
 
 export interface ViazCurrentUserAuthResponseDTO {
-  user: ViazUserDTO;
-  effectivePermissions: string[];
+    user: ViazUserDTO;
+    effectivePermissions: string[];
 }
 
 export interface UserSummaryDTO {
@@ -56,7 +56,6 @@ export interface ShipmentFile {
     uploadDate: string;
     position?: number; // Added for drag and drop ordering
 }
-
 
 
 // Role types
@@ -122,13 +121,14 @@ export interface ShipmentCharge {
 // Pagination types
 export interface Page<T> {
     content: T[];
-    totalElements: number;
-    totalPages: number;
-    size: number;
-    number: number;
-    first: boolean;
-    last: boolean;
+    page: {
+        size: number;
+        number: number;
+        totalElements: number;
+        totalPages: number;
+    };
 }
+
 
 // Filter options
 export interface ShipmentFilterOptionsDTO {
