@@ -562,6 +562,32 @@ const ShipmentDetail = () => {
         );
     }
 
+    const handleStatusChange = (viazId: string, status: string) => {
+        changeShipmentStatusMutation.mutate({viazId, status});
+    };
+
+    const changeShipmentStatusMutation = useMutation({
+        mutationFn: ({viazId, status}: { viazId: string; status: string }) =>
+            apiShipmentService.changeShipmentStatus(viazId, status),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({queryKey: ['shipment', id]}).then(() =>
+                toast({
+                    title: "Estatus actualizado",
+                    description: `El estatus del embarque ${variables.viazId} se cambió a "${variables.status}".`,
+                })
+            );
+
+
+        },
+        onError: (error: any) => {
+            toast({
+                title: "Error al actualizar estatus",
+                description: error.message || "Intenta de nuevo más tarde.",
+                variant: "destructive",
+            });
+        },
+    });
+
     return (
         <div className="space-y-6">
             {/* Show closed shipment warning */}
@@ -700,6 +726,7 @@ const ShipmentDetail = () => {
                         customerServiceAgents={customerServiceAgents}
                         isLoadingTransports={isLoadingTransports}
                         isLoadingCustomerServiceAgents={isLoadingCustomerServiceAgents}
+                        handleStatusChange={handleStatusChange}
                     />
 
                     {/* ETA Card */}
