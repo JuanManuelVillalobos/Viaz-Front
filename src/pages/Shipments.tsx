@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, useMemo} from "react";
 import {
     Search, MapPin, Columns, ListFilter, User, Truck, Eye, Lock, Trash
 } from "lucide-react";
@@ -37,13 +37,13 @@ import {
     defaultShipmentColumns,
     allShipmentColumns,
     Transport,
-    ShipmentRequest
+    ShipmentRequest, SHIPMENT_STATUS_OPTIONS
 } from "@/types/shipment";
 import {getStatusColor} from "@/services/shipmentService";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {apiShipmentService} from "@/services/api";
-import {UserSummaryDTO, Page, ShipmentFilterOptionsDTO} from "@/types/api.ts";
+import {UserSummaryDTO, ShipmentFilterOptionsDTO} from "@/types/api.ts";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel,
     AlertDialogContent,
@@ -63,16 +63,18 @@ type FilterOption = {
     client: string[]
 };
 
+
 const Shipments = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const [searchTerm, setSearchTerm] = useState("");
     const [filterOpen, setFilterOpen] = useState(false);
     const [filters, setFilters] = useState<FilterOption>({status: [], carrier: [], client: []});
     const [newShipmentOpen, setNewShipmentOpen] = useState(false);
     const [shipmentToDelete, setShipmentToDelete] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize] = useState(10);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [columns, setColumns] = useState<TableColumn[]>(() => {
         // Try to load column preferences from localStorage
         const savedColumns = localStorage.getItem("shipmentColumns");
@@ -106,7 +108,7 @@ const Shipments = () => {
         container: "",
         containerType: "",
         shipmentDate: "",
-        operator: "",
+        foreignReference: "",
         terminal: "",
         ci: false,
         ccp: false,
@@ -119,16 +121,13 @@ const Shipments = () => {
         cleaningOrder: "",
         pod: "",
         cleaningPatio: "",
-        cleaningDate: "",
+        hasCleaningAppointment: false,
+        cleaningAppointmentDate: "",
         cleanArrivalDate: "",
         eir: "",
         observations: ""
     });
 
-    // Save column visibility preferences when they change
-    useEffect(() => {
-        localStorage.setItem("shipmentColumns", JSON.stringify(columns));
-    }, [columns]);
 
     // Fetch filter options
     const {data: filterOptions} = useQuery<ShipmentFilterOptionsDTO>({
@@ -137,20 +136,28 @@ const Shipments = () => {
         enabled: canManageShipments(),
     });
 
-    // Fetch shipments with React Query
-    const {data: shipmentsPage, isLoading, error} = useQuery({
-        queryKey: ['shipments', currentPage, pageSize, filters.status, filters.client, filters.carrier],
-        queryFn: () => apiShipmentService.getShipments(
+    const {data: shipmentsPage, isFetching, isLoading, error} = useQuery({
+        queryKey: [
+            'shipments',
             currentPage,
             pageSize,
-            filters.status.length > 0 ? filters.status : undefined,
-            filters.client.length > 0 ? filters.client : undefined,
-            filters.carrier.length > 0 ? filters.carrier : undefined
-        ),
+            filters.status,
+            filters.client,
+            filters.carrier,
+            debouncedSearch, // include search in the cache key
+        ],
+        queryFn: () =>
+            apiShipmentService.getShipments(
+                currentPage,
+                pageSize,
+                filters.status.length > 0 ? filters.status : undefined,
+                filters.client.length > 0 ? filters.client : undefined,
+                filters.carrier.length > 0 ? filters.carrier : undefined,
+                debouncedSearch || undefined
+            ),
         enabled: canManageShipments(),
     });
 
-    const shipments = shipmentsPage?.content || [];
 
     // Toggle column visibility
     const toggleColumnVisibility = (columnId: string) => {
@@ -175,8 +182,8 @@ const Shipments = () => {
         mutationFn: apiShipmentService.createShipment,
         onSuccess: () => {
             // Invalidate and refetch shipments query
-            queryClient.invalidateQueries({queryKey: ['shipments']});
-            setNewShipmentOpen(false);
+            queryClient.invalidateQueries({queryKey: ['shipments']}).then(() => setNewShipmentOpen(false));
+
 
             toast({
                 title: "Shipment Created",
@@ -202,7 +209,7 @@ const Shipments = () => {
             containerType: "",
             shipmentDate: "",
             transport: "",
-            operator: "",
+            foreignReference: "",
             terminal: "",
             ci: false,
             ccp: false,
@@ -215,7 +222,7 @@ const Shipments = () => {
             cleaningOrder: "",
             pod: "",
             cleaningPatio: "",
-            cleaningDate: "",
+            cleaningAppointmentDate: "",
             cleanArrivalDate: "",
             eir: "",
             observations: "",
@@ -226,11 +233,35 @@ const Shipments = () => {
     const deleteShipmentMutation = useMutation({
         mutationFn: apiShipmentService.deleteShipment,
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: ['shipments']});
+            queryClient.invalidateQueries({queryKey: ['shipments']}).then(() =>
+                toast({
+                    title: "Embarque Eliminado",
+                    description: "El embarque ha sido eliminado correctamente.",
+                })
+            );
 
+
+        },
+    });
+
+    const changeShipmentStatusMutation = useMutation({
+        mutationFn: ({viazId, status}: { viazId: string; status: string }) =>
+            apiShipmentService.changeShipmentStatus(viazId, status),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({queryKey: ["shipments"]}).then(() =>
+                toast({
+                    title: "Estatus actualizado",
+                    description: `El estatus del embarque ${variables.viazId} se cambió a "${variables.status}".`,
+                })
+            );
+
+
+        },
+        onError: (error: any) => {
             toast({
-                title: "Shipment Deleted",
-                description: "The shipment has been successfully deleted.",
+                title: "Error al actualizar estatus",
+                description: error.message || "Intenta de nuevo más tarde.",
+                variant: "destructive",
             });
         },
     });
@@ -249,7 +280,7 @@ const Shipments = () => {
 
             return {...prev, [type]: newValues};
         });
-        setCurrentPage(0); // Reset to first page when filters change
+        setCurrentPage(0); // Reset to the first page when filters change
     };
 
     const resetFilters = () => {
@@ -266,20 +297,28 @@ const Shipments = () => {
         createShipmentMutation.mutate(newShipment as ShipmentRequest);
     };
 
+    const handleStatusChange = (viazId: string, status: string) => {
+        changeShipmentStatusMutation.mutate({viazId, status});
+    };
+
+
     // Client-side search filtering (since we now have server-side filters for status, client, carrier)
-    const filteredShipments = shipments.filter(
-        (shipment) => {
-            if (!searchTerm) return true;
+    const clientFilteredShipments = useMemo(() => {
+        if (!shipmentsPage?.content || !searchTerm) return shipmentsPage?.content || [];
 
-            const matchesSearch =
-                shipment.viazId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                shipment.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                shipment.origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                shipment.destination?.toLowerCase().includes(searchTerm.toLowerCase());
+        return shipmentsPage.content.filter((shipment) => {
+            const lower = searchTerm.toLowerCase();
+            return (
+                shipment.fullViazId?.toLowerCase().includes(lower) ||
+                shipment.client?.toLowerCase().includes(lower) ||
+                shipment.origin?.toLowerCase().includes(lower) ||
+                shipment.destination?.toLowerCase().includes(lower)
+            );
+        });
+    }, [shipmentsPage, searchTerm]);
 
-            return matchesSearch;
-        }
-    );
+    const filteredShipments = isFetching ? clientFilteredShipments : shipmentsPage?.content;
+
 
     const handleViewShipment = (id: string) => {
         navigate(`/shipments/${id}`);
@@ -339,7 +378,7 @@ const Shipments = () => {
         const value = shipment[key];
 
         switch (columnId) {
-            case "viazId":
+            case "fullViazId":
                 return <span className="font-medium">{value as string}</span>;
 
             case "origin":
@@ -411,7 +450,7 @@ const Shipments = () => {
             case "departureDate":
             case "arrivalDate":
             case "unloadDate":
-            case "cleaningDate":
+            case "cleaningAppointmentDate":
             case "cleanArrivalDate":
                 return value ? new Date(value as string).toLocaleDateString() : "N/A";
 
@@ -435,7 +474,7 @@ const Shipments = () => {
             shipment.customsAgent,
             shipment.container,
             shipment.containerType,
-            shipment.operator,
+            shipment.foreignReference,
             shipment.terminal,
             shipment.ci,
             shipment.ccp,
@@ -448,7 +487,7 @@ const Shipments = () => {
             shipment.cleaningOrder,
             shipment.pod,
             shipment.cleaningPatio,
-            shipment.cleaningDate,
+            shipment.cleaningAppointmentDate,
             shipment.cleanArrivalDate,
             shipment.eir
         ];
@@ -462,6 +501,19 @@ const Shipments = () => {
 
     // Get visible columns (excluding hasIncidents and hasCharges)
     const visibleColumns = columns.filter(col => col.visible && col.id !== 'hasIncidents' && col.id !== 'hasCharges');
+
+    // debounce: only update debouncedSearch 400 ms after user stops typing
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 400); // wait 400 ms after last keystroke
+        return () => clearTimeout(handler);
+    }, [searchTerm]);
+
+    // Save column visibility preferences when they change
+    useEffect(() => {
+        localStorage.setItem("shipmentColumns", JSON.stringify(columns));
+    }, [columns]);
 
     return (
         <div className="space-y-6">
@@ -671,7 +723,7 @@ const Shipments = () => {
 
                                     return (
                                         <TableRow
-                                            key={shipment.viazId}
+                                            key={shipment.fullViazId}
                                             className={`${!shipment.open ? "opacity-60" : ""} ${
                                                 shipment.hasCharges
                                                     ? "bg-red-50 hover:bg-red-100"
@@ -682,7 +734,27 @@ const Shipments = () => {
                                         >
                                             {visibleColumns.map((column) => (
                                                 <TableCell key={column.id}>
-                                                    {getCellValue(shipment, column.id)}
+                                                    {column.id === 'status' ? (
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <div className="cursor-pointer w-fit">
+                                                                    {getCellValue(shipment, column.id)}
+                                                                </div>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent>
+                                                                {SHIPMENT_STATUS_OPTIONS.map((status) => (
+                                                                    <DropdownMenuItem
+                                                                        key={status}
+                                                                        onSelect={() => handleStatusChange(shipment.fullViazId, status)}
+                                                                    >
+                                                                        {status}
+                                                                    </DropdownMenuItem>
+                                                                ))}
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    ) : (
+                                                        getCellValue(shipment, column.id)
+                                                    )}
                                                 </TableCell>
                                             ))}
                                             <TableCell>
@@ -702,7 +774,7 @@ const Shipments = () => {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        onClick={() => handleViewShipment(shipment.viazId)}
+                                                        onClick={() => handleViewShipment(shipment.fullViazId)}
                                                     >
                                                         <Eye/>
                                                     </Button>
@@ -711,7 +783,7 @@ const Shipments = () => {
                                                             className="text-destructive focus:text-destructive"
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => setShipmentToDelete(shipment.viazId)}
+                                                            onClick={() => setShipmentToDelete(shipment.fullViazId)}
                                                         >
                                                             <Trash/>
                                                         </Button>
@@ -719,7 +791,8 @@ const Shipments = () => {
                                                 </div>
                                             </TableCell>
                                         </TableRow>
-                                    );
+                                    )
+                                        ;
                                 })}
                             </>
                         )}
@@ -728,47 +801,52 @@ const Shipments = () => {
                 </Table>
             </div>
 
-            {/* Pagination Controls */}
-            {shipmentsPage && shipmentsPage.totalPages > 1 && (
-                <div className="flex items-center justify-between px-2">
-                    <div className="text-sm text-muted-foreground">
-                        Showing {currentPage * pageSize + 1} to {Math.min((currentPage + 1) * pageSize, shipmentsPage.totalElements)} of {shipmentsPage.totalElements} results
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(currentPage - 1)}
-                            disabled={currentPage === 0}
-                        >
-                            Previous
-                        </Button>
-                        <div className="text-sm">
-                            Page {currentPage + 1} of {shipmentsPage.totalPages}
+            {/* Pagination Controls */
+            }
+            {
+                shipmentsPage && shipmentsPage.page.totalPages > 1 && (
+                    <div className="flex items-center justify-between px-2">
+                        <div className="text-sm text-muted-foreground">
+                            Mostrando
+                            resultados {currentPage * pageSize + 1} a {Math.min((currentPage + 1) * pageSize, shipmentsPage.page.totalElements)} de {shipmentsPage.page.totalElements} totales
                         </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(currentPage + 1)}
-                            disabled={currentPage >= shipmentsPage.totalPages - 1}
-                        >
-                            Next
-                        </Button>
+                        <div className="flex items-center space-x-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(currentPage - 1)}
+                                disabled={currentPage === 0}
+                            >
+                                Anterior
+                            </Button>
+                            <div className="text-sm">
+                                Página {currentPage + 1} de {shipmentsPage.page.totalPages}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(currentPage + 1)}
+                                disabled={currentPage >= shipmentsPage.page.totalPages - 1}
+                            >
+                                Siguiente
+                            </Button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            {/* Delete Confirmation Dialog */}
+            {/* Delete Confirmation Dialog */
+            }
             <AlertDialog open={!!shipmentToDelete} onOpenChange={(open) => !open && setShipmentToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Shipment</AlertDialogTitle>
+                        <AlertDialogTitle>Eliminar Embarque</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete this shipment? This action cannot be undone.
+                            ¿Estas seguro de querer eliminar este embarque? Esta acción no se puede deshacer.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => {
                                 if (shipmentToDelete) {
@@ -778,13 +856,14 @@ const Shipments = () => {
                             }}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            Delete
+                            Eliminar
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </div>
-    );
+    )
+        ;
 };
 
 export default Shipments;
