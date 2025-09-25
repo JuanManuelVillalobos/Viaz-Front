@@ -1,7 +1,7 @@
 import apiClient from './apiClient';
 
 export interface Carrier {
-    carrierId: string;
+    carrierId: number;
     name: string;
     rfc: string;
     razonSocial: string;
@@ -34,12 +34,12 @@ export const carrierService = {
     },
 
     // Delete a carrier
-    deleteCarrier: async (carrierId: string): Promise<void> => {
+    deleteCarrier: async (carrierId: number): Promise<void> => {
         await apiClient.delete(`/api/carrier/delete-carrier/${carrierId}`);
     },
 
     // Update a carrier
-    updateCarrier: async (carrierId: string, carrierData: Partial<Carrier>): Promise<Carrier> => {
+    updateCarrier: async (carrierId: number, carrierData: Partial<Carrier>): Promise<Carrier> => {
         const response = await apiClient.patch(`/api/carrier/update-carrier/${carrierId}`, carrierData);
         return response.data;
     }
