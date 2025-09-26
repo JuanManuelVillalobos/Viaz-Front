@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {useParams, useNavigate} from "react-router-dom";
-import {ArrowLeft, Edit, Save, X, Lock, Clock, AlertTriangle, Unlock, DollarSign} from "lucide-react";
+import {ArrowLeft, Edit, Save, X, Lock, Clock, AlertTriangle, Unlock, DollarSign, Plus} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
@@ -100,6 +100,37 @@ const ShipmentDetail = () => {
         queryKey: ['shipmentEta', id],
         queryFn: () => id ? apiShipmentService.getShipmentEta(id) : Promise.reject('No ID provided'),
         enabled: !!id
+    });
+
+    // Fetch shipment variants if hasVariants is true
+    const {
+        data: variants = [],
+        isLoading: isLoadingVariants
+    } = useQuery({
+        queryKey: ['shipmentVariants', id],
+        queryFn: () => id ? apiShipmentService.getShipmentVariants(id) : Promise.reject('No ID provided'),
+        enabled: !!id && !!shipment?.hasVariants
+    });
+
+    // Create variant mutation
+    const createVariantMutation = useMutation({
+        mutationFn: (viazId: string) => apiShipmentService.createShipmentVariant(viazId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ['shipment', id]});
+            queryClient.invalidateQueries({queryKey: ['shipmentVariants', id]});
+            toast({
+                title: "Success",
+                description: "Variant created successfully.",
+            });
+        },
+        onError: (error) => {
+            console.error("Error creating variant:", error);
+            toast({
+                title: "Error",
+                description: "Failed to create variant.",
+                variant: "destructive",
+            });
+        }
     });
 
     // Fetch incident types
@@ -680,6 +711,15 @@ const ShipmentDetail = () => {
                                 <Lock className="h-4 w-4"/>
                                 Cerrar
                             </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => createVariantMutation.mutate(shipment.fullViazId)}
+                                disabled={createVariantMutation.isPending}
+                                className="flex items-center gap-2"
+                            >
+                                <Plus className="h-4 w-4"/>
+                                {createVariantMutation.isPending ? "Creando..." : "Crear Variante"}
+                            </Button>
                         </>
                     )}
                     {shipment.open && canCreateShipments() && (
@@ -713,6 +753,35 @@ const ShipmentDetail = () => {
                     )}
                 </div>
             </div>
+
+            {/* Variants Section */}
+            {shipment.hasVariants && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Variantes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoadingVariants ? (
+                            <p className="text-muted-foreground">Cargando variantes...</p>
+                        ) : variants.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                {variants.map((variant) => (
+                                    <Button
+                                        key={variant}
+                                        variant="outline"
+                                        onClick={() => navigate(`/shipments/${variant}`)}
+                                        className="justify-start"
+                                    >
+                                        {variant}
+                                    </Button>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground">No hay variantes disponibles.</p>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-6">

@@ -36,6 +36,7 @@ export interface Shipment {
     open?: boolean;
     hasIncidents?: boolean;
     hasCharges?: boolean;
+    hasVariants?: boolean;
     rating?: number;
     customerServiceRating?: number;
     shipmentRating?: number;

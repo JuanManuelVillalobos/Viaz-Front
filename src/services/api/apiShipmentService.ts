@@ -202,6 +202,17 @@ export const apiShipmentService = {
 
         const response = await apiClient.post(url);
         return response.data;
+    },
+
+    // Create shipment variant
+    createShipmentVariant: async (viazId: string): Promise<void> => {
+        await apiClient.post(`/api/shipment/create-shipment-variant/${viazId}`);
+    },
+
+    // Get shipment variants
+    getShipmentVariants: async (viazId: string): Promise<string[]> => {
+        const response = await apiClient.get(`/api/shipment/get-variants/${viazId}`);
+        return response.data;
     }
 };
 
