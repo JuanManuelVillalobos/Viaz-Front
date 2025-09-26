@@ -10,16 +10,7 @@ import {
 import {Shipment, ShipmentRequest, Transport} from "@/types/shipment.ts";
 
 export const apiShipmentService = {
-    // Get shipments with pagination and filters
-    // Get shipments with pagination, filters, and search
-    getShipments: async (
-        page: number = 0,
-        size: number = 10,
-        statuses?: string[],
-        clients?: string[],
-        carriers?: string[],
-        search?: string
-    ): Promise<Page<Shipment>> => {
+    shipmentParams(page: number, size: number, statuses: string[], clients: string[], carriers: string[], search: string) {
         const params = new URLSearchParams();
         params.append("page", page.toString());
         params.append("size", size.toString());
@@ -36,17 +27,39 @@ export const apiShipmentService = {
         if (search && search.trim().length > 0) {
             params.append("search", search.trim());
         }
+        return params;
+    },
+    // Get shipments with pagination and filters
+    // Get shipments with pagination, filters, and search
+    async getShipments(
+        page: number = 0,
+        size: number = 10,
+        statuses?: string[],
+        clients?: string[],
+        carriers?: string[],
+        search?: string
+    ): Promise<Page<Shipment>> {
+        const params = this.shipmentParams(page, size, statuses, clients, carriers, search);
 
         const response = await apiClient.get(`/api/shipment/shipments?${params.toString()}`);
         return response.data;
     },
 
+    async getOpenShipments(
+        page: number = 0,
+        size: number = 10,
+        statuses?: string[],
+        clients?: string[],
+        carriers?: string[],
+        search?: string
+    ): Promise<Page<Shipment>>{
+        const params = this.shipmentParams(page, size, statuses, clients, carriers, search);
 
-    // Get all shipments (legacy - keeping for compatibility)
-    getAllShipments: async (): Promise<Shipment[]> => {
-        const response = await apiClient.get('/api/shipment/get-all-shipments');
+
+        const response = await apiClient.get(`/api/shipment/open-shipments?${params.toString()}`);
         return response.data;
     },
+
 
     // Get filter options
     getFilterOptions: async (): Promise<ShipmentFilterOptionsDTO> => {
@@ -54,11 +67,6 @@ export const apiShipmentService = {
         return response.data;
     },
 
-    // Get pending shipments
-    getPendingShipments: async (): Promise<Shipment[]> => {
-        const response = await apiClient.get('/api/shipment/get-pending-shipments');
-        return response.data;
-    },
 
     // Get shipment by ID
     getShipmentById: async (viazId: string): Promise<Shipment> => {
@@ -160,16 +168,6 @@ export const apiShipmentService = {
     //     return response.data;
     // },
 
-    // Get incident types
-    getIncidentTypes: async (): Promise<any[]> => {
-        const response = await apiClient.get('/api/incident/get-incident-types');
-        return response.data;
-    },
-
-    // Add incident to shipment
-    addIncidentToShipment: async (viazId: string, incidentId: string): Promise<void> => {
-        await apiClient.post(`/api/shipment/add-incident/${viazId}/${incidentId}`);
-    },
 
     // Reopen shipment
     reopenShipment: async (viazId: string): Promise<void> => {
