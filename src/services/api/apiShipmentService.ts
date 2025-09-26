@@ -154,11 +154,11 @@ export const apiShipmentService = {
         return response.data;
     },
 
-    // Get ETA for a shipment
-    getShipmentEta: async (viazId: string): Promise<number> => {
-        const response = await apiClient.get(`/api/shipment/${viazId}/eta`);
-        return response.data;
-    },
+    // // Get ETA for a shipment
+    // getShipmentEta: async (viazId: string): Promise<number> => {
+    //     const response = await apiClient.get(`/api/shipment/${viazId}/eta`);
+    //     return response.data;
+    // },
 
     // Get incident types
     getIncidentTypes: async (): Promise<any[]> => {

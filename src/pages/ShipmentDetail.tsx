@@ -95,12 +95,12 @@ const ShipmentDetail = () => {
         enabled: isEditing, // Only fetch when in editing mode
     });
 
-    // Fetch ETA for shipment
-    const {data: eta, isLoading: isLoadingEta} = useQuery({
-        queryKey: ['shipmentEta', id],
-        queryFn: () => id ? apiShipmentService.getShipmentEta(id) : Promise.reject('No ID provided'),
-        enabled: !!id
-    });
+    // // Fetch ETA for shipment
+    // const {data: eta, isLoading: isLoadingEta} = useQuery({
+    //     queryKey: ['shipmentEta', id],
+    //     queryFn: () => id ? apiShipmentService.getShipmentEta(id) : Promise.reject('No ID provided'),
+    //     enabled: !!id
+    // });
 
     // Fetch shipment variants if hasVariants is true
     const {
@@ -754,34 +754,6 @@ const ShipmentDetail = () => {
                 </div>
             </div>
 
-            {/* Variants Section */}
-            {shipment.hasVariants && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Variantes</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoadingVariants ? (
-                            <p className="text-muted-foreground">Cargando variantes...</p>
-                        ) : variants.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                                {variants.map((variant) => (
-                                    <Button
-                                        key={variant}
-                                        variant="outline"
-                                        onClick={() => navigate(`/shipments/${variant}`)}
-                                        className="justify-start"
-                                    >
-                                        {variant}
-                                    </Button>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-muted-foreground">No hay variantes disponibles.</p>
-                        )}
-                    </CardContent>
-                </Card>
-            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-6">
@@ -798,24 +770,45 @@ const ShipmentDetail = () => {
                         handleStatusChange={handleStatusChange}
                     />
 
-                    {/* ETA Card */}
-                    {/*<Card>*/}
-                    {/*    <CardHeader>*/}
-                    {/*        <CardTitle className="flex items-center gap-2">*/}
-                    {/*            <Clock className="h-5 w-5"/>*/}
-                    {/*            Tiempo estimado de entrega*/}
-                    {/*        </CardTitle>*/}
-                    {/*    </CardHeader>*/}
-                    {/*    <CardContent>*/}
-                    {/*        {isLoadingEta ? (*/}
-                    {/*            <p className="text-muted-foreground">Loading ETA...</p>*/}
-                    {/*        ) : eta !== undefined ? (*/}
-                    {/*            <p className="text-lg font-semibold">{formatEta(eta)}</p>*/}
-                    {/*        ) : (*/}
-                    {/*            <p className="text-muted-foreground">ETA not available</p>*/}
-                    {/*        )}*/}
-                    {/*    </CardContent>*/}
-                    {/*</Card>*/}
+                    {/* Variants Section */}
+                    {(shipment.hasVariants || /[a-zA-Z]$/.test(id)) && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Variantes</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {shipment.hasVariants ? (
+                                    isLoadingVariants ? (
+                                        <p className="text-muted-foreground">Cargando variantes...</p>
+                                    ) : variants.length > 0 ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                            {variants.map((variant) => (
+                                                <Button
+                                                    key={variant}
+                                                    variant="outline"
+                                                    onClick={() => navigate(`/shipments/${variant}`)}
+                                                    className="justify-start"
+                                                >
+                                                    {variant}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-muted-foreground">No hay variantes disponibles.</p>
+                                    )
+                                ) : (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => navigate(`/shipments/${id.slice(0, -1)}`)}
+                                    >
+                                        Ir a embarque base
+                                    </Button>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
+
+
                 </div>
                 <div className="space-y-6">
                     <ShipmentFilesCard
