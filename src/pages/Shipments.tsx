@@ -1,6 +1,6 @@
 import {useState, useEffect, useMemo} from "react";
 import {
-    Search, MapPin, Columns, ListFilter, User, Truck, Eye, Lock, Trash
+    Search, MapPin, Columns, ListFilter, User, Truck, Eye, Lock, Trash, ChevronDown
 } from "lucide-react";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
@@ -74,6 +74,8 @@ const Shipments = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize] = useState(10);
     const [searchTerm, setSearchTerm] = useState("");
+    const [shipmentFetchType, setShipmentFetchType] = useState<'all' | 'open'>('open');
+
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [columns, setColumns] = useState<TableColumn[]>(() => {
         // Try to load column preferences from localStorage
@@ -136,25 +138,42 @@ const Shipments = () => {
         enabled: canManageShipments(),
     });
 
-    const {data: shipmentsPage, isFetching, isLoading, error} = useQuery({
+    const {
+        data: shipmentsPage,
+        isFetching,
+        isLoading,
+        error,
+    } = useQuery({
         queryKey: [
-            'shipments',
+            shipmentFetchType,
             currentPage,
             pageSize,
             filters.status,
             filters.client,
             filters.carrier,
-            debouncedSearch, // include search in the cache key
+            debouncedSearch,
         ],
-        queryFn: () =>
-            apiShipmentService.getShipments(
-                currentPage,
-                pageSize,
-                filters.status.length > 0 ? filters.status : undefined,
-                filters.client.length > 0 ? filters.client : undefined,
-                filters.carrier.length > 0 ? filters.carrier : undefined,
-                debouncedSearch || undefined
-            ),
+        queryFn: () => {
+            if (shipmentFetchType === 'open') {
+                return apiShipmentService.getOpenShipments(
+                    currentPage,
+                    pageSize,
+                    filters.status.length > 0 ? filters.status : undefined,
+                    filters.client.length > 0 ? filters.client : undefined,
+                    filters.carrier.length > 0 ? filters.carrier : undefined,
+                    debouncedSearch || undefined
+                );
+            } else {
+                return apiShipmentService.getShipments(
+                    currentPage,
+                    pageSize,
+                    filters.status.length > 0 ? filters.status : undefined,
+                    filters.client.length > 0 ? filters.client : undefined,
+                    filters.carrier.length > 0 ? filters.carrier : undefined,
+                    debouncedSearch || undefined
+                );
+            }
+        },
         enabled: canManageShipments(),
     });
 
@@ -528,6 +547,33 @@ const Shipments = () => {
                     />
                 </div>
                 <div className="flex flex-wrap gap-2 ml-auto">
+                    {/* Shipment Type Dropdown */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                {shipmentFetchType === 'all' ? 'Todos los embarques' : 'Embarques abiertos'}
+                                <ChevronDown className="ml-2 h-4 w-4"/>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-48">
+                            <DropdownMenuLabel>Tipo de embarques</DropdownMenuLabel>
+                            <DropdownMenuSeparator/>
+                            <DropdownMenuItem
+                                onSelect={() => setShipmentFetchType('open')}
+                                aria-checked={shipmentFetchType === 'open'}
+                                role="menuitemradio"
+                            >
+                                Embarques abiertos
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onSelect={() => setShipmentFetchType('all')}
+                                aria-checked={shipmentFetchType === 'all'}
+                                role="menuitemradio"
+                            >
+                                Todos los embarques
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
                     {/* Column Selection Dropdown */}
                     <DropdownMenu>
