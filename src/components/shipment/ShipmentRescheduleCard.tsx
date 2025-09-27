@@ -42,11 +42,19 @@ export function ShipmentRescheduleCard({shipment}: ShipmentRescheduleCardProps) 
 
     const validateForm = () => {
         if (!form.newUnloadDateTime) {
-            toast.error("Por favor, seleccione una fecha y hora.");
+            toast({
+                title: "Error",
+                description: "Por favor, seleccione una fecha y hora.",
+                variant: "destructive",
+            });
             return false;
         }
         if (!form.comment.trim()) {
-            toast.error("Por favor, agregue un comentario.");
+            toast({
+                title: "Error", 
+                description: "Por favor, agregue un comentario.",
+                variant: "destructive",
+            });
             return false;
         }
         return true;
@@ -58,13 +66,18 @@ export function ShipmentRescheduleCard({shipment}: ShipmentRescheduleCardProps) 
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: ["shipment", shipment.fullViazId]});
             queryClient.invalidateQueries({queryKey: ["shipmentIncidents", shipment.fullViazId]});
-            toast.success("Embarque reprogramado exitosamente!");
+            toast({
+                title: "Éxito",
+                description: "Embarque reprogramado exitosamente!",
+            });
             setDialogOpen(false);
             setForm({newUnloadDateTime: "", comment: ""});
         },
         onError: (error: any) => {
-            toast.error("Error al reprogramar el embarque.", {
+            toast({
+                title: "Error al reprogramar el embarque",
                 description: error.message,
+                variant: "destructive",
             });
         },
     });

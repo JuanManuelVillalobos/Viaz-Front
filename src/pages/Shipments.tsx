@@ -369,7 +369,12 @@ const Shipments = () => {
     // Export to Excel function
     const handleExportExcel = async () => {
         try {
-            const blob = await apiShipmentService.exportShipmentsExcel(filteredShipments);
+            const blob = await apiShipmentService.exportShipments(
+                filters.status.length > 0 ? filters.status : undefined,
+                filters.client.length > 0 ? filters.client : undefined,
+                filters.carrier.length > 0 ? filters.carrier : undefined,
+                debouncedSearch || undefined
+            );
 
             // Create a download link and trigger download
             const url = window.URL.createObjectURL(blob);

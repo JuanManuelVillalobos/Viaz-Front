@@ -115,6 +115,43 @@ export const apiShipmentService = {
         return response.data;
     },
 
+    // Export shipments with filters
+    exportShipments: async (
+        statuses?: string[],
+        clients?: string[],
+        carriers?: string[],
+        search?: string,
+        startDate?: string,
+        endDate?: string
+    ): Promise<Blob> => {
+        const params = new URLSearchParams();
+        
+        if (statuses && statuses.length > 0) {
+            statuses.forEach(status => params.append("statuses", status));
+        }
+        if (clients && clients.length > 0) {
+            clients.forEach(client => params.append("clients", client));
+        }
+        if (carriers && carriers.length > 0) {
+            carriers.forEach(carrier => params.append("carriers", carrier));
+        }
+        if (search && search.trim().length > 0) {
+            params.append("search", search.trim());
+        }
+        if (startDate) {
+            params.append("startDate", startDate);
+        }
+        if (endDate) {
+            params.append("endDate", endDate);
+        }
+
+        const response = await apiClient.get(`/api/shipments/export?${params.toString()}`, {
+            responseType: 'blob'
+        });
+
+        return response.data;
+    },
+
     // Upload file to a shipment
     uploadFile: async (viazId: string, file: File): Promise<void> => {
         const formData = new FormData();
