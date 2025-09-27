@@ -51,7 +51,9 @@ import {
     AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import {Avatar, AvatarFallback} from "@/components/ui/avatar";
-import {toast, useToast} from "@/hooks/use-toast";
+import {
+    useToast
+} from "@/hooks/use-toast";
 import {carrierService, Carrier, CreateCarrierRequest} from "@/services/api/carrierService";
 import {roleService, RoleCreationRequest} from "@/services/api/roleService";
 import {incidentService} from "@/services/api/incidentService";
@@ -168,7 +170,6 @@ const AdminDashboard = () => {
         const {
             data: users,
             isLoading: isLoadingUsers,
-            error: usersError,
         } = useQuery({
             queryKey: ['users'],
             queryFn: () => userService.getAllUsers(),
@@ -177,7 +178,6 @@ const AdminDashboard = () => {
 
         const {
             data: carriers = [],
-            error: carriersError,
         } = useQuery({
             queryKey: ['carriers'],
             queryFn: () => carrierService.getAllCarriersWithSensitiveFields(),
@@ -185,7 +185,6 @@ const AdminDashboard = () => {
 
         const {
             data: roles = [],
-            error: rolesError,
         } = useQuery({
             queryKey: ['roles'],
             queryFn:
@@ -195,7 +194,6 @@ const AdminDashboard = () => {
 
         const {
             data: availablePermissions = [],
-            error: permissionsError,
         } = useQuery({
             queryKey: ['permissions'],
             queryFn: () => roleService.getAllPermissions(),
@@ -203,7 +201,6 @@ const AdminDashboard = () => {
 
         const {
             data: incidentTypes = [],
-            error: incidentTypesError,
         } = useQuery({
             queryKey: ['incidentTypes'],
             queryFn: () => incidentService.getAllIncidentTypes(),
@@ -211,7 +208,6 @@ const AdminDashboard = () => {
 
         const {
             data: chargeTypes = [],
-            error: chargeTypesError,
         } = useQuery({
             queryKey: ['chargeTypes'],
             queryFn: () => chargeService.getAllChargeTypes(),
@@ -440,7 +436,7 @@ const AdminDashboard = () => {
 
         const createIncidentTypeMutation = useMutation({
             mutationFn: (data: { name: string, penalty: number }) => incidentService.createIncidentType(data),
-            onSuccess: (newIncidentType) => {
+            onSuccess: () => {
                 queryClient.invalidateQueries({queryKey: ['incidentTypes']});
 
                 setNewIncidentTypeOpen(false);
@@ -476,7 +472,7 @@ const AdminDashboard = () => {
 
         const createChargeTypeMutation = useMutation({
             mutationFn: (data: { name: string, penalty: number }) => chargeService.createChargeType(data),
-            onSuccess: (newChargeType) => {
+            onSuccess: () => {
                 queryClient.invalidateQueries({queryKey: ['chargeTypes']});
 
                 setNewChargeTypeOpen(false);
@@ -601,8 +597,6 @@ const AdminDashboard = () => {
                 return newRoles;
             },
             onSuccess: (newRoles, variables) => {
-                const {userId} = variables;
-
                 // Update local state
                 queryClient.invalidateQueries({queryKey: ['users']});
 
