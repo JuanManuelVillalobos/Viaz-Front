@@ -43,6 +43,7 @@ import {Shipment, ShipmentRequest, Transport} from "@/types/shipment";
 import {UserSummaryDTO} from "@/types/api.ts";
 import {ShipmentIncidentsChargesCard} from "@/components/shipment/ShipmentIncidentsChargesCard.tsx";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip.tsx";
+import {ShipmentRescheduleCard} from "@/components/shipment/ShipmentRescheduleCard.tsx";
 
 const ShipmentDetail = () => {
     const {id} = useParams<{ id: string }>();
@@ -74,7 +75,8 @@ const ShipmentDetail = () => {
     const {
         data: shipment,
         isLoading,
-        error
+        error,
+        refetch
     } = useQuery({
         queryKey: ['shipment', id],
         queryFn: () => id ? apiShipmentService.getShipmentById(id) : Promise.reject('No ID provided'),
@@ -95,12 +97,6 @@ const ShipmentDetail = () => {
         enabled: isEditing, // Only fetch when in editing mode
     });
 
-    // // Fetch ETA for shipment
-    // const {data: eta, isLoading: isLoadingEta} = useQuery({
-    //     queryKey: ['shipmentEta', id],
-    //     queryFn: () => id ? apiShipmentService.getShipmentEta(id) : Promise.reject('No ID provided'),
-    //     enabled: !!id
-    // });
 
     // Fetch shipment variants if hasVariants is true
     const {
@@ -711,15 +707,17 @@ const ShipmentDetail = () => {
                                 <Lock className="h-4 w-4"/>
                                 Cerrar
                             </Button>
-                            <Button
-                                variant="outline"
-                                onClick={() => createVariantMutation.mutate(shipment.fullViazId)}
-                                disabled={createVariantMutation.isPending}
-                                className="flex items-center gap-2"
-                            >
-                                <Plus className="h-4 w-4"/>
-                                {createVariantMutation.isPending ? "Creando..." : "Crear Variante"}
-                            </Button>
+                            {shipment.baseViazId == shipment.fullViazId &&
+                                <Button
+                                    variant="outline"
+                                    onClick={() => createVariantMutation.mutate(shipment.fullViazId)}
+                                    disabled={createVariantMutation.isPending}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Plus className="h-4 w-4"/>
+                                    {createVariantMutation.isPending ? "Creando..." : "Crear Variante"}
+                                </Button>
+                            }
                         </>
                     )}
                     {shipment.open && canCreateShipments() && (
@@ -770,6 +768,11 @@ const ShipmentDetail = () => {
                         handleStatusChange={handleStatusChange}
                     />
 
+
+                    {/* Reschedule Card */}
+                    <ShipmentRescheduleCard shipment={shipment}/>
+
+
                     {/* Variants Section */}
                     {(shipment.hasVariants || /[a-zA-Z]$/.test(id)) && (
                         <Card>
@@ -799,9 +802,9 @@ const ShipmentDetail = () => {
                                 ) : (
                                     <Button
                                         variant="outline"
-                                        onClick={() => navigate(`/shipments/${id.slice(0, -1)}`)}
+                                        onClick={() => navigate(`/shipments/${shipment.baseViazId}`)}
                                     >
-                                        Ir a embarque base
+                                        Ir a embarque base: {shipment.baseViazId}
                                     </Button>
                                 )}
                             </CardContent>
@@ -934,7 +937,7 @@ const ShipmentDetail = () => {
                             <Label htmlFor="incident-type">Incident Type</Label>
                             <Select value={selectedIncidentType} onValueChange={setSelectedIncidentType}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select incident type"/>
+                                    <SelectValue placeholder="Selecciona el tipo de incidente"/>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {isLoadingIncidentTypes ? (
@@ -985,7 +988,7 @@ const ShipmentDetail = () => {
                             <Label htmlFor="charge-type">Charge Type</Label>
                             <Select value={selectedChargeType} onValueChange={setSelectedChargeType}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select charge type"/>
+                                    <SelectValue placeholder="Selecciona el tipo de cargo"/>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {isLoadingChargeTypes ? (
