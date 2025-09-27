@@ -15,7 +15,9 @@ import {
     Edit,
     Trash2,
     CheckCircle,
-    XCircle, Trash
+    XCircle,
+    Trash,
+    BarChart
 } from "lucide-react";
 import {Checkbox} from "@/components/ui/checkbox";
 import {
@@ -60,6 +62,7 @@ import {format} from "date-fns";
 import {Switch} from "@/components/ui/switch.tsx";
 import {usePermissions} from "@/hooks/usePermissions.ts";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import CarrierStats from "@/components/carrier/CarrierStats.tsx";
 
 // Component interfaces and state
 
@@ -106,6 +109,10 @@ const AdminDashboard = () => {
 
         const [roleDialogOpen, setRoleDialogOpen] = useState(false);
         const [selectedUserForRole, setSelectedUserForRole] = useState<ViazUserDTO | null>(null);
+
+
+        const [statsDialogOpen, setStatsDialogOpen] = useState(false);
+        const [selectedCarrier, setSelectedCarrier] = useState<any | null>(null);
 
 
         // Get permissions and query
@@ -672,6 +679,11 @@ const AdminDashboard = () => {
                 )
         );
 
+        const handleViewStats = (carrier) => {
+            setSelectedCarrier(carrier);
+            setStatsDialogOpen(true);
+        };
+
 
         return (
             <div className="space-y-6">
@@ -682,6 +694,18 @@ const AdminDashboard = () => {
                             sistema</p>
                     </div>
                 </div>
+
+                <Dialog open={statsDialogOpen} onOpenChange={setStatsDialogOpen}>
+                    <DialogContent className="max-w-[800px] max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Estadísticas de {selectedCarrier?.name}</DialogTitle>
+                            <DialogDescription>
+                                Historial de ratings mensuales para este transportista.
+                            </DialogDescription>
+                        </DialogHeader>
+                        {selectedCarrier && <CarrierStats carrierId={selectedCarrier.carrierId}/>}
+                    </DialogContent>
+                </Dialog>
 
                 <Tabs defaultValue="carriers" className="space-y-4">
                     <TabsList className="grid w-full grid-cols-3">
@@ -816,6 +840,10 @@ const AdminDashboard = () => {
                                                             <DropdownMenuItem onClick={() => handleEditCarrier(carrier)}>
                                                                 <Edit className="mr-2 h-4 w-4"/>
                                                                 Editar
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleViewStats(carrier)}>
+                                                                <BarChart className="mr-2 h-4 w-4"/>
+                                                                Ver Estadísticas
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem
                                                                 className="text-destructive"
