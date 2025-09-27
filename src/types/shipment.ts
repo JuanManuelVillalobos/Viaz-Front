@@ -41,6 +41,7 @@ export interface Shipment {
     customerServiceRating?: number;
     shipmentRating?: number;
     ratingObservation?: string;
+    hasReschedule?: boolean;
 }
 
 export interface ShipmentRequest {
@@ -90,7 +91,7 @@ export const allShipmentColumns: TableColumn[] = [
     {id: "origin", label: "Origen", visible: true},
     {id: "destination", label: "Destino", visible: true},
     {id: "status", label: "Estatus", visible: true},
-    {id: "shipmentDate", label: "Fecha de Carga", visible: true},
+    {id: "shipmentDate", label: "Cita de Carga", visible: true},
     {id: "transport", label: "Transporte", visible: true},
     {id: "transportMethod", label: "Método de Transporte", visible: false},
     {id: "customerServiceAgent", label: "Customer Service", visible: false},
@@ -127,7 +128,7 @@ export const defaultShipmentColumns: TableColumn[] = [
     {id: "client", label: "Cliente", visible: true},
     {id: "transport", label: "Transporte", visible: true},
     {id: "status", label: "Estatus", visible: true},
-    {id: "shipmentDate", label: "Fecha de Carga", visible: true},
+    {id: "shipmentDate", label: "Cita de Carga", visible: true},
     {id: "hasIncidents", label: "Incidentes", visible: true},
     {id: "hasCharges", label: "Cargos", visible: true},
 ];
