@@ -11,15 +11,6 @@ import {useQuery} from "@tanstack/react-query";
 import {apiStatsService, MonthlyCarrierRating} from "@/services/api/apiStatsService.ts";
 
 const Index = () => {
-    const monthlyData = [
-        {name: "Jan", shipments: 65, delivered: 58},
-        {name: "Feb", shipments: 59, delivered: 55},
-        {name: "Mar", shipments: 80, delivered: 78},
-        {name: "Apr", shipments: 81, delivered: 77},
-        {name: "May", shipments: 56, delivered: 53},
-        {name: "Jun", shipments: 55, delivered: 52},
-        {name: "Jul", shipments: 40, delivered: 38},
-    ];
 
 
     const COLORS = ["#0088FE", "#776424"];
