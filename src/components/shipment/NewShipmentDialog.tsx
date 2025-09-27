@@ -230,7 +230,7 @@ export function NewShipmentDialog({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="shipmentDate">Fecha de Carga</Label>
+                                <Label htmlFor="shipmentDate">Cita de Carga</Label>
                                 <Input
                                     id="shipmentDate"
                                     type="datetime-local"
@@ -269,6 +269,16 @@ export function NewShipmentDialog({
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="shipmentTerminal">Terminal</Label>
+                                <Input
+                                    id="shipmentTerminal"
+                                    value={newShipment.terminal}
+                                    onChange={(e) =>
+                                        handleInputChange("terminal", e.target.value)
+                                    }
+                                />
+                            </div>
                         </div>
                     </TabsContent>
 
@@ -298,19 +308,6 @@ export function NewShipmentDialog({
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="shipmentTerminal">Terminal</Label>
-                                <Input
-                                    id="shipmentTerminal"
-                                    value={newShipment.terminal}
-                                    onChange={(e) =>
-                                        handleInputChange("terminal", e.target.value)
-                                    }
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="portOfDischarge">POD</Label>
                                 <Select
@@ -345,9 +342,9 @@ export function NewShipmentDialog({
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="portArrivalDate">Fecha Llegada a Puerto</Label>
+                                <Label htmlFor="arrivalDate">Fecha Llegada a Destino</Label>
                                 <Input
-                                    id="portArrivalDate"
+                                    id="arrivalDate"
                                     type="datetime-local"
                                     value={newShipment.arrivalDate}
                                     onChange={(e) =>
