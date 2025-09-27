@@ -145,6 +145,7 @@ const Shipments = () => {
         error,
     } = useQuery({
         queryKey: [
+            'shipments',
             shipmentFetchType,
             currentPage,
             pageSize,
@@ -177,6 +178,28 @@ const Shipments = () => {
         enabled: canManageShipments(),
     });
 
+    //  const {data: shipmentsPage, isFetching, isLoading, error} = useQuery({
+    //     queryKey: [
+    //         'shipments',
+    //         currentPage,
+    //         pageSize,
+    //         filters.status,
+    //         filters.client,
+    //         filters.carrier,
+    //         debouncedSearch, // include search in the cache key
+    //     ],
+    //     queryFn: () =>
+    //         apiShipmentService.getShipments(
+    //             currentPage,
+    //             pageSize,
+    //             filters.status.length > 0 ? filters.status : undefined,
+    //             filters.client.length > 0 ? filters.client : undefined,
+    //             filters.carrier.length > 0 ? filters.carrier : undefined,
+    //             debouncedSearch || undefined
+    //         ),
+    //     enabled: canManageShipments(),
+    // });
+
 
     // Toggle column visibility
     const toggleColumnVisibility = (columnId: string) => {
@@ -200,7 +223,6 @@ const Shipments = () => {
     const createShipmentMutation = useMutation({
         mutationFn: apiShipmentService.createShipment,
         onSuccess: () => {
-            // Invalidate and refetch shipments query
             queryClient.invalidateQueries({queryKey: ['shipments']}).then(() => setNewShipmentOpen(false));
 
 
@@ -267,7 +289,8 @@ const Shipments = () => {
         mutationFn: ({viazId, status}: { viazId: string; status: string }) =>
             apiShipmentService.changeShipmentStatus(viazId, status),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({queryKey: ["shipments"]}).then(() =>
+
+                queryClient.invalidateQueries({queryKey: ['shipments']}).then(() =>
                 toast({
                     title: "Estatus actualizado",
                     description: `El estatus del embarque ${variables.viazId} se cambió a "${variables.status}".`,
