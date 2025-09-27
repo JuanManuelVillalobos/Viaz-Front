@@ -136,3 +136,10 @@ export interface ShipmentFilterOptionsDTO {
     clients: string[];
     carriers: string[];
 }
+
+export interface MonthlyRating {
+  carrierName: string;
+  month: string;
+  monthNumber: number;
+  averageRating: number;
+}
