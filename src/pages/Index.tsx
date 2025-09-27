@@ -45,9 +45,7 @@ const Index = () => {
 
 
     const {
-        data: numberOfIssuesOnOpenShipments,
-        isLoading: isLoadingNnumberOfIssuesOnOpenShipments,
-        error: errorNumberOfIssuesOnOpenShipments
+        data: numberOfIssuesOnOpenShipments
     } = useQuery({
         queryKey: ['numberOfIssuesOnOpenShipments'],
         queryFn: apiStatsService.getNumberOfIssuesOnOpenShipments,
@@ -63,18 +61,14 @@ const Index = () => {
     });
 
     const {
-        data: monthlyCarrierRatings,
-        isLoading: isLoadingMonthlyCarrierRatings,
-        error: errorMonthlyCarrierRatings
+        data: monthlyCarrierRatings
     } = useQuery<MonthlyCarrierRating[], Error>({
         queryKey: ['monthlyCarrierRatings'],
         queryFn: apiStatsService.getMonthlyCarrierRatings,
     });
 
     const {
-        data: openShipmentsCount,
-        isLoading: isLoadingOpenShipmentsCount,
-        error: errorOpenShipmentsCount
+        data: openShipmentsCount
     } = useQuery({
         queryKey: ['openShipmentsCount'],
         queryFn: apiStatsService.getOpenShipmentsCount,
@@ -82,8 +76,6 @@ const Index = () => {
 
     const {
         data: cleanedShipmentCount,
-        isLoading: isLoadingCleanedShipmentCount,
-        error: errorCleanedShipmentCount
     } = useQuery({
         queryKey: ['cleanedShipmentCount'],
         queryFn: apiStatsService.getCleanedShipmentsCount,
@@ -91,8 +83,6 @@ const Index = () => {
 
     const {
         data: numberOfChargesLastMonth,
-        isLoading: isLoadingNumberOfChargesLastMonth,
-        error: errorNumberOfChargesLastMonth
     } = useQuery({
         queryKey: ['numberOfChargesLastMonth'],
         queryFn: apiStatsService.getNumberOfChargesLastMonth,
@@ -255,7 +245,7 @@ const Index = () => {
                                         ))}
                                     </Pie>
                                     <Tooltip
-                                        formatter={(value, name, props) => [`${value} embarques`, name]}
+                                        formatter={(value, name) => [`${value} embarques`, name]}
                                     />
                                 </PieChart>
                             )}
