@@ -1,4 +1,5 @@
 import {apiClient} from "@/services/api/index.ts";
+import {MonthlyRating} from "@/types/api.ts";
 
 export type MonthlyCarrierRating = {
     carrierName: string;
@@ -44,13 +45,19 @@ export const apiStatsService = {
         return response.data;
     },
 
-     getCleanedShipmentsCount: async (): Promise<number> => {
+    getCleanedShipmentsCount: async (): Promise<number> => {
         const response = await apiClient.get('/api/stats/get-cleaned-shipments');
         return response.data;
-     },
+    },
 
     getNumberOfChargesLastMonth: async (): Promise<number> => {
         const response = await apiClient.get('/api/stats/get-number-of-charges-in-last-month');
+        return response.data;
+    },
+
+    // Get monthly average ratings for a specific carrier
+    getMonthlyRatingsOfCarrier: async (carrierId: number): Promise<MonthlyRating[]> => {
+        const response = await apiClient.get(`/api/stats/get-monthly-ratings-of-carrier/${carrierId}`);
         return response.data;
     }
 
