@@ -24,6 +24,7 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
         mutationFn: apiShipmentService.deleteIncident,
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: ['shipmentIncidents', shipmentId]});
+            queryClient.invalidateQueries({queryKey: ["shipment", shipmentId]});
             toast({
                 title: 'Incidente eliminado',
                 description: 'El incidente ha sido eliminado exitosamente.',
