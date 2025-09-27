@@ -15,7 +15,9 @@ import {
     Edit,
     Trash2,
     CheckCircle,
-    XCircle, Trash
+    XCircle,
+    Trash,
+    BarChart
 } from "lucide-react";
 import {Checkbox} from "@/components/ui/checkbox";
 import {
@@ -49,7 +51,9 @@ import {
     AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import {Avatar, AvatarFallback} from "@/components/ui/avatar";
-import {toast, useToast} from "@/hooks/use-toast";
+import {
+    useToast
+} from "@/hooks/use-toast";
 import {carrierService, Carrier, CreateCarrierRequest} from "@/services/api/carrierService";
 import {roleService, RoleCreationRequest} from "@/services/api/roleService";
 import {incidentService} from "@/services/api/incidentService";
@@ -60,6 +64,7 @@ import {format} from "date-fns";
 import {Switch} from "@/components/ui/switch.tsx";
 import {usePermissions} from "@/hooks/usePermissions.ts";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import CarrierStats from "@/components/carrier/CarrierStats.tsx";
 
 // Component interfaces and state
 
@@ -106,6 +111,10 @@ const AdminDashboard = () => {
 
         const [roleDialogOpen, setRoleDialogOpen] = useState(false);
         const [selectedUserForRole, setSelectedUserForRole] = useState<ViazUserDTO | null>(null);
+
+
+        const [statsDialogOpen, setStatsDialogOpen] = useState(false);
+        const [selectedCarrier, setSelectedCarrier] = useState<any | null>(null);
 
 
         // Get permissions and query
@@ -161,7 +170,6 @@ const AdminDashboard = () => {
         const {
             data: users,
             isLoading: isLoadingUsers,
-            error: usersError,
         } = useQuery({
             queryKey: ['users'],
             queryFn: () => userService.getAllUsers(),
@@ -170,7 +178,6 @@ const AdminDashboard = () => {
 
         const {
             data: carriers = [],
-            error: carriersError,
         } = useQuery({
             queryKey: ['carriers'],
             queryFn: () => carrierService.getAllCarriersWithSensitiveFields(),
@@ -178,7 +185,6 @@ const AdminDashboard = () => {
 
         const {
             data: roles = [],
-            error: rolesError,
         } = useQuery({
             queryKey: ['roles'],
             queryFn:
@@ -188,7 +194,6 @@ const AdminDashboard = () => {
 
         const {
             data: availablePermissions = [],
-            error: permissionsError,
         } = useQuery({
             queryKey: ['permissions'],
             queryFn: () => roleService.getAllPermissions(),
@@ -196,7 +201,6 @@ const AdminDashboard = () => {
 
         const {
             data: incidentTypes = [],
-            error: incidentTypesError,
         } = useQuery({
             queryKey: ['incidentTypes'],
             queryFn: () => incidentService.getAllIncidentTypes(),
@@ -204,7 +208,6 @@ const AdminDashboard = () => {
 
         const {
             data: chargeTypes = [],
-            error: chargeTypesError,
         } = useQuery({
             queryKey: ['chargeTypes'],
             queryFn: () => chargeService.getAllChargeTypes(),
@@ -433,7 +436,7 @@ const AdminDashboard = () => {
 
         const createIncidentTypeMutation = useMutation({
             mutationFn: (data: { name: string, penalty: number }) => incidentService.createIncidentType(data),
-            onSuccess: (newIncidentType) => {
+            onSuccess: () => {
                 queryClient.invalidateQueries({queryKey: ['incidentTypes']});
 
                 setNewIncidentTypeOpen(false);
@@ -469,7 +472,7 @@ const AdminDashboard = () => {
 
         const createChargeTypeMutation = useMutation({
             mutationFn: (data: { name: string, penalty: number }) => chargeService.createChargeType(data),
-            onSuccess: (newChargeType) => {
+            onSuccess: () => {
                 queryClient.invalidateQueries({queryKey: ['chargeTypes']});
 
                 setNewChargeTypeOpen(false);
@@ -594,8 +597,6 @@ const AdminDashboard = () => {
                 return newRoles;
             },
             onSuccess: (newRoles, variables) => {
-                const {userId} = variables;
-
                 // Update local state
                 queryClient.invalidateQueries({queryKey: ['users']});
 
@@ -672,6 +673,11 @@ const AdminDashboard = () => {
                 )
         );
 
+        const handleViewStats = (carrier) => {
+            setSelectedCarrier(carrier);
+            setStatsDialogOpen(true);
+        };
+
 
         return (
             <div className="space-y-6">
@@ -682,6 +688,18 @@ const AdminDashboard = () => {
                             sistema</p>
                     </div>
                 </div>
+
+                <Dialog open={statsDialogOpen} onOpenChange={setStatsDialogOpen}>
+                    <DialogContent className="max-w-[800px] max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Estadísticas de {selectedCarrier?.name}</DialogTitle>
+                            <DialogDescription>
+                                Historial de ratings mensuales para este transportista.
+                            </DialogDescription>
+                        </DialogHeader>
+                        {selectedCarrier && <CarrierStats carrierId={selectedCarrier.carrierId}/>}
+                    </DialogContent>
+                </Dialog>
 
                 <Tabs defaultValue="carriers" className="space-y-4">
                     <TabsList className="grid w-full grid-cols-3">
@@ -816,6 +834,10 @@ const AdminDashboard = () => {
                                                             <DropdownMenuItem onClick={() => handleEditCarrier(carrier)}>
                                                                 <Edit className="mr-2 h-4 w-4"/>
                                                                 Editar
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleViewStats(carrier)}>
+                                                                <BarChart className="mr-2 h-4 w-4"/>
+                                                                Ver Estadísticas
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem
                                                                 className="text-destructive"

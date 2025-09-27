@@ -235,17 +235,6 @@ export const ShipmentDetailForm = ({
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="terminal">Terminal</Label>
-                                    <Input
-                                        id="terminal"
-                                        value={editedShipment.terminal || ''}
-                                        onChange={e => handleInputChange("terminal", e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
                                     <Label htmlFor="pod">POD</Label>
                                     <Select
                                         value={editedShipment.pod || ''}
@@ -303,12 +292,20 @@ export const ShipmentDetailForm = ({
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="shipmentDate">Fecha de Carga</Label>
+                                    <Label htmlFor="shipmentDate">Cita de Carga</Label>
                                     <Input
                                         id="shipmentDate"
                                         type="datetime-local"
                                         value={editedShipment.shipmentDate || ''}
                                         onChange={e => handleInputChange("shipmentDate", e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="terminal">Terminal</Label>
+                                    <Input
+                                        id="terminal"
+                                        value={editedShipment.terminal || ''}
+                                        onChange={e => handleInputChange("terminal", e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -413,7 +410,7 @@ export const ShipmentDetailForm = ({
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="arrivalDate">Fecha Llegada a Puerto</Label>
+                                    <Label htmlFor="arrivalDate">Fecha Llegada a Destino</Label>
                                     <Input
                                         id="arrivalDate"
                                         type="datetime-local"
@@ -501,12 +498,12 @@ export const ShipmentDetailForm = ({
                             </fieldset>
 
                             <div className="space-y-2">
-                                <Label htmlFor="observations">Observations</Label>
+                                <Label htmlFor="observations">Observaciones</Label>
                                 <Textarea
                                     id="observations"
                                     value={editedShipment.observations || ''}
                                     onChange={e => handleInputChange("observations", e.target.value)}
-                                    placeholder="Add any additional notes here..."
+                                    placeholder="Agrega notas adicionales aquí..."
                                     rows={3}
                                 />
                             </div>
@@ -631,16 +628,10 @@ export const ShipmentDetailForm = ({
                                     </div>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Terminal</p>
-                                    <p className="text-base mt-1">{shipment.terminal || 'N/A'}</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
                                     <p className="text-sm font-medium text-muted-foreground">POD</p>
                                     <p className="text-base mt-1">{shipment.pod || 'N/A'}</p>
                                 </div>
+
                             </div>
                         </TabsContent>
 
@@ -811,7 +802,7 @@ export const ShipmentDetailForm = ({
 
                             {shipment.observations && (
                                 <div className="space-y-2">
-                                    <p className="text-sm font-medium text-muted-foreground">Observations</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Observaciones</p>
                                     <div className="p-3 bg-muted rounded-md">
                                         <p className="text-base whitespace-pre-wrap">{shipment.observations}</p>
                                     </div>
