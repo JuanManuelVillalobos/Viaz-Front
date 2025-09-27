@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {useParams, useNavigate} from "react-router-dom";
-import {ArrowLeft, Edit, Save, X, Lock, Clock, AlertTriangle, Unlock, DollarSign, Plus} from "lucide-react";
+import {ArrowLeft, Edit, Save, X, Lock, AlertTriangle, Unlock, DollarSign, Plus} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
@@ -75,8 +75,7 @@ const ShipmentDetail = () => {
     const {
         data: shipment,
         isLoading,
-        error,
-        refetch
+        error
     } = useQuery({
         queryKey: ['shipment', id],
         queryFn: () => id ? apiShipmentService.getShipmentById(id) : Promise.reject('No ID provided'),
@@ -343,7 +342,7 @@ const ShipmentDetail = () => {
         setDragOverIndex(null);
     };
 
-    const handleDrop = (targetIndex: number) => {
+    const handleDrop = () => {
         setDraggedFile(null);
         setDragOverIndex(null);
 
@@ -491,23 +490,6 @@ const ShipmentDetail = () => {
                 description: "Failed to close shipment.",
                 variant: "destructive",
             });
-        }
-    };
-
-    // Format ETA from seconds to readable format
-    const formatEta = (seconds: number): string => {
-        if (seconds < 60) {
-            return `${seconds} seconds`;
-        } else if (seconds < 3600) {
-            const minutes = Math.floor(seconds / 60);
-            return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
-        } else {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            if (minutes === 0) {
-                return `${hours} hour${hours !== 1 ? 's' : ''}`;
-            }
-            return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
         }
     };
 
