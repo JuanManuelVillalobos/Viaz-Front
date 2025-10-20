@@ -1,7 +1,7 @@
 import axios, {AxiosInstance} from 'axios';
 import {jwtDecode} from 'jwt-decode';
 import {toast} from '@/hooks/use-toast';
-import {authService} from './authService';
+import {apiAuthService} from './apiAuthService.ts';
 
 interface JwtPayload {
     exp: number;
@@ -20,7 +20,7 @@ function isTokenExpired(token: string): boolean {
 
 const API_URL = import.meta.env.VITE_BACKEND_URL;
 
-const apiClient: AxiosInstance = axios.create({
+const apiAxiosClient: AxiosInstance = axios.create({
     baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json',
@@ -28,14 +28,14 @@ const apiClient: AxiosInstance = axios.create({
     withCredentials: true,
 });
 
-apiClient.interceptors.request.use(
+apiAxiosClient.interceptors.request.use(
     async (config) => {
         let token = localStorage.getItem('accessToken');
 
         if (token) {
             if (isTokenExpired(token) && !config.url?.includes('/auth/refresh-token')) {
                 try {
-                    token = await authService.refreshToken();
+                    token = await apiAuthService.refreshToken();
                 } catch {
                     toast({
                         title: 'Session expired',
@@ -54,7 +54,7 @@ apiClient.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-apiClient.interceptors.response.use(
+apiAxiosClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         if (axios.isCancel(error)) {
@@ -73,10 +73,10 @@ apiClient.interceptors.response.use(
             originalRequest._retry = true;
 
             try {
-                const token = await authService.refreshToken();
+                const token = await apiAuthService.refreshToken();
 
                 originalRequest.headers['Authorization'] = `Bearer ${token}`;
-                return apiClient(originalRequest);
+                return apiAxiosClient(originalRequest);
             } catch {
                 localStorage.clear();
                 toast({
@@ -96,18 +96,25 @@ apiClient.interceptors.response.use(
 
             switch (status) {
                 case 400:
-                    toast({title: 'Invalid request', description: errorMessage, variant: 'destructive'});
+                    toast({title: 'Solicitud inválida', description: errorMessage, variant: 'destructive'});
                     break;
                 case 401:
-                    toast({title: 'Unauthorized', description: errorMessage, variant: 'destructive'});
+                    toast({title: 'No autorizado', description: errorMessage, variant: 'destructive'});
                     break;
                 case 404:
-                    toast({title: 'Not found', description: errorMessage, variant: 'destructive'});
+                    toast({title: 'No encontrado', description: errorMessage, variant: 'destructive'});
+                    break;
+                case 429:
+                    toast({
+                        title: 'Demasiadas solicitudes',
+                        description: 'Has enviado demasiadas solicitudes. Inténtalo de nuevo más tarde.',
+                        variant: 'destructive'
+                    });
                     break;
                 case 500:
                     toast({
-                        title: 'Server error',
-                        description: 'Something went wrong on the server',
+                        title: 'Error del servidor',
+                        description: 'Algo salió mal en el servidor',
                         variant: 'destructive'
                     });
                     break;
@@ -116,6 +123,7 @@ apiClient.interceptors.response.use(
                         toast({title: 'Error', description: errorMessage, variant: 'destructive'});
                     }
             }
+
         } else if (error.request) {
             toast({title: 'Network error', description: 'Could not connect to the server', variant: 'destructive'});
         } else {
@@ -126,4 +134,4 @@ apiClient.interceptors.response.use(
     }
 );
 
-export default apiClient;
+export default apiAxiosClient;
