@@ -1,16 +1,16 @@
-import apiClient from './apiClient';
+import apiAxiosClient from './apiAxiosClient.ts';
 import {LoginRequest, Token, ViazUserDTO, ViazUser, ViazCurrentUserAuthResponseDTO} from '@/types/api';
 
-export const authService = {
+export const apiAuthService = {
 
     me : async () : Promise<ViazCurrentUserAuthResponseDTO> => {
-        const response = await apiClient.get('/api/auth/me');
+        const response = await apiAxiosClient.get('/api/auth/me');
         return response.data;
     },
 
     // Login user
     login: async (credentials: LoginRequest): Promise<Token> => {
-        const response = await apiClient.post('/api/auth/login', {
+        const response = await apiAxiosClient.post('/api/auth/login', {
             email: credentials.email,
             password: credentials.password
         });
@@ -27,18 +27,18 @@ export const authService = {
 
     // Register user
     register: async (userData: ViazUserDTO): Promise<ViazUser> => {
-        const response = await apiClient.post('/api/auth/register', userData);
+        const response = await apiAxiosClient.post('/api/auth/register', userData);
         return response.data;
     },
 
     // Forgot password - send reset link
     forgotPassword: async (email: string): Promise<void> => {
-        await apiClient.post('/api/auth/forgot-password', email);
+        await apiAxiosClient.post('/api/auth/forgot-password', email);
     },
 
     // Set new password with token
     setPassword: async (email: string, password: string, token: string): Promise<ViazUserDTO> => {
-        const response = await apiClient.post(
+        const response = await apiAxiosClient.post(
             `/api/auth/set-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`,
             {password: password}
         );
@@ -48,7 +48,7 @@ export const authService = {
     // Logout user
     logout: async (): Promise<void> => {
         try {
-            await apiClient.post('/api/auth/logout');
+            await apiAxiosClient.post('/api/auth/logout');
         } finally {
             // Clear local storage regardless of API call success
             localStorage.removeItem('accessToken');
@@ -58,7 +58,7 @@ export const authService = {
     },
 
     refreshToken: async (): Promise<string> => {
-    const response = await apiClient.post(
+    const response = await apiAxiosClient.post(
       '/api/auth/refresh-token',
       {},
       { withCredentials: true }
