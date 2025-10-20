@@ -59,6 +59,19 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
 
     const canDeleteIncidents = hasPermission('SHIPMENT_INCIDENT_DELETE');
     const canDeleteCharges = hasPermission('SHIPMENT_CHARGE_DELETE');
+
+    function formatEntityLabel(entity: string) {
+        switch (entity) {
+            case 'CARRIER':
+                return 'Transportista';
+            case 'CLIENT':
+                return 'Cliente';
+            default:
+                return entity;
+        }
+    }
+
+
     return (
         <Card>
             <CardHeader>
@@ -98,6 +111,9 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
                                                     <div className="text-xs text-muted-foreground mt-1">
                                                         {format(new Date(incident.occurredAt), "dd MMM yyyy, HH:mm")}
                                                     </div>
+                                                    <div className="text-xs text-muted-foreground mt-1 italic">
+                                                        Incidente con: {formatEntityLabel(incident.entityTied)}
+                                                    </div>
                                                 </div>
                                                 {canDeleteIncidents && (
                                                     <Button
@@ -107,7 +123,7 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
                                                         disabled={deleteIncidentMutation.isPending}
                                                         className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
+                                                        <Trash2 className="h-4 w-4"/>
                                                     </Button>
                                                 )}
                                             </div>
@@ -148,7 +164,7 @@ export const ShipmentIncidentsChargesCard = ({incidents, charges, isLoading, err
                                                         disabled={deleteChargeMutation.isPending}
                                                         className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
+                                                        <Trash2 className="h-4 w-4"/>
                                                     </Button>
                                                 )}
                                             </div>

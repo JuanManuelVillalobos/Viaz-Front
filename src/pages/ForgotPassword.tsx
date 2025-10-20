@@ -1,4 +1,4 @@
-import {useState} from "react";
+import React, {useState} from "react";
 import {Link} from "react-router-dom";
 import {
     Card,
@@ -13,7 +13,7 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Mail, ArrowLeft, CheckCircle} from "lucide-react";
 import {toast} from "@/hooks/use-toast";
-import {authService} from "@/services/api";
+import {apiAuthService} from "@/services/api";
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState("");
@@ -35,7 +35,7 @@ const ForgotPassword = () => {
         setIsLoading(true);
 
         try {
-            await authService.forgotPassword(email);
+            await apiAuthService.forgotPassword(email);
             toast({
                 title: "Success",
                 description: "If your email is registered with us, you will receive a password reset link shortly",

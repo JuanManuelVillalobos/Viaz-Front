@@ -21,26 +21,26 @@ import {
 } from "../ui/select"; // Adjust path as needed
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "../ui/tabs"; // Adjust path as needed
 import {Textarea} from "../ui/textarea";
-import {Shipment, SHIPMENT_STATUS_OPTIONS, ShipmentRequest, Transport} from "@/types/shipment.ts";
-import {UserSummaryDTO} from "@/types/api.ts"; // Adjust path as needed
+import {Shipment, SHIPMENT_CONTAINER_OPTIONS, SHIPMENT_STATUS_OPTIONS, ShipmentRequest} from "@/types/shipment.ts";
+import {UserSummaryDTO} from "@/types/api.ts";
+import {SimplifiedClient} from "@/services/api/apiClientService.ts";
+import {SimplifiedCarrier} from "@/services/api/apiCarrierService.ts"; // Adjust path as needed
 
 
-// Define the props for the NewShipmentDialog component
+// Define the props for the NewShipmentAlert component
 interface NewShipmentDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     newShipment: Partial<ShipmentRequest>;
     handleInputChange: (field: keyof Shipment, value: any) => void;
     customerServiceAgents: UserSummaryDTO[];
-    transports: Transport[];
+    transports: SimplifiedCarrier[];
+    clients: SimplifiedClient[];
     handleNewShipmentSubmit: () => void;
     createShipmentMutation: {
         isPending: boolean;
     };
     resetNewShipment: () => void;
-    // The original component had canCreateShipments() condition,
-    // but it seems to control the DialogTrigger, not the dialog itself.
-    // We'll assume the parent component handles whether to render this dialog or not based on that.
 }
 
 export function NewShipmentDialog({
@@ -50,6 +50,7 @@ export function NewShipmentDialog({
                                       handleInputChange,
                                       customerServiceAgents,
                                       transports,
+                                      clients,
                                       handleNewShipmentSubmit,
                                       createShipmentMutation,
                                       resetNewShipment,
@@ -106,12 +107,27 @@ export function NewShipmentDialog({
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="client">Cliente</Label>
-                                <Input
-                                    id="client"
+                                <Select
                                     value={newShipment.client}
-                                    onChange={(e) => handleInputChange("client", e.target.value)}
-                                    placeholder="Nombre del cliente"
-                                />
+                                    onValueChange={(value) =>
+                                        handleInputChange("client", value)
+                                    }
+                                >
+                                    <SelectTrigger id="client">
+                                        <SelectValue placeholder="Selecciona el cliente"/>
+                                    </SelectTrigger>
+                                    <SelectContent maxHeight="max-h-48">
+                                        {clients.map((clientItem, index) => (
+                                            <SelectItem
+                                                key={clientItem.clientId || clientItem.name || index}
+                                                value={clientItem.name}
+                                            >
+                                                {clientItem.name.charAt(0).toUpperCase() +
+                                                    clientItem.name.slice(1)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="t_m">T/M</Label>
@@ -189,11 +205,16 @@ export function NewShipmentDialog({
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="status">Estatus</Label>
-                                <Select>
+                                <Select
+                                    value={newShipment.status}
+                                    onValueChange={(value) =>
+                                        handleInputChange("status", value)
+                                    }
+                                >
                                     <SelectTrigger id="status">
                                         <SelectValue placeholder="Información Pendiente"/>
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent maxHeight={"200px"}>
                                         {SHIPMENT_STATUS_OPTIONS.map((option) => (
                                             <SelectItem key={option} value={option}>
                                                 {option}
@@ -254,18 +275,12 @@ export function NewShipmentDialog({
                                     <SelectTrigger id="containerType">
                                         <SelectValue placeholder="Selecciona el tipo de contenedor"/>
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="40_HC">40 HC</SelectItem>
-                                        <SelectItem value="20_HC">20 HC</SelectItem>
-                                        <SelectItem value="40_IMO">40 IMO</SelectItem>
-                                        <SelectItem value="20_IMO">20 IMO</SelectItem>
-                                        <SelectItem value="40_DC">40 DC</SelectItem>
-                                        <SelectItem value="20_DC">20 DC</SelectItem>
-                                        <SelectItem value="CAJA_53">Caja 53</SelectItem>
-                                        <SelectItem value="NISSAN">NISSAN</SelectItem>
-                                        <SelectItem value="PLATAFORMA">PLATAFORMA</SelectItem>
-                                        <SelectItem value="CAMA_BAJA">CAMA BAJA</SelectItem>
-                                        <SelectItem value="RABON">RABON</SelectItem>
+                                    <SelectContent side="left" maxHeight="250px" searchable align="center">
+                                        {SHIPMENT_CONTAINER_OPTIONS.map((option) => (
+                                                <SelectItem key={option} value={option}>
+                                                    {option}
+                                                </SelectItem>
+                                            ))}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -292,13 +307,13 @@ export function NewShipmentDialog({
                                         handleInputChange("transport", value)
                                     }
                                 >
-                                    <SelectTrigger id="transport">
+                                    <SelectTrigger id="transport" >
                                         <SelectValue placeholder="Selecciona el transporte"/>
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent maxHeight="250px" searchable>
                                         {transports.map((transportItem, index) => (
                                             <SelectItem
-                                                key={transportItem.id || transportItem.name || index}
+                                                key={transportItem.carrierId || transportItem.name || index}
                                                 value={transportItem.name}
                                             >
                                                 {transportItem.name.charAt(0).toUpperCase() +
@@ -470,12 +485,12 @@ export function NewShipmentDialog({
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="vacuumManoeuvre">Maniobra de Vacío</Label>
+                                <Label htmlFor="cleaningOrder">Maniobra de Vacío</Label>
                                 <Select
                                     value={newShipment.cleaningOrder}
                                     onValueChange={(value) => handleInputChange("cleaningOrder", value)}
                                 >
-                                    <SelectTrigger id="vacuumManoeuvre">
+                                    <SelectTrigger id="cleaningOrder">
                                         <SelectValue placeholder="Selecciona estatus"/>
                                     </SelectTrigger>
                                     <SelectContent>

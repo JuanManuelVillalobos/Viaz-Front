@@ -21,7 +21,7 @@ import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
 import {ArrowRightCircle} from "lucide-react";
 import {format} from "date-fns";
-import {incidentService} from "@/services/api";
+import {apiIncidentService} from "@/services/api";
 import {Shipment} from "@/types/shipment";
 import {toast} from "@/hooks/use-toast";
 
@@ -62,7 +62,7 @@ export function ShipmentRescheduleCard({shipment}: ShipmentRescheduleCardProps) 
 
     const rescheduleMutation = useMutation({
         mutationFn: (data: { newUnloadTime: string; comment: string }) =>
-            incidentService.rescheduleShipment(shipment.fullViazId, data),
+            apiIncidentService.rescheduleShipment(shipment.fullViazId, data),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: ["shipment", shipment.fullViazId]});
             queryClient.invalidateQueries({queryKey: ["shipmentIncidents", shipment.fullViazId]});
@@ -93,7 +93,7 @@ export function ShipmentRescheduleCard({shipment}: ShipmentRescheduleCardProps) 
 
     const {data: rescheduleDetails} = useQuery({
         queryKey: ["reschedule-details", shipment.fullViazId],
-        queryFn: () => incidentService.getRescheduleDetails(shipment.fullViazId),
+        queryFn: () => apiIncidentService.getRescheduleDetails(shipment.fullViazId),
         enabled: !!shipment.hasReschedule,
     });
 

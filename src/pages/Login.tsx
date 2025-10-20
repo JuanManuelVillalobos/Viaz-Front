@@ -1,4 +1,4 @@
-import {useState} from "react";
+import React, {useState} from "react";
 import {useNavigate, Link} from "react-router-dom";
 import {
     Card,
@@ -13,7 +13,7 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {LogIn, Mail, LockKeyhole} from "lucide-react";
 import {toast} from "@/hooks/use-toast";
-import {authService} from "@/services/api/authService";
+import {apiAuthService} from "@/services/api/apiAuthService.ts";
 import {useAuth} from "@/contexts/AuthContext.tsx";
 
 const Login = () => {
@@ -39,7 +39,7 @@ const Login = () => {
 
         try {
             // Call the login API
-            const response = await authService.login({email, password});
+            await apiAuthService.login({email, password});
             await refreshAuth();
 
             // Get user info and save to localStorage (you might want to adapt this)
@@ -56,7 +56,7 @@ const Login = () => {
             navigate("/");
         } catch (error) {
             console.error("Login error:", error);
-            // The toast for errors is handled by the API client
+            // The API client handles the toast for errors
         } finally {
             setIsLoading(false);
         }

@@ -1,16 +1,16 @@
-import apiClient from './apiClient';
+import apiAxiosClient from './apiAxiosClient.ts';
 import { ViazUserDTO } from '@/types/api';
 
 export const userService = {
   // Get all users
   getAllUsers: async (): Promise<ViazUserDTO[]> => {
-    const response = await apiClient.get('/api/user/get-all-users');
+    const response = await apiAxiosClient.get('/api/user/get-all-users');
     return response.data;
   },
 
   // Delete a user
   deleteUser: async (userId: number): Promise<void> => {
-    await apiClient.delete(`/api/user/delete-user/${userId}`);
+    await apiAxiosClient.delete(`/api/user/delete-user/${userId}`);
   },
 
   // Get current user profile
@@ -21,7 +21,7 @@ export const userService = {
     }
 
     try {
-      const response = await apiClient.get('/api/user/current');
+      const response = await apiAxiosClient.get('/api/user/current');
       return response.data;
     } catch (apiError) {
       console.error("Error fetching current user from API", apiError);

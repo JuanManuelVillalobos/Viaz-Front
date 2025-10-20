@@ -1,47 +1,56 @@
 import {UserSummaryDTO} from "@/types/api.ts";
+import {SimplifiedCarrier} from "@/services/api/apiCarrierService.ts";
+import {SimplifiedClient} from "@/services/api/apiClientService.ts";
 
 export interface Shipment {
     baseViazId: string;
     fullViazId: string;
-    transportMethod?: string;
-    customerServiceAgent?: UserSummaryDTO;
-    typeOfService?: string;
-    client?: string;
-    origin?: string;
-    customsAgent?: string;
-    destination?: string;
-    status?: string;
-    container?: string;
-    containerType?: string;
-    shipmentDate?: string;
-    transport?: Transport;
-    foreignReference?: string;
-    terminal?: string;
-    ci?: boolean;
-    ccp?: boolean;
-    taxFolio?: boolean;
-    loadManoeuvre?: boolean;
-    pisVinculation?: boolean;
-    departureDate?: string;
-    arrivalDate?: string;
-    unloadDate?: string;
-    cleaningOrder?: string;
-    pod?: string;
-    cleaningPatio?: string;
-    hasCleaningAppointment?: boolean;
-    cleaningAppointmentDate?: string;
-    cleanArrivalDate?: string;
-    eir?: string;
-    observations?: string;
-    open?: boolean;
-    hasIncidents?: boolean;
-    hasCharges?: boolean;
-    hasVariants?: boolean;
-    rating?: number;
-    customerServiceRating?: number;
-    shipmentRating?: number;
-    ratingObservation?: string;
-    hasReschedule?: boolean;
+    year: number;
+    sequence: number;
+    transportMethod: string;
+    customerServiceAgent: UserSummaryDTO;
+    typeOfService: string;
+    client: SimplifiedClient;
+    origin: string;
+    customsAgent: string;
+    destination: string;
+    status: string;
+    container: string;
+    containerType: string;
+    shipmentDate: string;
+    transport: SimplifiedCarrier;
+    foreignReference: string;
+    terminal: string;
+    ci: boolean;
+    ccp: boolean;
+    taxFolio: boolean;
+    loadManoeuvre: boolean;
+    pisVinculation: boolean;
+    departureDate: string;
+    arrivalDate: string;
+    unloadDate: string;
+    cleaningOrder: string;
+    pod: string;
+    cleaningPatio: string;
+    hasCleaningAppointment: boolean;
+    cleaningAppointmentDate: string;
+    cleanArrivalDate: string;
+    eir: string;
+    observations: string;
+    files: number;
+    open: boolean;
+    hasIncidents: boolean;
+    hasCharges: boolean;
+    carrierRating: number;
+    clientRating: number;
+    carrierCustomerServiceRating: number;
+    clientCustomerServiceRating: number;
+    carrierRatingObservation: string;
+    clientRatingObservation: string | null;
+    shipmentCompleteRating: number;
+    hasVariants: boolean;
+    hasReschedule: boolean;
+    deleted: boolean;
 }
 
 export interface ShipmentRequest {
@@ -109,15 +118,13 @@ export const allShipmentColumns: TableColumn[] = [
     {id: "departureDate", label: "Fecha de Salida", visible: false},
     {id: "arrivalDate", label: "Fecha de Llegada", visible: false},
     {id: "unloadDate", label: "Fecha de Descarga", visible: false},
-    {id: "cleaningOrder", label: "Orden de Limpieza", visible: false},
+    {id: "cleaningOrder", label: "Maniobra de vacío", visible: false},
     {id: "pod", label: "POD", visible: false},
-    {id: "cleaningPatio", label: "Patio de Limpieza", visible: false},
-    {id: "cleaningAppointmentDate", label: "Fecha de Limpieza", visible: false},
-    {id: "cleanArrivalDate", label: "Fecha de Llegada Limpia", visible: false},
+    {id: "cleaningPatio", label: "Patio de Vacío", visible: false},
+    {id: "cleaningAppointmentDate", label: "Fecha de Vacío", visible: false},
+    {id: "cleanArrivalDate", label: "Fecha de Llegada Vacío", visible: false},
     {id: "eir", label: "EIR", visible: false},
     {id: "observations", label: "Observaciones", visible: false},
-    {id: "hasIncidents", label: "Incidentes", visible: true},
-    {id: "hasCharges", label: "Cargos", visible: true},
 ];
 
 // Default visible columns (subset of allShipmentColumns)
@@ -129,14 +136,7 @@ export const defaultShipmentColumns: TableColumn[] = [
     {id: "transport", label: "Transporte", visible: true},
     {id: "status", label: "Estatus", visible: true},
     {id: "shipmentDate", label: "Cita de Carga", visible: true},
-    {id: "hasIncidents", label: "Incidentes", visible: true},
-    {id: "hasCharges", label: "Cargos", visible: true},
 ];
-
-export interface Transport {
-    id: string;
-    name: string;
-}
 
 export const SHIPMENT_STATUS_OPTIONS = [
     "Información Pendiente",
@@ -147,7 +147,23 @@ export const SHIPMENT_STATUS_OPTIONS = [
     "En Transito",
     "En Destino",
     "POD Pendiente",
+    "Maniobra de Vacío Pendiente",
     "Vacío Pendiente",
     "Ingresado",
     "Egresado",
 ];
+
+export const SHIPMENT_CONTAINER_OPTIONS = [
+    "40_HC",
+    "20_HC",
+    "40_IMO",
+    "20_IMO",
+    "40_DC",
+    "20_DC",
+    "CAJA_53",
+    "NISSAN",
+    "PLATAFORMA",
+    "CAMA_BAJA",
+    "RABON",
+];
+
