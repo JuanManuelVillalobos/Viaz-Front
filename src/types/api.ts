@@ -106,6 +106,7 @@ export interface ShipmentIncident {
     shipmentIncidentId: number;
     shipmentId: string;
     incidentType: string;
+    entityTied: string;
     comment: string;
     occurredAt: string; // ISO date string
 }
@@ -114,6 +115,7 @@ export interface ShipmentCharge {
     shipmentChargeId: number;
     shipmentId: string;
     chargeType: string;
+    entityTied: string;
     comment: string;
     occurredAt: string; // ISO date string
 }
@@ -138,8 +140,17 @@ export interface ShipmentFilterOptionsDTO {
 }
 
 export interface MonthlyRating {
-  carrierName: string;
-  month: string;
-  monthNumber: number;
-  averageRating: number;
+    carrierName: string;
+    month: string;
+    monthNumber: number;
+    averageRating: number;
 }
+
+export interface ShipmentCloseRequestDTO {
+    fullViazId: string;
+    carrierRating: number;
+    carrierObservations: string;
+    clientRating: number;
+    clientObservations: string;
+}
+

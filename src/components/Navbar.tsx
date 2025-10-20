@@ -11,7 +11,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {Avatar, AvatarFallback} from "@/components/ui/avatar";
-import {authService} from "@/services/api/authService";
+import {apiAuthService} from "@/services/api/apiAuthService.ts";
 import {useAuth} from "@/contexts/AuthContext.tsx";
 import {NotificationDropdown} from "./NotificationDropdown";
 
@@ -31,7 +31,7 @@ const Navbar = ({onMenuToggle}: NavbarProps) => {
 
     const handleLogout = async () => {
         try {
-            await authService.logout();
+            await apiAuthService.logout();
             await refreshAuth();
             toast({
                 title: "Logged out",
@@ -40,7 +40,7 @@ const Navbar = ({onMenuToggle}: NavbarProps) => {
             navigate("/login");
         } catch (error) {
             console.error("Logout error:", error);
-            // The apiClient will handle the toast for errors
+            // The apiAxiosClient will handle the toast for errors
         }
     };
 

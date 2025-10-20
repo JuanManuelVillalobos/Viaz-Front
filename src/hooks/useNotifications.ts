@@ -1,5 +1,5 @@
 import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
-import {notificationService} from '@/services/api';
+import {apiNotificationService} from '@/services/api';
 import {NotificationResponseDTO} from '@/types/notification';
 import {useAuth} from '@/contexts/AuthContext';
 import {toast} from '@/hooks/use-toast';
@@ -14,7 +14,7 @@ export const useNotifications = () => {
         error
     } = useQuery<NotificationResponseDTO[]>({
         queryKey: ['notifications', user?.user.userId],
-        queryFn: () => notificationService.getUserNotifications(user!.user.userId),
+        queryFn: () => apiNotificationService.getUserNotifications(user!.user.userId),
         enabled: !!user?.user.userId,
         refetchInterval: 5000,
     });
@@ -23,12 +23,12 @@ export const useNotifications = () => {
         data: unreadCount = 0
     } = useQuery<number>({
         queryKey: ['notifications', 'unread-count', user?.user.userId],
-        queryFn: () => notificationService.getUnreadCount(user!.user.userId),
+        queryFn: () => apiNotificationService.getUnreadCount(user!.user.userId),
         enabled: !!user?.user.userId,
     });
 
     const markAsReadMutation = useMutation({
-        mutationFn: notificationService.markAsRead,
+        mutationFn: apiNotificationService.markAsRead,
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: ['notifications']});
             toast({
@@ -39,7 +39,7 @@ export const useNotifications = () => {
     });
 
     const markAllAsRead = useMutation({
-        mutationFn: notificationService.markAllAsRead,
+        mutationFn: apiNotificationService.markAllAsRead,
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: ['notifications']});
             toast({

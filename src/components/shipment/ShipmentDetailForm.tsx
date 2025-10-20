@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {Shipment, SHIPMENT_STATUS_OPTIONS, Transport} from "@/types/shipment.ts";
+import {Shipment, SHIPMENT_STATUS_OPTIONS} from "@/types/shipment.ts";
 import {UserSummaryDTO} from "@/types/api.ts";
 import {
     DropdownMenu,
@@ -21,17 +21,21 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.tsx";
+import {SimplifiedCarrier} from "@/services/api/apiCarrierService.ts";
+import {SimplifiedClient} from "@/services/api/apiClientService.ts";
 
 interface ShipmentDetailFormProps {
     shipment: Shipment;
     isEditing: boolean;
     editedShipment: Shipment;
-    handleInputChange: (field: keyof Shipment, value: string | boolean | number | Transport | UserSummaryDTO) => void;
+    handleInputChange: (field: keyof Shipment, value: string | boolean | number | SimplifiedCarrier| SimplifiedClient | UserSummaryDTO) => void;
     getStatusColor: (status: string) => string;
-    transports: Transport[];
+    transports: SimplifiedCarrier[];
     customerServiceAgents: UserSummaryDTO[];
+    clients: SimplifiedClient[]
     isLoadingTransports: boolean;
     isLoadingCustomerServiceAgents: boolean;
+    isLoadingClients: boolean;
     handleStatusChange: (viazId: string, status: string) => void;
 }
 
@@ -45,6 +49,8 @@ export const ShipmentDetailForm = ({
                                        isLoadingTransports,
                                        customerServiceAgents,
                                        isLoadingCustomerServiceAgents,
+                                       clients,
+                                       isLoadingClients,
                                        handleStatusChange
                                    }: ShipmentDetailFormProps) => {
 
@@ -93,12 +99,32 @@ export const ShipmentDetailForm = ({
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="client">Cliente</Label>
-                                    <Input
-                                        id="client"
-                                        value={editedShipment.client || ''}
-                                        onChange={e => handleInputChange("client", e.target.value)}
-                                        placeholder="Nombre del cliente"
-                                    />
+                                    <Select
+                                        onValueChange={(value) => {
+                                            const selectedClient = clients.find(t => t.name === value);
+                                            if (selectedClient) {
+                                                handleInputChange("client", selectedClient);
+                                            }
+                                        }}
+                                        value={editedShipment.client?.name || ""}
+                                        disabled={!isEditing || isLoadingClients} // Disable if loading
+
+                                    >
+                                        <SelectTrigger id="client">
+                                            <SelectValue
+                                                placeholder={isLoadingClients ? "Cargando clientes" : "Cliente"}
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {clients.map((client, index) => (
+                                                <SelectItem
+                                                    key={client.clientId || client.name || index}
+                                                    value={client.name}>
+                                                    {client.name.charAt(0).toUpperCase() + client.name.slice(1)}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="transportMethod">T/M</Label>
@@ -110,8 +136,8 @@ export const ShipmentDetailForm = ({
                                             <SelectValue placeholder="Tipo de transporte"/>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="terreste">Terrestre</SelectItem>
-                                            <SelectItem value="maritimo">Marítimo</SelectItem>
+                                            <SelectItem value="Terreste">Terrestre</SelectItem>
+                                            <SelectItem value="Marítimo">Marítimo</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -226,7 +252,7 @@ export const ShipmentDetailForm = ({
                                         <SelectContent>
                                             {transports.map((transportItem, index) => (
                                                 <SelectItem
-                                                    key={transportItem.id || transportItem.name || index}
+                                                    key={transportItem.carrierId || transportItem.name || index}
                                                     value={transportItem.name}>
                                                     {transportItem.name.charAt(0).toUpperCase() + transportItem.name.slice(1)}
                                                 </SelectItem>
@@ -362,23 +388,11 @@ export const ShipmentDetailForm = ({
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="cleaningPatio">Patio</Label>
-                                    <Select
+                                    <Input
+                                        id="cleaningPatio"
                                         value={editedShipment.cleaningPatio || ''}
-                                        onValueChange={value => handleInputChange("cleaningPatio", value)}
-                                    >
-                                        <SelectTrigger id="cleaningPatio">
-                                            <SelectValue placeholder="Patio"/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="SSA">SSA</SelectItem>
-                                            <SelectItem value="TIMSA">TIMSA</SelectItem>
-                                            <SelectItem value="CIMA">CIMA</SelectItem>
-                                            <SelectItem value="OCUPA">OCUPA</SelectItem>
-                                            <SelectItem value="ISL">ISL</SelectItem>
-                                            <SelectItem value="CISE">CISE</SelectItem>
-                                            <SelectItem value="Otro">Otro</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        onChange={e => handleInputChange("cleaningPatio", e.target.value)}
+                                    />
                                 </div>
                                 {editedShipment.hasCleaningAppointment && (
                                     <div className="space-y-2">
@@ -543,7 +557,7 @@ export const ShipmentDetailForm = ({
                                     <p className="text-sm font-medium text-muted-foreground">Cliente</p>
                                     <div className="flex items-center mt-1">
                                         <User className="h-4 w-4 mr-2 text-muted-foreground"/>
-                                        <p className="text-base">{shipment.client || 'N/A'}</p>
+                                        <p className="text-base">{shipment.client?.name || 'N/A'}</p>
                                     </div>
                                 </div>
                                 <div>
@@ -650,7 +664,7 @@ export const ShipmentDetailForm = ({
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Fecha de Contenedor</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Cita de Carga</p>
                                     <div className="flex items-center mt-1">
                                         <Calendar className="h-4 w-4 mr-2 text-muted-foreground"/>
                                         <p className="text-base">
@@ -730,7 +744,7 @@ export const ShipmentDetailForm = ({
                                     </div>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Fecha Llegada a Puerto</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Fecha Llegada a Destino</p>
                                     <div className="flex items-center mt-1">
                                         <Calendar className="h-4 w-4 mr-2 text-muted-foreground"/>
                                         <p className="text-base">

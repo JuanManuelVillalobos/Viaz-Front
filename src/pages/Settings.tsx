@@ -22,9 +22,7 @@ import {
   Shield, 
   Moon, 
   LogOut, 
-  Mail, 
-  Globe, 
-  Languages 
+  Languages
 } from "lucide-react";
 
 const Settings = () => {

@@ -6,7 +6,7 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {
     Plus,
-    Truck,
+    User,
     Users,
     Settings,
     Search,
@@ -54,23 +54,27 @@ import {Avatar, AvatarFallback} from "@/components/ui/avatar";
 import {
     useToast
 } from "@/hooks/use-toast";
-import {carrierService, Carrier, CreateCarrierRequest} from "@/services/api/carrierService";
-import {roleService, RoleCreationRequest} from "@/services/api/roleService";
-import {incidentService} from "@/services/api/incidentService";
-import {chargeService} from "@/services/api/chargeService";
-import {authService, userService} from "@/services/api";
+import {apiCarrierService, Carrier, CreateCarrierRequest, SimplifiedCarrier} from "@/services/api/apiCarrierService.ts";
+import {apiRoleService, RoleCreationRequest} from "@/services/api/apiRoleService.ts";
+import {apiIncidentService} from "@/services/api/apiIncidentService.ts";
+import {apiChargeService} from "@/services/api/apiChargeService.ts";
+import {apiAuthService, userService} from "@/services/api";
 import {ViazUserDTO, UserStatus} from "@/types/api";
 import {format} from "date-fns";
 import {Switch} from "@/components/ui/switch.tsx";
 import {usePermissions} from "@/hooks/usePermissions.ts";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import CarrierStats from "@/components/carrier/CarrierStats.tsx";
+import EntityStats from "@/components/carrier/EntityStats.tsx";
+import {apiClientService, CreateClientRequest, Client, SimplifiedClient} from "@/services/api/apiClientService.ts";
 
 // Component interfaces and state
 
 const AdminDashboard = () => {
         const {toast} = useToast();
+        const [newClientOpen, setNewClientOpen] = useState(false);
         const [newCarrierOpen, setNewCarrierOpen] = useState(false);
+
+
         const [editUserOpen, setEditUserOpen] = useState(false);
         const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
         const [selectedUser, setSelectedUser] = useState<ViazUserDTO | null>(null);
@@ -93,11 +97,22 @@ const AdminDashboard = () => {
         const [newIncidentTypeOpen, setNewIncidentTypeOpen] = useState(false);
         const [newIncidentTypeName, setNewIncidentTypeName] = useState('');
         const [newIncidentTypePenalty, setNewIncidentTypePenalty] = useState(1);
+        const [newIncidentEntityTied, setNewIncidentEntityTied] = useState('');
 
         // Charge Types state
         const [newChargeTypeOpen, setNewChargeTypeOpen] = useState(false);
         const [newChargeTypeName, setNewChargeTypeName] = useState('');
         const [newChargeTypePenalty, setNewChargeTypePenalty] = useState(2);
+
+        // Client editing state
+        const [editClientOpen, setEditClientOpen] = useState(false);
+        const [editingClient, setEditingClient] = useState<Client | null>(null);
+        const [editClientData, setEditClientData] = useState({
+            name: ''
+        });
+
+        const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+        const [statsClientDialogOpen, setStatsClientDialogOpen] = useState(false);
 
         // Carrier editing state
         const [editCarrierOpen, setEditCarrierOpen] = useState(false);
@@ -109,12 +124,11 @@ const AdminDashboard = () => {
             caat: ''
         });
 
+        const [statsCarrierDialogOpen, setStatsCarrierDialogOpen] = useState(false);
+        const [selectedCarrier, setSelectedCarrier] = useState<Carrier | null>(null);
+
         const [roleDialogOpen, setRoleDialogOpen] = useState(false);
         const [selectedUserForRole, setSelectedUserForRole] = useState<ViazUserDTO | null>(null);
-
-
-        const [statsDialogOpen, setStatsDialogOpen] = useState(false);
-        const [selectedCarrier, setSelectedCarrier] = useState<any | null>(null);
 
 
         // Get permissions and query
@@ -125,7 +139,7 @@ const AdminDashboard = () => {
         //  Manage roles
         const [roleToDelete, setRoleToDelete] = useState<number | null>(null);
         const deleteRoleMutation = useMutation({
-            mutationFn: roleService.deleteRole,
+            mutationFn: apiRoleService.deleteRole,
             onSuccess: () => {
                 toast({
                     title: "Rol Eliminado",
@@ -137,9 +151,9 @@ const AdminDashboard = () => {
         // Manage incidents and charges
         const [incidentTypeToDelete, setIncidentTypeToDelete] = useState<number | null>(null);
         const deleteIncidentTypeMutation = useMutation({
-            mutationFn: incidentService.deleteIncidentType,
-            onSuccess: () => {
-                queryClient.invalidateQueries({queryKey: ['incidentTypes']});
+            mutationFn: apiIncidentService.deleteIncidentType,
+            onSuccess: async  () => {
+                await queryClient.invalidateQueries({queryKey: ['incidentTypes']});
                 toast({
                     title: "Tipo de Incidente Eliminado",
                     description: "El tipo de incidente ha sido eliminado correctamente.",
@@ -149,14 +163,18 @@ const AdminDashboard = () => {
 
         const [chargeTypeToDelete, setChargeTypeToDelete] = useState<number | null>(null);
         const deleteChargeTypeMutation = useMutation({
-            mutationFn: chargeService.deleteChargeType,
-            onSuccess: () => {
-                queryClient.invalidateQueries({queryKey: ['chargeTypes']});
+            mutationFn: apiChargeService.deleteChargeType,
+            onSuccess: async () => {
+                await queryClient.invalidateQueries({queryKey: ['chargeTypes']});
                 toast({
                     title: "Tipo de Cargo Eliminado",
                     description: "El tipo de cargo ha sido eliminado correctamente.",
                 });
             },
+        });
+
+        const [newClient, setNewClient] = useState({
+            name: '',
         });
 
         const [newCarrier, setNewCarrier] = useState({
@@ -180,7 +198,14 @@ const AdminDashboard = () => {
             data: carriers = [],
         } = useQuery({
             queryKey: ['carriers'],
-            queryFn: () => carrierService.getAllCarriersWithSensitiveFields(),
+            queryFn: () => apiCarrierService.getAllCarriersWithSensitiveFields(),
+        });
+
+        const {
+            data: clients = [],
+        } = useQuery({
+            queryKey: ['clients'],
+            queryFn: () => apiClientService.getAllClientsWithSensitiveFields(),
         });
 
         const {
@@ -188,7 +213,7 @@ const AdminDashboard = () => {
         } = useQuery({
             queryKey: ['roles'],
             queryFn:
-                () => roleService.getAllRoles(),
+                () => apiRoleService.getAllRoles(),
         });
 
 
@@ -196,26 +221,35 @@ const AdminDashboard = () => {
             data: availablePermissions = [],
         } = useQuery({
             queryKey: ['permissions'],
-            queryFn: () => roleService.getAllPermissions(),
+            queryFn: () => apiRoleService.getAllPermissions(),
         });
 
         const {
             data: incidentTypes = [],
         } = useQuery({
             queryKey: ['incidentTypes'],
-            queryFn: () => incidentService.getAllIncidentTypes(),
+            queryFn: () => apiIncidentService.getAllIncidentTypes(),
         });
 
         const {
             data: chargeTypes = [],
         } = useQuery({
             queryKey: ['chargeTypes'],
-            queryFn: () => chargeService.getAllChargeTypes(),
+            queryFn: () => apiChargeService.getAllChargeTypes(),
 
         });
 
         // =================== Create Carrier ===================
         const handleCreateCarrier = () => {
+            if (!newCarrier.name.trim()) {
+                toast({
+                    title: "Nombre requerido",
+                    description: "El nombre del transportista es requerido.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
             if (newCarrier.rfc.length !== 10) {
                 toast({
                     title: "RFC inválido",
@@ -242,17 +276,18 @@ const AdminDashboard = () => {
             });
         };
 
+
         const createCarrierMutation = useMutation({
             mutationFn: (carrierData: CreateCarrierRequest) =>
-                carrierService.createCarrier(carrierData),
-            onSuccess: () => {
+                apiCarrierService.createCarrier(carrierData),
+            onSuccess: async () => {
                 toast({
                     title: "Transportista creado",
                     description: "El transportista ha sido creado exitosamente.",
                 });
                 setNewCarrier({caat: "", razonSocial: "", rfc: "", name: ""});
                 setNewCarrierOpen(false);
-                queryClient.invalidateQueries({queryKey: ['carriers']});
+                await queryClient.invalidateQueries({queryKey: ['carriers']});
             },
             onError: (error) => {
                 console.error("Error creating carrier:", error);
@@ -264,25 +299,210 @@ const AdminDashboard = () => {
             },
         });
 
+
+        // =================== Update Carrier ===================
+        const handleUpdateCarrier = () => {
+            if (!editingCarrier) return;
+
+            if (editCarrierData.rfc.length !== 10) {
+                toast({
+                    title: "RFC inválido",
+                    description: "El RFC debe tener exactamente 10 caracteres.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            if (editCarrierData.caat.length !== 4) {
+                toast({
+                    title: "CAAT inválido",
+                    description: "El CAAT debe tener exactamente 4 caracteres.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            updateCarrierMutation.mutate({
+                carrierId: editingCarrier.carrierId,
+                data: editCarrierData,
+            });
+        };
+
+        const updateCarrierMutation = useMutation({
+            mutationFn: ({carrierId, data}: { carrierId: number; data: CreateCarrierRequest }) =>
+                apiCarrierService.updateCarrier(carrierId, data),
+            onSuccess: async (updatedCarrier) => {
+                setEditCarrierOpen(false);
+                setEditingCarrier(null);
+                setEditCarrierData({
+                    name: '',
+                    rfc: '',
+                    razonSocial: '',
+                    caat: '',
+                });
+
+                toast({
+                    title: "Transportista actualizado",
+                    description: `Transportista "${updatedCarrier.name}" actualizado exitosamente.`,
+                });
+
+                await queryClient.invalidateQueries({queryKey: ['carriers']});
+            },
+            onError: (error) => {
+                console.error('Error updating carrier:', error);
+                toast({
+                    title: "Error",
+                    description: "Error al actualizar el transportista.",
+                    variant: "destructive",
+                });
+            },
+        });
+
+// =================== Edit Carrier (Open Modal) ===================
+        const handleEditCarrier = (carrier: Carrier) => {
+            setEditingCarrier(carrier);
+            setEditCarrierData({
+                name: carrier.name,
+                rfc: carrier.rfc,
+                razonSocial: carrier.razonSocial,
+                caat: carrier.caat,
+            });
+            setEditCarrierOpen(true);
+        };
+
+
 // =================== Delete Carrier ===================
         const handleDeleteCarrier = (id: number) => {
             deleteCarrierMutation.mutate(id);
         };
 
         const deleteCarrierMutation = useMutation({
-            mutationFn: (id: number) => carrierService.deleteCarrier(id),
-            onSuccess: () => {
+            mutationFn: (id: number) => apiCarrierService.deleteCarrier(id),
+            onSuccess: async () => {
                 toast({
                     title: "Transportista eliminado",
                     description: "El transportista ha sido eliminado exitosamente.",
                 });
-                queryClient.invalidateQueries({queryKey: ['carriers']});
+                await queryClient.invalidateQueries({queryKey: ['carriers']});
             },
             onError: (error) => {
                 console.error("Error deleting carrier:", error);
                 toast({
                     title: "Error",
                     description: "Error al eliminar el transportista.",
+                    variant: "destructive",
+                });
+            },
+        });
+
+
+        // =================== Create Client ===================
+        const handleCreateClient = () => {
+            if (!newClient.name.trim()) {
+                toast({
+                    title: "Nombre requerido",
+                    description: "El nombre del cliente es requerido.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            createClientMutation.mutate({
+                name: newClient.name,
+            });
+        };
+
+
+        const createClientMutation = useMutation({
+            mutationFn: (clientData: CreateClientRequest) =>
+                apiClientService.createClient(clientData),
+            onSuccess: async () => {
+                toast({
+                    title: "Cliente creado",
+                    description: "El cliente ha sido creado exitosamente.",
+                });
+                setNewClient({name: ""});
+                setNewClientOpen(false);
+                await queryClient.invalidateQueries({queryKey: ['clients']});
+            },
+            onError: (error) => {
+                console.error("Error creating client:", error);
+                toast({
+                    title: "Error",
+                    description: "Error al crear el cliente.",
+                    variant: "destructive",
+                });
+            },
+        });
+
+
+        // =================== Update Client ===================
+        const handleUpdateClient = () => {
+            if (!editingClient) return;
+
+            updateClientMutation.mutate({
+                clientId: editingClient.clientId,
+                data: editClientData,
+            });
+        };
+
+        const updateClientMutation = useMutation({
+            mutationFn: ({clientId, data}: { clientId: number; data: CreateClientRequest }) =>
+                apiClientService.updateClient(clientId, data),
+            onSuccess: async (updatedClient) => {
+
+                setEditClientOpen(false);
+                setEditingClient(null);
+                setEditClientData({
+                    name: ''
+                });
+
+                toast({
+                    title: "Cliente actualizado",
+                    description: `Transportista "${updatedClient.name}" actualizado exitosamente.`,
+                });
+
+                await queryClient.invalidateQueries({queryKey: ['clients']});
+            },
+            onError: (error) => {
+                console.error('Error updating client:', error);
+                toast({
+                    title: "Error",
+                    description: "Error al actualizar el cliente.",
+                    variant: "destructive",
+                });
+            },
+        });
+
+// =================== Edit Client (Open Modal) ===================
+        const handleEditClient = (client: Client) => {
+            setEditingClient(client);
+            setEditClientData({
+                name: client.name,
+            });
+            setEditClientOpen(true);
+        };
+
+
+// =================== Delete Client ===================
+        const handleDeleteClient = (id: number) => {
+            deleteClientMutation.mutate(id);
+        };
+
+        const deleteClientMutation = useMutation({
+            mutationFn: (id: number) => apiClientService.deleteClient(id),
+            onSuccess: async () => {
+                toast({
+                    title: "Cliente eliminado",
+                    description: "El cliente ha sido eliminado exitosamente.",
+                });
+                await queryClient.invalidateQueries({queryKey: ['clients']});
+            },
+            onError: (error) => {
+                console.error("Error deleting carrier:", error);
+                toast({
+                    title: "Error",
+                    description: "Error al eliminar el cliente.",
                     variant: "destructive",
                 });
             },
@@ -297,12 +517,12 @@ const AdminDashboard = () => {
 
         const deleteUserMutation = useMutation({
             mutationFn: (userId: number) => userService.deleteUser(userId),
-            onSuccess: (_) => {
+            onSuccess: async (_) => {
                 toast({
                     title: "User Deleted",
                     description: `User ${userToDelete?.username} has been deleted.`,
                 });
-                queryClient.invalidateQueries({queryKey: ['users']});
+                await queryClient.invalidateQueries({queryKey: ['users']});
                 setDeleteDialogOpen(false);
                 setUserToDelete(null);
             },
@@ -331,13 +551,13 @@ const AdminDashboard = () => {
         };
 
         const inviteUserMutation = useMutation({
-            mutationFn: (userData: ViazUserDTO) => authService.register(userData),
-            onSuccess: () => {
+            mutationFn: (userData: ViazUserDTO) => apiAuthService.register(userData),
+            onSuccess: async () => {
                 toast({
                     title: "Invitation Sent",
                     description: `An invitation has been sent to ${inviteEmail}`,
                 });
-                queryClient.invalidateQueries({queryKey: ['users']});
+                await queryClient.invalidateQueries({queryKey: ['users']});
                 setInviteEmail("");
                 setInviteUsername("");
                 setInviteRole("");
@@ -398,13 +618,13 @@ const AdminDashboard = () => {
         };
 
         const createRoleMutation = useMutation({
-            mutationFn: (roleData: RoleCreationRequest) => roleService.createRole(roleData),
-            onSuccess: () => {
+            mutationFn: (roleData: RoleCreationRequest) => apiRoleService.createRole(roleData),
+            onSuccess: async () => {
                 setNewRoleName("");
                 setNewRoleDescription("");
                 setSelectedPermissions(new Set());
                 setNewRoleOpen(false);
-                queryClient.invalidateQueries({queryKey: ['roles']});
+                await queryClient.invalidateQueries({queryKey: ['roles']});
                 toast({
                     title: "Rol creado",
                     description: "El rol ha sido creado exitosamente.",
@@ -431,13 +651,21 @@ const AdminDashboard = () => {
                 return;
             }
 
-            createIncidentTypeMutation.mutate({name: newIncidentTypeName, penalty: newIncidentTypePenalty});
+            createIncidentTypeMutation.mutate({
+                name: newIncidentTypeName,
+                penalty: newIncidentTypePenalty,
+                entityTied: newIncidentEntityTied
+            });
         };
 
         const createIncidentTypeMutation = useMutation({
-            mutationFn: (data: { name: string, penalty: number }) => incidentService.createIncidentType(data),
-            onSuccess: () => {
-                queryClient.invalidateQueries({queryKey: ['incidentTypes']});
+            mutationFn: (data: {
+                name: string,
+                penalty: number,
+                entityTied: string
+            }) => apiIncidentService.createIncidentType(data),
+            onSuccess: async () => {
+                await queryClient.invalidateQueries({queryKey: ['incidentTypes']});
 
                 setNewIncidentTypeOpen(false);
                 setNewIncidentTypeName('');
@@ -467,13 +695,21 @@ const AdminDashboard = () => {
                 return;
             }
 
-            createChargeTypeMutation.mutate({name: newChargeTypeName, penalty: newChargeTypePenalty});
+            createChargeTypeMutation.mutate({
+                name: newChargeTypeName,
+                penalty: newChargeTypePenalty,
+                entityTied: "carrier"
+            });
         };
 
         const createChargeTypeMutation = useMutation({
-            mutationFn: (data: { name: string, penalty: number }) => chargeService.createChargeType(data),
-            onSuccess: () => {
-                queryClient.invalidateQueries({queryKey: ['chargeTypes']});
+            mutationFn: (data: {
+                name: string,
+                penalty: number,
+                entityTied: string
+            }) => apiChargeService.createChargeType(data),
+            onSuccess: async () => {
+                await queryClient.invalidateQueries({queryKey: ['chargeTypes']});
 
                 setNewChargeTypeOpen(false);
                 setNewChargeTypeName('');
@@ -492,80 +728,7 @@ const AdminDashboard = () => {
             },
         });
 
-// =================== Update Carrier ===================
-        const handleUpdateCarrier = () => {
-            if (!editingCarrier) return;
-
-            if (editCarrierData.rfc.length !== 10) {
-                toast({
-                    title: "RFC inválido",
-                    description: "El RFC debe tener exactamente 10 caracteres.",
-                    variant: "destructive",
-                });
-                return;
-            }
-
-            if (editCarrierData.caat.length !== 4) {
-                toast({
-                    title: "CAAT inválido",
-                    description: "El CAAT debe tener exactamente 4 caracteres.",
-                    variant: "destructive",
-                });
-                return;
-            }
-
-            updateCarrierMutation.mutate({
-                carrierId: editingCarrier.carrierId,
-                data: editCarrierData,
-            });
-        };
-
-        const updateCarrierMutation = useMutation({
-            mutationFn: ({carrierId, data}: { carrierId: number; data: CreateCarrierRequest }) =>
-                carrierService.updateCarrier(carrierId, data),
-            onSuccess: (updatedCarrier) => {
-                queryClient.invalidateQueries({queryKey: ['carriers']});
-
-                setEditCarrierOpen(false);
-                setEditingCarrier(null);
-                setEditCarrierData({
-                    name: '',
-                    rfc: '',
-                    razonSocial: '',
-                    caat: '',
-                });
-
-                toast({
-                    title: "Transportista actualizado",
-                    description: `Transportista "${updatedCarrier.name}" actualizado exitosamente.`,
-                });
-
-                queryClient.invalidateQueries({queryKey: ['carriers']});
-            },
-            onError: (error) => {
-                console.error('Error updating carrier:', error);
-                toast({
-                    title: "Error",
-                    description: "Error al actualizar el transportista.",
-                    variant: "destructive",
-                });
-            },
-        });
-
-// =================== Edit Carrier (Open Modal) ===================
-        const handleEditCarrier = (carrier: Carrier) => {
-            setEditingCarrier(carrier);
-            setEditCarrierData({
-                name: carrier.name,
-                rfc: carrier.rfc,
-                razonSocial: carrier.razonSocial,
-                caat: carrier.caat,
-            });
-            setEditCarrierOpen(true);
-        };
-
-
-//     =================== Edit Carrier (Open Modal) ===================
+//     =================== Edit User Roles (Open Modal) ===================
 
         const handleUpdateUserRoles = (newRoles: string[]) => {
             if (selectedUser) {
@@ -588,17 +751,17 @@ const AdminDashboard = () => {
 
                 // Perform role updates
                 for (const role of rolesToAdd) {
-                    await roleService.assignRole(userId, role);
+                    await apiRoleService.assignRole(userId, role);
                 }
                 for (const role of rolesToRemove) {
-                    await roleService.removeRole(userId, role);
+                    await apiRoleService.removeRole(userId, role);
                 }
 
                 return newRoles;
             },
-            onSuccess: (newRoles, variables) => {
+            onSuccess: async () => {
                 // Update local state
-                queryClient.invalidateQueries({queryKey: ['users']});
+                await queryClient.invalidateQueries({queryKey: ['users']});
 
                 setEditUserOpen(false);
                 setSelectedUser(null);
@@ -673,9 +836,14 @@ const AdminDashboard = () => {
                 )
         );
 
-        const handleViewStats = (carrier) => {
+        const handleViewClientStats = (client : SimplifiedClient) => {
+            setSelectedClient(client);
+            setStatsClientDialogOpen(true);
+        };
+
+        const handleViewCarrierStats = (carrier : SimplifiedCarrier) => {
             setSelectedCarrier(carrier);
-            setStatsDialogOpen(true);
+            setStatsCarrierDialogOpen(true);
         };
 
 
@@ -689,23 +857,12 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                <Dialog open={statsDialogOpen} onOpenChange={setStatsDialogOpen}>
-                    <DialogContent className="max-w-[800px] max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>Estadísticas de {selectedCarrier?.name}</DialogTitle>
-                            <DialogDescription>
-                                Historial de ratings mensuales para este transportista.
-                            </DialogDescription>
-                        </DialogHeader>
-                        {selectedCarrier && <CarrierStats carrierId={selectedCarrier.carrierId}/>}
-                    </DialogContent>
-                </Dialog>
 
-                <Tabs defaultValue="carriers" className="space-y-4">
+                <Tabs defaultValue="entities" className="space-y-4">
                     <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="carriers" className="flex items-center gap-2">
-                            <Truck className="h-4 w-4"/>
-                            Transportistas
+                        <TabsTrigger value="entities" className="flex items-center gap-2">
+                            <User className="h-4 w-4"/>
+                            Contactos
                         </TabsTrigger>
                         <TabsTrigger value="users" className="flex items-center gap-2">
                             <Users className="h-4 w-4"/>
@@ -717,144 +874,283 @@ const AdminDashboard = () => {
                         </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="carriers" className="space-y-4">
-                        <Card>
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <CardTitle>Transportistas</CardTitle>
-                                        <CardDescription>Gestiona todos los transportistas y sus
-                                            información</CardDescription>
-                                    </div>
-                                    <Dialog open={newCarrierOpen} onOpenChange={setNewCarrierOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2"/>
-                                                Nuevo Transportista
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>Crear Nuevo Transportista</DialogTitle>
-                                                <DialogDescription>
-                                                    Agrega un nuevo transportista al sistema
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <div className="grid gap-4 py-4">
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor="name">Nombre</Label>
-                                                    <Input
-                                                        id="name"
-                                                        value={newCarrier.name}
-                                                        onChange={(e) => setNewCarrier({
-                                                            ...newCarrier,
-                                                            name: e.target.value
-                                                        })}
-                                                        placeholder="Nombre del transportista"
-                                                    />
-                                                </div>
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor="rfc">RFC</Label>
-                                                    <Input
-                                                        id="rfc"
-                                                        value={newCarrier.rfc}
-                                                        maxLength={10}
-                                                        minLength={10}
-                                                        onChange={(e) => setNewCarrier({
-                                                            ...newCarrier,
-                                                            rfc: e.target.value
-                                                        })}
-                                                        placeholder="RFC del transportista"
-                                                    />
-                                                </div>
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor="razonSocial">Razón Social</Label>
-                                                    <Input
-                                                        id="razonSocial"
-                                                        value={newCarrier.razonSocial}
-                                                        onChange={(e) => setNewCarrier({
-                                                            ...newCarrier,
-                                                            razonSocial: e.target.value
-                                                        })}
-                                                        placeholder="Razón social del transportista"
-                                                    />
-                                                </div>
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor="caat">CAAT</Label>
-                                                    <Input
-                                                        id="caat"
-                                                        value={newCarrier.caat}
-                                                        maxLength={4}
-                                                        minLength={4}
-                                                        onChange={(e) => setNewCarrier({
-                                                            ...newCarrier,
-                                                            caat: e.target.value
-                                                        })}
-                                                        placeholder="CAAT del transportista"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <DialogFooter>
-                                                <Button variant="outline" onClick={() => setNewCarrierOpen(false)}>
-                                                    Cancelar
-                                                </Button>
-                                                <Button onClick={handleCreateCarrier}>Crear Transportista</Button>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </Dialog>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Nombre</TableHead>
-                                            <TableHead>RFC</TableHead>
-                                            <TableHead>CAAT</TableHead>
-                                            <TableHead>Razón Social</TableHead>
-                                            <TableHead className="w-[70px]">Acciones</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {carriers.map((carrier) => (
-                                            <TableRow key={carrier.carrierId}>
-                                                <TableCell className="font-medium">{carrier.name}</TableCell>
-                                                <TableCell className="font-light">{carrier.rfc}</TableCell>
-                                                <TableCell className="font-light">{carrier.caat}</TableCell>
-                                                <TableCell className="font-light">{carrier.razonSocial}</TableCell>
+                    <TabsContent value="entities" className="space-y-4">
+                        <Tabs defaultValue="carriers" className="space-y-4">
+                            <TabsList>
+                                <TabsTrigger value="carriers">Transportistas</TabsTrigger>
+                                <TabsTrigger value="clients">Clientes</TabsTrigger>
+                            </TabsList>
 
-                                                <TableCell>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                                                <MoreHorizontal className="h-4 w-4"/>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => handleEditCarrier(carrier)}>
-                                                                <Edit className="mr-2 h-4 w-4"/>
-                                                                Editar
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleViewStats(carrier)}>
-                                                                <BarChart className="mr-2 h-4 w-4"/>
-                                                                Ver Estadísticas
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                className="text-destructive"
-                                                                onClick={() => handleDeleteCarrier(carrier.carrierId)}
-                                                            >
-                                                                <Trash2 className="mr-2 h-4 w-4"/>
-                                                                Eliminar
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
+                            {/* === Carriers Tab === */}
+                            <TabsContent value="carriers">
+                                <Dialog open={statsCarrierDialogOpen} onOpenChange={setStatsCarrierDialogOpen}>
+                                    <DialogContent className="max-w-[800px] max-h-[80vh] overflow-y-auto">
+                                        <DialogHeader>
+                                            <DialogTitle>Estadísticas de {selectedCarrier?.name}</DialogTitle>
+                                            <DialogDescription>
+                                                Historial de ratings mensuales para este transportista.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        {selectedCarrier && <EntityStats entityId={selectedCarrier.carrierId} entityType={"carrier"}/>}
+                                    </DialogContent>
+                                </Dialog>
+                                <Card>
+                                    <CardHeader>
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <CardTitle>Transportistas</CardTitle>
+                                                <CardDescription>Gestiona los transportistas y visualiza
+                                                    estadísticas</CardDescription>
+                                            </div>
+                                            <Dialog open={newCarrierOpen} onOpenChange={setNewCarrierOpen}>
+                                                <DialogTrigger asChild>
+                                                    <Button>
+                                                        <Plus className="h-4 w-4 mr-2"/>
+                                                        Nuevo Transportista
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle>Crear Nuevo Transportista</DialogTitle>
+                                                        <DialogDescription>
+                                                            Agrega un nuevo transportista al sistema
+                                                        </DialogDescription>
+                                                    </DialogHeader>
+                                                    <div className="grid gap-4 py-4">
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="name">Nombre</Label>
+                                                            <Input
+                                                                id="name"
+                                                                value={newCarrier.name}
+                                                                onChange={(e) => setNewCarrier({
+                                                                    ...newCarrier,
+                                                                    name: e.target.value
+                                                                })}
+                                                                placeholder="Nombre del transportista"
+                                                            />
+                                                        </div>
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="rfc">RFC</Label>
+                                                            <Input
+                                                                id="rfc"
+                                                                value={newCarrier.rfc}
+                                                                maxLength={10}
+                                                                minLength={10}
+                                                                onChange={(e) => setNewCarrier({
+                                                                    ...newCarrier,
+                                                                    rfc: e.target.value
+                                                                })}
+                                                                placeholder="RFC del transportista"
+                                                            />
+                                                        </div>
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="razonSocial">Razón Social</Label>
+                                                            <Input
+                                                                id="razonSocial"
+                                                                value={newCarrier.razonSocial}
+                                                                onChange={(e) => setNewCarrier({
+                                                                    ...newCarrier,
+                                                                    razonSocial: e.target.value
+                                                                })}
+                                                                placeholder="Razón social del transportista"
+                                                            />
+                                                        </div>
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="caat">CAAT</Label>
+                                                            <Input
+                                                                id="caat"
+                                                                value={newCarrier.caat}
+                                                                maxLength={4}
+                                                                minLength={4}
+                                                                onChange={(e) => setNewCarrier({
+                                                                    ...newCarrier,
+                                                                    caat: e.target.value
+                                                                })}
+                                                                placeholder="CAAT del transportista"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <DialogFooter>
+                                                        <Button variant="outline" onClick={() => setNewCarrierOpen(false)}>
+                                                            Cancelar
+                                                        </Button>
+                                                        <Button onClick={handleCreateCarrier}>Crear Transportista</Button>
+                                                    </DialogFooter>
+                                                </DialogContent>
+                                            </Dialog>
+                                        </div>
+                                    </CardHeader>
+
+                                    <CardContent>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Nombre</TableHead>
+                                                    <TableHead>RFC</TableHead>
+                                                    <TableHead>CAAT</TableHead>
+                                                    <TableHead>Razón Social</TableHead>
+                                                    <TableHead className="w-[70px]">Acciones</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {carriers.map((carrier) => (
+                                                    <TableRow key={carrier.carrierId}>
+                                                        <TableCell className="font-medium">{carrier.name}</TableCell>
+                                                        <TableCell className="font-light">{carrier.rfc}</TableCell>
+                                                        <TableCell className="font-light">{carrier.caat}</TableCell>
+                                                        <TableCell className="font-light">{carrier.razonSocial}</TableCell>
+
+                                                        <TableCell>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                        <MoreHorizontal className="h-4 w-4"/>
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleEditCarrier(carrier)}>
+                                                                        <Edit className="mr-2 h-4 w-4"/>
+                                                                        Editar
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleViewCarrierStats(carrier)}>
+                                                                        <BarChart className="mr-2 h-4 w-4"/>
+                                                                        Ver Estadísticas
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        className="text-destructive"
+                                                                        onClick={() => handleDeleteCarrier(carrier.carrierId)}
+                                                                    >
+                                                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                                                        Eliminar
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
+
+                            {/* === Clients Tab === */}
+
+
+                            <TabsContent value="clients">
+                                <Dialog open={statsClientDialogOpen} onOpenChange={setStatsClientDialogOpen}>
+                                    <DialogContent className="max-w-[800px] max-h-[80vh] overflow-y-auto">
+                                        <DialogHeader>
+                                            <DialogTitle>Estadísticas de {selectedClient?.name}</DialogTitle>
+                                            <DialogDescription>
+                                                Historial de ratings mensuales para este cliente.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        {selectedClient && <EntityStats entityId={selectedClient.clientId} entityType={"client"}/>}
+                                    </DialogContent>
+                                </Dialog>
+
+
+                                <Card>
+                                    <CardHeader>
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                        <CardTitle>Clientes</CardTitle>
+                                        <CardDescription>Gestiona los cliented y visualiza estadísticas</CardDescription>
+                                                </div>
+                                            <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
+                                                <DialogTrigger asChild>
+                                                    <Button>
+                                                        <Plus className="h-4 w-4 mr-2"/>
+                                                        Nuevo Cliente
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle>Crear Nuevo Transportista</DialogTitle>
+                                                        <DialogDescription>
+                                                            Agrega un nuevo transportista al sistema
+                                                        </DialogDescription>
+                                                    </DialogHeader>
+                                                    <div className="grid gap-4 py-4">
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="client-name">Nombre</Label>
+                                                            <Input
+                                                                id="client-name"
+                                                                value={newClient.name}
+                                                                onChange={(e) => setNewClient({
+                                                                    ...newClient,
+                                                                    name: e.target.value
+                                                                })}
+                                                                placeholder="Nombre del cliente"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <DialogFooter>
+                                                        <Button variant="outline" onClick={() => setNewClientOpen(false)}>
+                                                            Cancelar
+                                                        </Button>
+                                                        <Button onClick={handleCreateClient}>Crear Cliente</Button>
+                                                    </DialogFooter>
+                                                </DialogContent>
+                                            </Dialog>
+                                        </div>
+                                    </CardHeader>
+
+                                    <CardContent>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>ID</TableHead>
+                                                    <TableHead>Nombre</TableHead>
+                                                    <TableHead className="w-[70px]">Acciones</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {clients.map((client) => (
+                                                    <TableRow key={client.clientId}>
+                                                        <TableCell>{client.clientId}</TableCell>
+                                                        <TableCell>{client.name}</TableCell>
+
+                                                        <TableCell>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                        <MoreHorizontal className="h-4 w-4"/>
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleEditClient(client)}>
+                                                                        <Edit className="mr-2 h-4 w-4"/>
+                                                                        Editar
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleViewClientStats(client)}>
+                                                                        <BarChart className="mr-2 h-4 w-4"/>
+                                                                        Ver Estadísticas
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        className="text-destructive"
+                                                                        onClick={() => handleDeleteClient(client.clientId)}
+                                                                    >
+                                                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                                                        Eliminar
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                        </Tabs>
                     </TabsContent>
 
                     <TabsContent value="users" className="space-y-4">
@@ -866,7 +1162,8 @@ const AdminDashboard = () => {
                                 </CardTitle>
                                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
                                     <div className="relative w-full sm:w-96">
-                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
+                                        <Search
+                                            className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
                                         <Input
                                             placeholder="Search users..."
                                             className="pl-8"
@@ -926,7 +1223,8 @@ const AdminDashboard = () => {
                                                     </div>
                                                 </div>
                                                 <DialogFooter>
-                                                    <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>
+                                                    <Button variant="outline"
+                                                            onClick={() => setInviteDialogOpen(false)}>
                                                         Cancel
                                                     </Button>
                                                     <Button onClick={handleInvite} disabled={isInviting}>
@@ -972,7 +1270,8 @@ const AdminDashboard = () => {
                                                                     <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
                                                                 </Avatar>
                                                                 <div>
-                                                                    <div className="font-medium">{user.username}</div>
+                                                                    <div
+                                                                        className="font-medium">{user.username}</div>
                                                                     <div
                                                                         className="text-sm text-muted-foreground">{user.email}</div>
                                                                 </div>
@@ -1113,14 +1412,16 @@ const AdminDashboard = () => {
                                                                                     setSelectedPermissions(newPermissions);
                                                                                 }}
                                                                             />
-                                                                            <Label htmlFor={`permission-${permission}`}
-                                                                                   className="text-sm cursor-pointer">
+                                                                            <Label
+                                                                                htmlFor={`permission-${permission}`}
+                                                                                className="text-sm cursor-pointer">
                                                                                 {permission}
                                                                             </Label>
                                                                         </div>
                                                                     ))
                                                                 ) : (
-                                                                    <p className="text-sm text-muted-foreground">No hay
+                                                                    <p className="text-sm text-muted-foreground">No
+                                                                        hay
                                                                         permisos disponibles</p>
                                                                 )}
                                                             </div>
@@ -1218,7 +1519,8 @@ const AdminDashboard = () => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <CardTitle>Gestión de Tipos de Incidentes</CardTitle>
-                                        <CardDescription>Administra los tipos de incidentes del sistema</CardDescription>
+                                        <CardDescription>Administra los tipos de incidentes del
+                                            sistema</CardDescription>
                                     </div>
                                     <Dialog open={newIncidentTypeOpen} onOpenChange={setNewIncidentTypeOpen}>
                                         <DialogTrigger asChild>
@@ -1236,7 +1538,8 @@ const AdminDashboard = () => {
                                             </DialogHeader>
                                             <div className="grid gap-4 py-4">
                                                 <div className="grid gap-2">
-                                                    <Label htmlFor="incidentTypeName">Nombre del Tipo de Incidente</Label>
+                                                    <Label htmlFor="incidentTypeName">Nombre del Tipo de
+                                                        Incidente</Label>
                                                     <Input
                                                         id="incidentTypeName"
                                                         value={newIncidentTypeName}
@@ -1256,12 +1559,29 @@ const AdminDashboard = () => {
                                                         className="text-center"
                                                     />
                                                 </div>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="incidentTypeEntityTied">Tipo de
+                                                        Incidente</Label>
+                                                    <Select value={newIncidentEntityTied}
+                                                            onValueChange={setNewIncidentEntityTied}>
+                                                        <SelectTrigger id="incidentTypeEntityTied">
+                                                            <SelectValue
+                                                                placeholder="Selecciona el tipo de incidente"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value={"client"}>Cliente</SelectItem>
+                                                            <SelectItem value={"carrier"}>Transportista</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
                                             </div>
                                             <DialogFooter>
-                                                <Button variant="outline" onClick={() => setNewIncidentTypeOpen(false)}>
+                                                <Button variant="outline"
+                                                        onClick={() => setNewIncidentTypeOpen(false)}>
                                                     Cancelar
                                                 </Button>
-                                                <Button onClick={handleCreateIncidentType}>Crear Tipo de Incidente</Button>
+                                                <Button onClick={handleCreateIncidentType}>Crear Tipo de
+                                                    Incidente</Button>
                                             </DialogFooter>
                                         </DialogContent>
                                     </Dialog>
@@ -1273,6 +1593,7 @@ const AdminDashboard = () => {
                                         <TableRow>
                                             <TableHead>Nombre</TableHead>
                                             <TableHead>Penalización</TableHead>
+                                            <TableHead>Tipo de incidente</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -1280,6 +1601,13 @@ const AdminDashboard = () => {
                                             <TableRow key={incidentType.incidentId}>
                                                 <TableCell className="font-medium">{incidentType.name}</TableCell>
                                                 <TableCell>{incidentType.penalty || "Sin descripción"}</TableCell>
+                                                <TableCell>
+                                                    {incidentType.entityTied === "CARRIER"
+                                                        ? "Transporte"
+                                                        : incidentType.entityTied === "CLIENT"
+                                                            ? "Cliente"
+                                                            : `Desconocido (${incidentType.entityTied})`}
+                                                </TableCell>
                                                 {canManageIncidentTypes() && (
                                                     <TableCell>
                                                         <Button
@@ -1314,7 +1642,8 @@ const AdminDashboard = () => {
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Eliminar Tipo de Incidente</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        Estas seguro de querer eliminar este tipo de incidente? Esta acción no se puede
+                                        Estas seguro de querer eliminar este tipo de incidente? Esta acción no se
+                                        puede
                                         deshacer.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
@@ -1341,7 +1670,8 @@ const AdminDashboard = () => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <CardTitle>Gestión de Tipos de Cargos</CardTitle>
-                                        <CardDescription>Administra los tipos de cargos del sistema</CardDescription>
+                                        <CardDescription>Administra los tipos de cargos del
+                                            sistema</CardDescription>
                                     </div>
                                     <Dialog open={newChargeTypeOpen} onOpenChange={setNewChargeTypeOpen}>
                                         <DialogTrigger asChild>
@@ -1369,7 +1699,7 @@ const AdminDashboard = () => {
                                                 </div>
                                                 <div className="grid gap-2">
                                                     <Label htmlFor="chargeTypePenalty">Penalización del Tipo de
-                                                        Incidente</Label>
+                                                        Cargo</Label>
                                                     <Input
                                                         id="chargeTypePenalty"
                                                         type="number"
@@ -1381,10 +1711,12 @@ const AdminDashboard = () => {
                                                 </div>
                                             </div>
                                             <DialogFooter>
-                                                <Button variant="outline" onClick={() => setNewChargeTypeOpen(false)}>
+                                                <Button variant="outline"
+                                                        onClick={() => setNewChargeTypeOpen(false)}>
                                                     Cancelar
                                                 </Button>
-                                                <Button onClick={handleCreateChargeType}>Crear Tipo de Cargo</Button>
+                                                <Button onClick={handleCreateChargeType}>Crear Tipo de
+                                                    Cargo</Button>
                                             </DialogFooter>
                                         </DialogContent>
                                     </Dialog>
@@ -1396,6 +1728,7 @@ const AdminDashboard = () => {
                                         <TableRow>
                                             <TableHead>Nombre</TableHead>
                                             <TableHead>Penalización</TableHead>
+                                            <TableHead>Tipo de incidente</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -1403,6 +1736,13 @@ const AdminDashboard = () => {
                                             <TableRow key={chargeType.chargeId}>
                                                 <TableCell className="font-medium">{chargeType.name}</TableCell>
                                                 <TableCell>{chargeType.penalty || "Sin descripción"}</TableCell>
+                                                <TableCell>
+                                                    {chargeType.entityTied === "CARRIER"
+                                                        ? "Transporte"
+                                                        : chargeType.entityTied === "CLIENT"
+                                                            ? "Cliente"
+                                                            : `Desconocido (${chargeType.entityTied})`}
+                                                </TableCell>
                                                 {canManageChargeTypes() && (
                                                     <TableCell>
                                                         <Button
@@ -1495,7 +1835,10 @@ const AdminDashboard = () => {
                                 <Input
                                     id="edit-carrier-razonSocial"
                                     value={editCarrierData.razonSocial}
-                                    onChange={(e) => setEditCarrierData({...editCarrierData, razonSocial: e.target.value})}
+                                    onChange={(e) => setEditCarrierData({
+                                        ...editCarrierData,
+                                        razonSocial: e.target.value
+                                    })}
                                     placeholder="Razón social"
                                 />
                             </div>
@@ -1515,6 +1858,35 @@ const AdminDashboard = () => {
                                 Cancelar
                             </Button>
                             <Button onClick={handleUpdateCarrier}>Actualizar Transportista</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Edit Client Dialog */}
+                <Dialog open={editClientOpen} onOpenChange={setEditClientOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Editar Cliente</DialogTitle>
+                            <DialogDescription>
+                                Modifica la información del cliente {editingClient?.name}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-client-name">Nombre</Label>
+                                <Input
+                                    id="edit-client-name"
+                                    value={editClientData.name}
+                                    onChange={(e) => setEditClientData({...editClientData, name: e.target.value})}
+                                    placeholder="Nombre del transportista"
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setEditClientOpen(false)}>
+                                Cancelar
+                            </Button>
+                            <Button onClick={handleUpdateClient}>Actualizar Cliente</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -1593,9 +1965,9 @@ const AdminDashboard = () => {
                                                     if (selectedUserForRole) {
                                                         try {
                                                             if (checked) {
-                                                                await roleService.assignRole(selectedUserForRole.userId, role.name);
+                                                                await apiRoleService.assignRole(selectedUserForRole.userId, role.name);
                                                             } else {
-                                                                await roleService.removeRole(selectedUserForRole.userId, role.name);
+                                                                await apiRoleService.removeRole(selectedUserForRole.userId, role.name);
                                                             }
 
                                                             // Update local state
@@ -1624,7 +1996,8 @@ const AdminDashboard = () => {
                                                     }
                                                 }}
                                             />
-                                            <Label htmlFor={`role-${role.roleId}`} className="capitalize cursor-pointer">
+                                            <Label htmlFor={`role-${role.roleId}`}
+                                                   className="capitalize cursor-pointer">
                                                 {role.name}
                                                 {role.description && (
                                                     <span className="text-muted-foreground text-sm ml-2">

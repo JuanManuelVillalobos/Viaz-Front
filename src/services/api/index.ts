@@ -1,10 +1,10 @@
 
-export { default as apiClient } from './apiClient';
-export { authService } from './authService';
+export { default as apiClient } from './apiAxiosClient.ts';
+export { apiAuthService } from './apiAuthService.ts';
 export { userService } from './userService';
-export { roleService } from './roleService';
+export { apiRoleService } from './apiRoleService.ts';
 export { apiShipmentService } from './apiShipmentService.ts';
-export { carrierService } from './carrierService';
-export { incidentService } from './incidentService';
-export { chargeService } from './chargeService';
-export { notificationService } from './notificationService';
+export { apiCarrierService } from './apiCarrierService.ts';
+export { apiIncidentService } from './apiIncidentService.ts';
+export { apiChargeService } from './apiChargeService.ts';
+export { apiNotificationService } from './apiNotificationService.ts';

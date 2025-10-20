@@ -1,12 +1,15 @@
 import {useAuth} from '@/contexts/AuthContext';
 
 export const usePermissions = () => {
-    const {hasPermission, hasAnyPermission, permissions} = useAuth();
+    const {hasPermission, hasAnyPermission, permissions, hasRole} = useAuth();
 
     return {
         hasPermission,
         hasAnyPermission,
         permissions,
+        hasRole,
+
+        isCustomerService: () => hasRole('Customer Service'),
 
         // Specific permission groups
         canManageUsers: () => hasAnyPermission(['USER_MANAGE', 'USER_WRITE', 'USER_READ']),
@@ -25,6 +28,8 @@ export const usePermissions = () => {
         canCreateShipments: () => hasAnyPermission(['SHIPMENT_MANAGE', 'SHIPMENT_WRITE']),
         canDeleteShipments: () => hasAnyPermission(['SHIPMENT_MANAGE', 'SHIPMENT_DELETE']),
         canCloseShipments: () => hasAnyPermission(['SHIPMENT_MANAGE', 'SHIPMENT_CLOSE']),
+        canExportShipments: () => hasAnyPermission(['SHIPMENT_MANAGE', 'SHIPMENT_EXPORT']),
+        canRestoreShipments: () => hasAnyPermission(['SHIPMENT_MANAGE', 'SHIPMENT_RESTORE']),
 
         canManageCarriers: () => hasAnyPermission(['CARRIER_MANAGE', 'CARRIER_WRITE', 'CARRIER_READ']),
         canCreateCarriers: () => hasAnyPermission(['CARRIER_MANAGE', 'CARRIER_WRITE']),

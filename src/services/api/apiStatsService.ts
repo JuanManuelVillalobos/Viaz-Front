@@ -59,6 +59,12 @@ export const apiStatsService = {
     getMonthlyRatingsOfCarrier: async (carrierId: number): Promise<MonthlyRating[]> => {
         const response = await apiClient.get(`/api/stats/get-monthly-ratings-of-carrier/${carrierId}`);
         return response.data;
-    }
+    },
+
+     // Get monthly average ratings for a specific client
+    getMonthlyRatingsOfClient: async (clientId: number): Promise<MonthlyRating[]> => {
+        const response = await apiClient.get(`/api/stats/get-monthly-ratings-of-client/${clientId}`);
+        return response.data;
+    },
 
 }
