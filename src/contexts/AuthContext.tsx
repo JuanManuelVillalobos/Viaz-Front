@@ -1,5 +1,5 @@
 import React, {createContext, useContext, useState, useEffect, ReactNode} from 'react';
-import {authService} from '@/services/api/authService';
+import {apiAuthService} from '@/services/api/apiAuthService.ts';
 import {ViazCurrentUserAuthResponseDTO} from '@/types/api';
 
 interface AuthContextType {
@@ -7,9 +7,12 @@ interface AuthContextType {
     permissions: string[];
     hasPermission: (permission: string) => boolean;
     hasAnyPermission: (permissions: string[]) => boolean;
+    hasRole: (role: string) => boolean;
+    hasAnyRole: (roles: string[]) => boolean;
     loading: boolean;
     refreshAuth: () => Promise<void>;
 }
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -20,7 +23,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
 
     const refreshAuth = async () => {
         try {
-            const authData = await authService.me();
+            const authData = await apiAuthService.me();
             setUser(authData);
             setPermissions(authData.effectivePermissions || []);
         } catch (error) {
@@ -40,6 +43,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
             requiredPermissions.some(permission => permissions.includes(permission));
     };
 
+    const hasRole = (role: string): boolean => {
+        return !!user?.user?.roles?.includes(role);
+    };
+
+    const hasAnyRole = (requiredRoles: string[]): boolean => {
+        return requiredRoles.some(role => user?.user?.roles?.includes(role));
+    };
+
+
     useEffect(() => {
         const accessToken = localStorage.getItem('accessToken');
         if (accessToken) {
@@ -50,12 +62,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({children}) => {
     }, []);
 
 
+
     return (
         <AuthContext.Provider value={{
             user,
             permissions,
             hasPermission,
             hasAnyPermission,
+            hasRole,
+            hasAnyRole,
             loading,
             refreshAuth
         }}>
