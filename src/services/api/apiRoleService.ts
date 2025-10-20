@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import apiAxiosClient from './apiAxiosClient.ts';
 
 export interface Role {
     roleId: number;
@@ -15,10 +15,10 @@ export interface RoleCreationRequest {
     cosmetic?: boolean;
 }
 
-export const roleService = {
+export const apiRoleService = {
     // Get all permissions
     getAllPermissions: async (): Promise<string[]> => {
-        const response = await apiClient.get('/api/permissions/get-permissions');
+        const response = await apiAxiosClient.get('/api/permissions/get-permissions');
         // Backend returns a string representation, parse it to get the actual permissions
         return response.data;
 
@@ -39,28 +39,28 @@ export const roleService = {
             permissions: roleData.permissions ? Array.from(roleData.permissions) : undefined,
             cosmetic: roleData.cosmetic || false
         };
-        const response = await apiClient.post('/api/role/create-role', requestData);
+        const response = await apiAxiosClient.post('/api/role/create-role', requestData);
         return response.data;
     },
 
     // Get all roles
     getAllRoles: async (): Promise<Role[]> => {
-        const response = await apiClient.get('/api/role/get-all-roles');
+        const response = await apiAxiosClient.get('/api/role/get-all-roles');
         return response.data;
     },
 
     // Assign role to user
     assignRole: async (userId: number, roleName: string): Promise<void> => {
-        await apiClient.post(`/api/user/${userId}/assign-role/${roleName}`);
+        await apiAxiosClient.post(`/api/user/${userId}/assign-role/${roleName}`);
     },
 
     // Remove role from user
     removeRole: async (userId: number, roleName: string): Promise<void> => {
-        await apiClient.delete(`/api/user/${userId}/remove-role/${roleName}`);
+        await apiAxiosClient.delete(`/api/user/${userId}/remove-role/${roleName}`);
     },
 
 //     Delete Role
     deleteRole: async (roleId: number): Promise<void> => {
-        await apiClient.delete(`/api/role/delete-role/${roleId}`);
+        await apiAxiosClient.delete(`/api/role/delete-role/${roleId}`);
     },
 };
