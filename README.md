@@ -4,7 +4,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript)
 ![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?style=flat-square&logo=vite)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-06B6D4?style=flat-square&logo=tailwindcss)
-![License](https://img.shields.io/badge/License-MIT-brightgreen?style=flat-square)
+![License](https://img.shields.io/badge/License-All_Rights_Reserved-red?style=flat-square)
 
 > **Portfolio Project:** Production-ready Web Client for the Viaz Logistics Management Platform. Built with React 18, TypeScript, and Vite to digitize manual Excel workflows into an interactive, real-time dashboard for shipment lifecycle tracking, carrier analytics, and role-gated UI workflows.
 
@@ -113,4 +113,6 @@ VITE_API_BASE_URL=http://localhost:8080/api
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+Copyright © 2025–2026 Juan Manuel Villalobos. All Rights Reserved.
+
+This repository is published strictly for portfolio display and code review. Unlawful copying, distribution, or commercial use of this software is strictly prohibited.
