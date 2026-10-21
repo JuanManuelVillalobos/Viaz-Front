@@ -1,69 +1,113 @@
-# Welcome to your Lovable project
+# UserFlux Tracker
 
-## Project info
+UserFlux Tracker is a logistics and shipment operations dashboard built with React, TypeScript, and Vite. It helps teams monitor shipment activity, track open and closed loads, review carrier performance, manage incidents and charges, and keep operational data organized in a single interface.
 
-**URL**: https://lovable.dev/projects/76799dff-b09d-4b6a-8e52-e11cef983b31
+## Overview
 
-## How can I edit this code?
+This project is designed for freight and logistics workflows, with a focus on:
 
-There are several ways of editing your application.
+- dashboard visibility for shipment volume and operational KPIs
+- shipment search, filtering, and status management
+- carrier and client tracking
+- open-vs-closed shipment monitoring
+- incident and charge tracking
+- completion/progress indicators for each shipment record
+- authenticated access for different user roles
 
-**Use Lovable**
+## Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/76799dff-b09d-4b6a-8e52-e11cef983b31) and start prompting.
+- Shipment dashboard with summary cards and analytics
+- Shipment list with search, filtering, and column customization
+- Shipment status updates directly from the table
+- Detailed shipment views and record tracking
+- Carrier rating charting and operational metrics
+- Incident and charge monitoring
+- Role-based access restrictions and authentication flow
+- Responsive UI built with Tailwind CSS and shadcn/ui components
 
-Changes made via Lovable will be committed automatically to this repo.
+## Tech Stack
 
-**Use your preferred IDE**
+- TypeScript
+- React 18
+- Vite
+- React Router
+- TanStack Query
+- Tailwind CSS
+- shadcn/ui
+- Recharts
+- Lucide React
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Project Structure
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```text
+.
+├── src/
+│   ├── components/       # Reusable UI and business components
+│   ├── contexts/         # Auth and shared application state
+│   ├── hooks/            # Custom hooks
+│   ├── layouts/          # Shell layouts and navigation wrappers
+│   ├── pages/            # Application pages
+│   ├── services/         # API and service layer
+│   ├── types/            # TypeScript models and DTOs
+│   ├── App.tsx           # App routing and auth guards
+│   └── main.tsx          # Application entry point
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+├── tailwind.config.ts
+├── README.md
+└── index.html
+```
 
-Follow these steps:
+## Getting Started
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Prerequisites
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- Node.js 18+
+- npm
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Install dependencies
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
+```
+
+### Run the app locally
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available in the browser through the Vite dev server.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Production build
 
-**Use GitHub Codespaces**
+```bash
+npm run build
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Preview production build
 
-## What technologies are used for this project?
+```bash
+npm run preview
+```
 
-This project is built with .
+## Scripts
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```json
+{
+  "dev": "vite",
+  "build": "vite build",
+  "build:dev": "vite build --mode development",
+  "lint": "eslint .",
+  "preview": "vite preview"
+}
+```
 
-## How can I deploy this project?
+## Notes
 
-Simply open [Lovable](https://lovable.dev/projects/76799dff-b09d-4b6a-8e52-e11cef983b31) and click on Share -> Publish.
+This repository appears to be the frontend application for a shipment-tracking and operations workflow. It integrates with backend services for shipment data, authentication, and operational analytics, so a matching API or environment configuration is expected depending on your deployment setup.
 
-## I want to use a custom domain - is that possible?
+## License
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+This project does not currently declare a license in the repository.
