@@ -1,113 +1,116 @@
-# UserFlux Tracker
+# Viaz — Logistics Operations Frontend
 
-UserFlux Tracker is a logistics and shipment operations dashboard built with React, TypeScript, and Vite. It helps teams monitor shipment activity, track open and closed loads, review carrier performance, manage incidents and charges, and keep operational data organized in a single interface.
+![React 18](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript)
+![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?style=flat-square&logo=vite)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-06B6D4?style=flat-square&logo=tailwindcss)
+![License](https://img.shields.io/badge/License-MIT-brightgreen?style=flat-square)
+
+> **Portfolio Project:** Production-ready Web Client for the Viaz Logistics Management Platform. Built with React 18, TypeScript, and Vite to digitize manual Excel workflows into an interactive, real-time dashboard for shipment lifecycle tracking, carrier analytics, and role-gated UI workflows.
+
+---
 
 ## Overview
 
-This project is designed for freight and logistics workflows, with a focus on:
+The application provides a high-performance web interface designed for freight operators and logistics managers:
 
-- dashboard visibility for shipment volume and operational KPIs
-- shipment search, filtering, and status management
-- carrier and client tracking
-- open-vs-closed shipment monitoring
-- incident and charge tracking
-- completion/progress indicators for each shipment record
-- authenticated access for different user roles
+- **Shipment Control Center:** Multi-field loose search, status filtering, column customization, and inline shipment edits.
+- **Multi-Leg Cross-Border Tracking:** Variant duplication workflows (`A`, `B`, `C`...) for international routes (e.g., US & MX freight legs).
+- **Incident & Charge Management:** Color-coded tracking (reports vs. incidents) with automated UI state locking upon shipment closure.
+- **Operational Analytics:** Interactive Recharts visual analytics covering carrier performance ratings, client statistics, and open/closed load ratios.
+- **Granular Access Controls:** Dynamic, permission-aware UI routing and component rendering based on authenticated JWT user roles.
 
-## Features
+---
 
-- Shipment dashboard with summary cards and analytics
-- Shipment list with search, filtering, and column customization
-- Shipment status updates directly from the table
-- Detailed shipment views and record tracking
-- Carrier rating charting and operational metrics
-- Incident and charge monitoring
-- Role-based access restrictions and authentication flow
-- Responsive UI built with Tailwind CSS and shadcn/ui components
+## Key Technical Highlights
+
+* **Server State Management:** Integrated **TanStack Query (React Query)** for efficient API caching, background refetching, and optimistic UI updates for shipment status toggles.
+* **Granular UI Permission Gating:** Custom Auth Context and dynamic permission hooks that strip or disable actions (e.g., dropdowns, shipment closure actions, admin settings) based on backend RBAC tokens.
+* **Component System & Styling:** Engineered with **Tailwind CSS** and modular **shadcn/ui** primitives for responsive, accessible UI layouts across desktop and mobile browsers.
+* **Type Safety & Data Integrity:** Strict TypeScript DTO and model definitions matching the Spring Boot REST API domain objects to ensure end-to-end data safety.
+
+---
 
 ## Tech Stack
 
-- TypeScript
-- React 18
-- Vite
-- React Router
-- TanStack Query
-- Tailwind CSS
-- shadcn/ui
-- Recharts
-- Lucide React
+* **Core Framework:** React 18, TypeScript, Vite
+* **Routing & State:** React Router v6, TanStack Query (React Query)
+* **Styling & UI:** Tailwind CSS, shadcn/ui, Lucide Icons
+* **Data Visualization:** Recharts
+* **Build & Tooling:** Vite, ESLint, npm
+
+---
 
 ## Project Structure
 
 ```text
 .
 ├── src/
-│   ├── components/       # Reusable UI and business components
-│   ├── contexts/         # Auth and shared application state
-│   ├── hooks/            # Custom hooks
-│   ├── layouts/          # Shell layouts and navigation wrappers
-│   ├── pages/            # Application pages
-│   ├── services/         # API and service layer
-│   ├── types/            # TypeScript models and DTOs
-│   ├── App.tsx           # App routing and auth guards
+│   ├── components/       # Reusable UI & business domain components
+│   │   ├── ui/           # Primitive shadcn/ui components
+│   │   ├── dashboard/    # Analytics widgets & Recharts views
+│   │   └── shipments/    # Tables, filter bars, and modal forms
+│   ├── contexts/         # Auth, session, and global app state
+│   ├── hooks/            # Custom React hooks (permissions, queries)
+│   ├── layouts/          # Navigation sidebars, shell wrappers
+│   ├── pages/            # Application view pages
+│   ├── services/         # Axios / Fetch API integrations
+│   ├── types/            # TypeScript models & API DTO contracts
+│   ├── App.tsx           # Route declarations & auth guards
 │   └── main.tsx          # Application entry point
 ├── package.json
 ├── vite.config.ts
-├── tsconfig.json
 ├── tailwind.config.ts
-├── README.md
-└── index.html
+└── README.md
 ```
 
-## Getting Started
+---
+
+## Environment Configuration
+
+Create a `.env` file in the root directory:
+
+```bash
+# Backend REST API endpoint
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+---
+
+## Local Setup
 
 ### Prerequisites
+* Node.js 18+
+* npm 9+
 
-- Node.js 18+
-- npm
+### Installation
 
-### Install dependencies
+1. **Clone repository:**
+   ```bash
+   git clone [https://github.com/JuanManuelVillalobos/viaz-frontend.git](https://github.com/JuanManuelVillalobos/viaz-frontend.git)
+   cd viaz-frontend
+   ```
 
-```bash
-npm install
-```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-### Run the app locally
+3. **Start local development server:**
+   ```bash
+   npm run dev
+   ```
+   The application will be served at `http://localhost:5173`.
 
-```bash
-npm run dev
-```
+### Scripts
 
-The application will be available in the browser through the Vite dev server.
+* `npm run dev` — Launch Vite dev server
+* `npm run build` — Compile production build
+* `npm run preview` — Locally preview production build
+* `npm run lint` — Run ESLint code quality checks
 
-### Production build
-
-```bash
-npm run build
-```
-
-### Preview production build
-
-```bash
-npm run preview
-```
-
-## Scripts
-
-```json
-{
-  "dev": "vite",
-  "build": "vite build",
-  "build:dev": "vite build --mode development",
-  "lint": "eslint .",
-  "preview": "vite preview"
-}
-```
-
-## Notes
-
-This repository appears to be the frontend application for a shipment-tracking and operations workflow. It integrates with backend services for shipment data, authentication, and operational analytics, so a matching API or environment configuration is expected depending on your deployment setup.
+---
 
 ## License
 
-This project does not currently declare a license in the repository.
+This project is licensed under the [MIT License](LICENSE).
