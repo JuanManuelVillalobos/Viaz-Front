@@ -6,38 +6,36 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-06B6D4?style=flat-square&logo=tailwindcss)
 ![License](https://img.shields.io/badge/License-All_Rights_Reserved-red?style=flat-square)
 
-> **Portfolio Project:** Production-ready Web Client for the Viaz Logistics Management Platform. Built with React 18, TypeScript, and Vite to digitize manual Excel workflows into an interactive, real-time dashboard for shipment lifecycle tracking, carrier analytics, and role-gated UI workflows.
+> **Portfolio Project:** Production-ready web client for the Viaz Logistics Management Platform. Built with React 18, TypeScript, and Vite to replace a 5-person team's Excel-based workflow with an interactive, real-time dashboard for shipment lifecycle tracking, incident reporting, and permission-gated user management.
 
 ---
 
 ## Overview
 
-The application provides a high-performance web interface designed for freight operators and logistics managers:
+The application provides a responsive UI engineered across three primary permission-gated views:
 
-- **Shipment Control Center:** Multi-field loose search, status filtering, column customization, and inline shipment edits.
-- **Multi-Leg Cross-Border Tracking:** Variant duplication workflows (`A`, `B`, `C`...) for international routes (e.g., US & MX freight legs).
-- **Incident & Charge Management:** Color-coded tracking (reports vs. incidents) with automated UI state locking upon shipment closure.
-- **Operational Analytics:** Interactive Recharts visual analytics covering carrier performance ratings, client statistics, and open/closed load ratios.
-- **Granular Access Controls:** Dynamic, permission-aware UI routing and component rendering based on authenticated JWT user roles.
+- **1. Dashboard View:** Multi-field loose search, status/client/carrier filtering, inline shipment edits, and multi-leg cross-border duplication (`A`, `B`, `C`...) to track international freight legs (e.g., US + MX legs).
+- **2. Statistics View:** Operational KPIs, open/closed shipment balances, and interactive monthly carrier/client rating visual charts.
+- **3. User Management View:** Dynamic RBAC administration for custom role creation, multi-role assignment, and cosmetic UI access controls.
 
 ---
 
 ## Key Technical Highlights
 
-* **Server State Management:** Integrated **TanStack Query (React Query)** for efficient API caching, background refetching, and optimistic UI updates for shipment status toggles.
-* **Granular UI Permission Gating:** Custom Auth Context and dynamic permission hooks that strip or disable actions (e.g., dropdowns, shipment closure actions, admin settings) based on backend RBAC tokens.
-* **Component System & Styling:** Engineered with **Tailwind CSS** and modular **shadcn/ui** primitives for responsive, accessible UI layouts across desktop and mobile browsers.
-* **Type Safety & Data Integrity:** Strict TypeScript DTO and model definitions matching the Spring Boot REST API domain objects to ensure end-to-end data safety.
+* **Incident & Report Visual System:** Custom color-coded shipment table row formatting (**Yellow** = Report, **Red** = Incident, **Purple** = Both) with backend-synchronized permission locking that freezes edits on closed shipments unless explicitly reopened.
+* **Dual-Token Client Auth Architecture:** Configured for dual JWT token handling—storing 15-minute access tokens in `localStorage` with automated retry/refresh handling via httpOnly cookies and 15-minute expiry token password reset flows.
+* **Server State & UI Performance:** Utilizes **TanStack Query (React Query)** for API caching, background refetching, and optimistic status updates.
+* **Component Architecture:** Built with **Tailwind CSS** and modular **shadcn/ui** components, combined with **Recharts** for logistics performance analytics.
 
 ---
 
 ## Tech Stack
 
 * **Core Framework:** React 18, TypeScript, Vite
-* **Routing & State:** React Router v6, TanStack Query (React Query)
-* **Styling & UI:** Tailwind CSS, shadcn/ui, Lucide Icons
+* **State & Data Fetching:** React Router v6, TanStack Query (React Query)
+* **Styling & UI Components:** Tailwind CSS, shadcn/ui, Lucide React Icons
 * **Data Visualization:** Recharts
-* **Build & Tooling:** Vite, ESLint, npm
+* **Build Tooling:** Vite, ESLint, npm
 
 ---
 
@@ -46,17 +44,18 @@ The application provides a high-performance web interface designed for freight o
 ```text
 .
 ├── src/
-│   ├── components/       # Reusable UI & business domain components
-│   │   ├── ui/           # Primitive shadcn/ui components
-│   │   ├── dashboard/    # Analytics widgets & Recharts views
-│   │   └── shipments/    # Tables, filter bars, and modal forms
-│   ├── contexts/         # Auth, session, and global app state
-│   ├── hooks/            # Custom React hooks (permissions, queries)
-│   ├── layouts/          # Navigation sidebars, shell wrappers
-│   ├── pages/            # Application view pages
-│   ├── services/         # Axios / Fetch API integrations
-│   ├── types/            # TypeScript models & API DTO contracts
-│   ├── App.tsx           # Route declarations & auth guards
+│   ├── components/       # Reusable UI and business domain components
+│   │   ├── dashboard/    # Shipment tables, filters, and color-coded rows
+│   │   ├── stats/        # Recharts analytics and KPI widgets
+│   │   ├── user/         # Role & permission assignment components
+│   │   └── ui/           # Primitive shadcn/ui design components
+│   ├── contexts/         # Auth, session storage, and dynamic permission state
+│   ├── hooks/            # Custom hooks (e.g., usePermissions, useShipments)
+│   ├── layouts/          # Navigation sidebars, shell layouts, and route guards
+│   ├── pages/            # Dashboard, Statistics, User Management, and Auth pages
+│   ├── services/         # Axios / Fetch API service integration layer
+│   ├── types/            # TypeScript models & REST DTO interfaces
+│   ├── App.tsx           # Application routing & permission guards
 │   └── main.tsx          # Application entry point
 ├── package.json
 ├── vite.config.ts
@@ -71,7 +70,7 @@ The application provides a high-performance web interface designed for freight o
 Create a `.env` file in the root directory:
 
 ```bash
-# Backend REST API endpoint
+# Backend REST API URL
 VITE_API_BASE_URL=http://localhost:8080/api
 ```
 
@@ -100,9 +99,9 @@ VITE_API_BASE_URL=http://localhost:8080/api
    ```bash
    npm run dev
    ```
-   The application will be served at `http://localhost:5173`.
+   The web application will be served at `http://localhost:5173`.
 
-### Scripts
+### Available Scripts
 
 * `npm run dev` — Launch Vite dev server
 * `npm run build` — Compile production build
@@ -115,4 +114,4 @@ VITE_API_BASE_URL=http://localhost:8080/api
 
 Copyright © 2025–2026 Juan Manuel Villalobos. All Rights Reserved.
 
-This repository is published strictly for portfolio display and code review. Unlawful copying, distribution, or commercial use of this software is strictly prohibited.
+This repository is published strictly for portfolio display and code review. Unlawful copying, distribution, modification, or commercial deployment of this software is strictly prohibited.
